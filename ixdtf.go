@@ -181,7 +181,7 @@ func Validate(s string) error {
 	rfc3339End := findRFC3339End(s)
 	rfc3339Portion := s[:rfc3339End]
 
-	if len(rfc3339Portion) == 0 {
+	if rfc3339Portion == "" {
 		return newParseError(LayoutRFC3339, s, errors.New("empty datetime string"))
 	}
 
@@ -272,7 +272,7 @@ func findRFC3339End(s string) int {
 }
 
 func isValidSuffixKey(key string) bool {
-	if len(key) == 0 {
+	if key == "" {
 		return false
 	}
 
@@ -322,7 +322,7 @@ func isValidSuffixKeyRange(s string, start, end int) bool {
 }
 
 func isValidSuffixValue(value string) bool {
-	if len(value) == 0 {
+	if value == "" {
 		return false
 	}
 
@@ -408,7 +408,7 @@ func isValidTimezone(s string) bool {
 }
 
 func isValidTimezoneContent(s string) bool {
-	if len(s) == 0 {
+	if s == "" {
 		return false
 	}
 
@@ -481,7 +481,7 @@ func parseSuffix(s string) (IXDTFExtensions, error) {
 }
 
 func parseSuffixElement(content string, ext *IXDTFExtensions) error {
-	if len(content) == 0 {
+	if content == "" {
 		return ErrInvalidSuffix
 	}
 
