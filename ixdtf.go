@@ -14,15 +14,20 @@ import (
 	"time"
 )
 
-// Layout constants for IXDTF formatting.
-const (
-	// IXDTF is the layout for RFC 9557 format with timezone suffix.
-	// Example: 2006-01-02T15:04:05Z[UTC]
-	IXDTF = "2006-01-02T15:04:05Z07:00[time-zone]"
+type Layout string
 
-	// IXDTFNano is like IXDTF but with nanoseconds.
-	// Example: 2006-01-02T15:04:05.999999999Z[UTC]
-	IXDTFNano = "2006-01-02T15:04:05.999999999Z07:00[time-zone]"
+const (
+	// LayoutRFC3339 represents the RFC 3339 layout.
+	LayoutRFC3339 Layout = time.RFC3339
+
+	// LayoutRFC3339Nano represents the RFC 3339 layout with nanoseconds.
+	LayoutRFC3339Nano Layout = time.RFC3339Nano
+
+	// LayoutIXDTF represents the IXDTF layout.
+	LayoutIXDTF Layout = "2006-01-02T15:04:05Z07:00[time-zone]"
+
+	// LayoutIXDTFNano represents the IXDTF layout with nanoseconds.
+	LayoutIXDTFNano Layout = "2006-01-02T15:04:05.999999999Z07:00[time-zone]"
 )
 
 // IXDTFExtensions holds IXDTF suffix information that extends RFC 3339.
@@ -32,7 +37,7 @@ type IXDTFExtensions struct {
 	TimeZone string
 
 	// Tags contains extension tags as key-value pairs.
-	// Example: map["u-ca"]"japanese" for calendar extension
+	// Example: map["u-ca"]"japanese"
 	Tags map[string]string
 
 	// Critical indicates which tags are marked as critical (must be processed).
@@ -43,6 +48,7 @@ type IXDTFExtensions struct {
 // NewIXDTFExtensions creates a new IXDTFExtensions with initialized maps.
 func NewIXDTFExtensions() IXDTFExtensions {
 	return IXDTFExtensions{
+		TimeZone: "",
 		Tags:     make(map[string]string),
 		Critical: make(map[string]bool),
 	}
@@ -50,16 +56,16 @@ func NewIXDTFExtensions() IXDTFExtensions {
 
 // ParseError represents an error that occurred during IXDTF parsing.
 type ParseError struct {
-	Layout string
+	Layout Layout
 	Value  string
-	Msg    string
+	Err  error
 }
 
 func (e *ParseError) Error() string {
-	if e.Msg == "" {
-		return "parsing time \"" + e.Value + "\" as \"" + e.Layout + "\": cannot parse"
+	if e.Err == nil {
+		return ""
 	}
-	return "parsing time \"" + e.Value + "\" as \"" + e.Layout + "\": " + e.Msg
+	return "parsing time \"" + e.Value + "\" as \"" + string(e.Layout) + "\": " + e.Err.Error()
 }
 
 // Common parsing errors
@@ -69,6 +75,31 @@ var (
 	ErrInvalidExtension  = errors.New("invalid extension format")
 	ErrCriticalExtension = errors.New("critical extension cannot be processed")
 )
+
+// newParseError creates a new ParseError with the given parameters.
+func newParseError(layout Layout, value string, err error) *ParseError {
+	return &ParseError{
+		Layout: layout,
+		Value:  value,
+		Err:    err,
+	}
+}
+
+// parseRFC3339Portion parses the RFC 3339 portion of a datetime string.
+func parseRFC3339Portion(rfc3339Portion string) (time.Time, error) {
+	layouts := []string{time.RFC3339Nano, time.RFC3339}
+	var lastErr error
+
+	for _, layout := range layouts {
+		if t, err := time.Parse(layout, rfc3339Portion); err == nil {
+			return t, nil
+		} else {
+			lastErr = err
+		}
+	}
+
+	return time.Time{}, lastErr
+}
 
 func findRFC3339End(s string) int {
 	for i, c := range s {
@@ -334,32 +365,18 @@ func appendSuffix(b []byte, ext IXDTFExtensions) []byte {
 // Parse parses an IXDTF string and returns the time and extension information.
 func Parse(s string) (time.Time, IXDTFExtensions, error) {
 	rfc3339End := findRFC3339End(s)
-
 	rfc3339Portion := s[:rfc3339End]
 
-	var t time.Time
-	var err error
-
-	if t, err = time.Parse(time.RFC3339Nano, rfc3339Portion); err != nil {
-		if t, err = time.Parse(time.RFC3339, rfc3339Portion); err != nil {
-			return time.Time{}, IXDTFExtensions{}, &ParseError{
-				Layout: "RFC3339",
-				Value:  s,
-				Msg:    "invalid RFC 3339 portion: " + err.Error(),
-			}
-		}
+	t, err := parseRFC3339Portion(rfc3339Portion)
+	if err != nil {
+		return time.Time{}, IXDTFExtensions{}, newParseError(LayoutRFC3339, s, err)
 	}
 
 	ext := NewIXDTFExtensions()
 	if rfc3339End < len(s) {
 		suffixPortion := s[rfc3339End:]
-		var err error
 		if ext, err = parseSuffix(suffixPortion); err != nil {
-			return time.Time{}, IXDTFExtensions{}, &ParseError{
-				Layout: "RFC9557",
-				Value:  s,
-				Msg:    err.Error(),
-			}
+			return time.Time{}, IXDTFExtensions{}, newParseError(LayoutIXDTF, s, err)
 		}
 	}
 
@@ -393,46 +410,20 @@ func FormatNano(t time.Time, ext IXDTFExtensions) string {
 // This is useful for quick validation without the overhead of time parsing.
 func Validate(s string) error {
 	rfc3339End := findRFC3339End(s)
-
 	rfc3339Portion := s[:rfc3339End]
+
 	if len(rfc3339Portion) == 0 {
-		return &ParseError{
-			Layout: "RFC3339",
-			Value:  s,
-			Msg:    "empty datetime string",
-		}
+		return newParseError(LayoutRFC3339, s, errors.New("empty datetime string"))
 	}
 
-	layouts := []string{
-		time.RFC3339Nano,
-		time.RFC3339,
-	}
-
-	var lastErr error
-	for _, layout := range layouts {
-		if _, err := time.Parse(layout, rfc3339Portion); err == nil {
-			break
-		} else {
-			lastErr = err
-		}
-	}
-
-	if lastErr != nil {
-		return &ParseError{
-			Layout: "RFC3339",
-			Value:  s,
-			Msg:    "invalid RFC 3339 portion: " + lastErr.Error(),
-		}
+	if _, err := parseRFC3339Portion(rfc3339Portion); err != nil {
+		return newParseError(LayoutRFC3339, s, errors.New("invalid portion: "+err.Error()))
 	}
 
 	if rfc3339End < len(s) {
 		suffixPortion := s[rfc3339End:]
 		if _, err := parseSuffix(suffixPortion); err != nil {
-			return &ParseError{
-				Layout: "RFC9557",
-				Value:  s,
-				Msg:    err.Error(),
-			}
+			return newParseError(LayoutIXDTF, s, err)
 		}
 	}
 

@@ -306,10 +306,10 @@ func TestParseErrorDetails(t *testing.T) {
 	parseErr2 := &ParseError{
 		Layout: "test-layout",
 		Value:  "test-value",
-		Msg:    "",
+		Err:    nil,
 	}
 	errorStr2 := parseErr2.Error()
-	expected := "parsing time \"test-value\" as \"test-layout\": cannot parse"
+	expected := ""
 	if errorStr2 != expected {
 		t.Errorf("Error() = %q, want %q", errorStr2, expected)
 	}

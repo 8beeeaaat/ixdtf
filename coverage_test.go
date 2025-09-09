@@ -14,31 +14,31 @@ func TestErrorTypes(t *testing.T) {
 	tests := []struct {
 		name      string
 		input     string
-		wantErr   error
+		wantErr   string
 		checkType bool
 	}{
 		{
 			name:      "Invalid suffix format",
 			input:     "2006-01-02T15:04:05Z[",
-			wantErr:   ErrInvalidSuffix,
+			wantErr:   "parsing time \"2006-01-02T15:04:05Z[\" as \"2006-01-02T15:04:05Z07:00[time-zone]\": invalid IXDTF suffix format",
 			checkType: true,
 		},
 		{
 			name:      "Invalid extension format",
 			input:     "2006-01-02T15:04:05Z[key=]",
-			wantErr:   ErrInvalidExtension,
+			wantErr:   "parsing time \"2006-01-02T15:04:05Z[key=]\" as \"2006-01-02T15:04:05Z07:00[time-zone]\": invalid extension format",
 			checkType: true,
 		},
 		{
 			name:      "Critical timezone",
 			input:     "2006-01-02T15:04:05Z[!UTC]",
-			wantErr:   ErrInvalidTimezone,
+			wantErr:   "parsing time \"2006-01-02T15:04:05Z[!UTC]\" as \"2006-01-02T15:04:05Z07:00[time-zone]\": invalid timezone name",
 			checkType: true,
 		},
 		{
 			name:      "Multiple timezones",
 			input:     "2006-01-02T15:04:05Z[UTC][GMT]",
-			wantErr:   ErrInvalidTimezone,
+			wantErr:   "parsing time \"2006-01-02T15:04:05Z[UTC][GMT]\" as \"2006-01-02T15:04:05Z07:00[time-zone]\": invalid timezone name",
 			checkType: true,
 		},
 	}
@@ -54,14 +54,10 @@ func TestErrorTypes(t *testing.T) {
 			// Check if the error is wrapped in a ParseError
 			var parseErr *ParseError
 			if errors.As(err, &parseErr) {
-				// The actual error should be in the message or as the underlying cause
-				if tt.checkType && !errors.Is(err, tt.wantErr) {
-					// Check if the error message contains the expected error string
-					expectedMsg := tt.wantErr.Error()
-					if parseErr.Msg != expectedMsg {
-						t.Errorf("Parse(%q) error message = %q, want %q", tt.input, parseErr.Msg, expectedMsg)
+					expectedMsg := tt.wantErr
+					if parseErr.Error() != expectedMsg {
+						t.Errorf("Parse(%q) error message = %q, want %q", tt.input, parseErr.Error(), expectedMsg)
 					}
-				}
 			} else {
 				t.Errorf("Parse(%q) expected ParseError, got %T", tt.input, err)
 			}
@@ -99,12 +95,12 @@ func TestParseInvalidRFC3339(t *testing.T) {
 		wantError string
 	}{
 		// These should fail both RFC3339Nano and RFC3339 parsing
-		{"completely invalid", "invalid-time-format","parsing time \"invalid-time-format\" as \"RFC3339\": invalid RFC 3339 portion: parsing time \"invalid-time-format\" as \"2006-01-02T15:04:05Z07:00\": cannot parse \"invalid-time-format\" as \"2006\"", },
-		{"invalid month", "2006-13-02T15:04:05Z","parsing time \"2006-13-02T15:04:05Z\" as \"RFC3339\": invalid RFC 3339 portion: parsing time \"2006-13-02T15:04:05Z\": month out of range",},
-		{"invalid hour", "2006-01-02T25:04:05Z","parsing time \"2006-01-02T25:04:05Z\" as \"RFC3339\": invalid RFC 3339 portion: parsing time \"2006-01-02T25:04:05Z\": hour out of range",},
-		{"malformed", "not-a-date-at-all","parsing time \"not-a-date-at-all\" as \"RFC3339\": invalid RFC 3339 portion: parsing time \"not-a-date-at-all\" as \"2006-01-02T15:04:05Z07:00\": cannot parse \"not-a-date-at-all\" as \"2006\"",},
-		{"partial date", "2006-01-02","parsing time \"2006-01-02\" as \"RFC3339\": invalid RFC 3339 portion: parsing time \"2006-01-02\" as \"2006-01-02T15:04:05Z07:00\": cannot parse \"\" as \"T\"" },
-		{"missing T separator", "2006-01-02 15:04:05Z","parsing time \"2006-01-02 15:04:05Z\" as \"RFC3339\": invalid RFC 3339 portion: parsing time \"2006-01-02 15:04:05Z\" as \"2006-01-02T15:04:05Z07:00\": cannot parse \" 15:04:05Z\" as \"T\"",},
+		{"completely invalid", "invalid-time-format","parsing time \"invalid-time-format\" as \"2006-01-02T15:04:05Z07:00\": parsing time \"invalid-time-format\" as \"2006-01-02T15:04:05Z07:00\": cannot parse \"invalid-time-format\" as \"2006\"", },
+		{"invalid month", "2006-13-02T15:04:05Z","parsing time \"2006-13-02T15:04:05Z\" as \"2006-01-02T15:04:05Z07:00\": parsing time \"2006-13-02T15:04:05Z\": month out of range",},
+		{"invalid hour", "2006-01-02T25:04:05Z","parsing time \"2006-01-02T25:04:05Z\" as \"2006-01-02T15:04:05Z07:00\": parsing time \"2006-01-02T25:04:05Z\": hour out of range",},
+		{"malformed", "not-a-date-at-all","parsing time \"not-a-date-at-all\" as \"2006-01-02T15:04:05Z07:00\": parsing time \"not-a-date-at-all\" as \"2006-01-02T15:04:05Z07:00\": cannot parse \"not-a-date-at-all\" as \"2006\"",},
+		{"partial date", "2006-01-02","parsing time \"2006-01-02\" as \"2006-01-02T15:04:05Z07:00\": parsing time \"2006-01-02\" as \"2006-01-02T15:04:05Z07:00\": cannot parse \"\" as \"T\"" },
+		{"missing T separator", "2006-01-02 15:04:05Z","parsing time \"2006-01-02 15:04:05Z\" as \"2006-01-02T15:04:05Z07:00\": parsing time \"2006-01-02 15:04:05Z\" as \"2006-01-02T15:04:05Z07:00\": cannot parse \" 15:04:05Z\" as \"T\"",},
 	}
 
 	for _, tt := range tests {
