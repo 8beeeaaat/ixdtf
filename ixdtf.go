@@ -70,8 +70,6 @@ var (
 	ErrCriticalExtension = errors.New("critical extension cannot be processed")
 )
 
-// findRFC3339End finds the end of the RFC 3339 portion in an IXDTF string.
-// It returns the index where the first '[' appears, or the end of string if no suffix exists.
 func findRFC3339End(s string) int {
 	for i, c := range s {
 		if c == '[' {
@@ -138,12 +136,12 @@ func parseSuffixElement(content string, ext *IXDTFExtensions) error {
 		if key == "" || value == "" {
 			return ErrInvalidExtension
 		}
-		
+
 		// Validate key format according to RFC 9557 ABNF grammar
 		if !isValidSuffixKey(key) {
 			return ErrInvalidExtension
 		}
-		
+
 		// Validate value format according to RFC 9557 ABNF grammar
 		if !isValidSuffixValue(value) {
 			return ErrInvalidExtension
@@ -174,7 +172,6 @@ func parseSuffixElement(content string, ext *IXDTFExtensions) error {
 	return nil
 }
 
-// findEqual finds the first '=' character in the string, or returns -1 if not found.
 func findEqual(s string) int {
 	for i, c := range s {
 		if c == '=' {
@@ -184,7 +181,6 @@ func findEqual(s string) int {
 	return -1
 }
 
-// containsHyphen checks if the string contains a hyphen character.
 func containsHyphen(s string) bool {
 	for _, c := range s {
 		if c == '-' {
@@ -194,11 +190,7 @@ func containsHyphen(s string) bool {
 	return false
 }
 
-// isValidTimezone checks if the string looks like a valid IANA timezone name.
-// This is a simple heuristic - real timezone names don't typically start with "u-".
 func isValidTimezone(s string) bool {
-	// Extension tags typically start with prefixes like "u-", "x-", etc.
-	// Valid timezone names don't start with these patterns
 	if len(s) >= 2 && s[1] == '-' {
 		prefix := s[0]
 		if prefix == 'u' || prefix == 'x' || prefix == 't' {
@@ -216,13 +208,13 @@ func isValidSuffixKey(key string) bool {
 	if len(key) == 0 {
 		return false
 	}
-	
+
 	// Check first character (key-initial)
 	first := key[0]
 	if !((first >= 'a' && first <= 'z') || first == '_') {
 		return false
 	}
-	
+
 	// Check remaining characters (key-char)
 	for i := 1; i < len(key); i++ {
 		char := key[i]
@@ -230,7 +222,7 @@ func isValidSuffixKey(key string) bool {
 			return false
 		}
 	}
-	
+
 	return true
 }
 
@@ -242,30 +234,30 @@ func isValidSuffixValue(value string) bool {
 	if len(value) == 0 {
 		return false
 	}
-	
+
 	// Check for leading or trailing hyphens
 	if value[0] == '-' || value[len(value)-1] == '-' {
 		return false
 	}
-	
+
 	// Check for consecutive hyphens
 	for i := 0; i < len(value)-1; i++ {
 		if value[i] == '-' && value[i+1] == '-' {
 			return false
 		}
 	}
-	
+
 	// Split on hyphens to validate each part
 	parts := splitOnHyphen(value)
 	if len(parts) == 0 {
 		return false
 	}
-	
+
 	for _, part := range parts {
 		if len(part) == 0 {
 			return false // Empty parts not allowed
 		}
-		
+
 		// Each part must be 1*alphanum
 		for _, char := range part {
 			if !((char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || (char >= '0' && char <= '9')) {
@@ -273,19 +265,18 @@ func isValidSuffixValue(value string) bool {
 			}
 		}
 	}
-	
+
 	return true
 }
 
-// splitOnHyphen splits a string on hyphens, similar to strings.Split but avoiding imports.
 func splitOnHyphen(s string) []string {
 	if len(s) == 0 {
 		return []string{}
 	}
-	
+
 	var parts []string
 	start := 0
-	
+
 	for i, char := range s {
 		if char == '-' {
 			if i > start {
@@ -294,32 +285,27 @@ func splitOnHyphen(s string) []string {
 			start = i + 1
 		}
 	}
-	
+
 	// Add the last part
 	if start < len(s) {
 		parts = append(parts, s[start:])
 	}
-	
+
 	return parts
 }
 
-// appendSuffix appends IXDTF suffix elements to the byte slice.
 func appendSuffix(b []byte, ext IXDTFExtensions) []byte {
-	// Add timezone suffix if specified
 	if ext.TimeZone != "" {
 		b = append(b, '[')
 		b = append(b, ext.TimeZone...)
 		b = append(b, ']')
 	}
 
-	// Add extension tags in a deterministic order
-	// We'll sort by key to ensure consistent output
 	keys := make([]string, 0, len(ext.Tags))
 	for key := range ext.Tags {
 		keys = append(keys, key)
 	}
 
-	// Simple insertion sort for small arrays
 	for i := 1; i < len(keys); i++ {
 		key := keys[i]
 		j := i - 1
@@ -330,7 +316,6 @@ func appendSuffix(b []byte, ext IXDTFExtensions) []byte {
 		keys[j+1] = key
 	}
 
-	// Append sorted extension tags
 	for _, key := range keys {
 		value := ext.Tags[key]
 		b = append(b, '[')
@@ -347,21 +332,15 @@ func appendSuffix(b []byte, ext IXDTFExtensions) []byte {
 }
 
 // Parse parses an IXDTF string and returns the time and extension information.
-// It first parses the RFC 3339 portion, then processes any suffix elements.
 func Parse(s string) (time.Time, IXDTFExtensions, error) {
-	// Find where RFC 3339 portion ends and suffixes begin
 	rfc3339End := findRFC3339End(s)
 
-	// Parse the RFC 3339 portion using the standard time package
 	rfc3339Portion := s[:rfc3339End]
 
-	// Try different RFC 3339 layouts
 	var t time.Time
 	var err error
 
-	// Try RFC 3339 with nanoseconds first (covers most cases including Z and offset variations)
 	if t, err = time.Parse(time.RFC3339Nano, rfc3339Portion); err != nil {
-		// Try standard RFC 3339 as fallback
 		if t, err = time.Parse(time.RFC3339, rfc3339Portion); err != nil {
 			return time.Time{}, IXDTFExtensions{}, &ParseError{
 				Layout: "RFC3339",
@@ -371,7 +350,6 @@ func Parse(s string) (time.Time, IXDTFExtensions, error) {
 		}
 	}
 
-	// Parse suffix elements if they exist
 	ext := NewIXDTFExtensions()
 	if rfc3339End < len(s) {
 		suffixPortion := s[rfc3339End:]
@@ -385,13 +363,10 @@ func Parse(s string) (time.Time, IXDTFExtensions, error) {
 		}
 	}
 
-	// Apply timezone information if specified
 	if ext.TimeZone != "" {
 		if loc, err := time.LoadLocation(ext.TimeZone); err == nil {
 			t = t.In(loc)
 		}
-		// If timezone loading fails, we keep the original offset
-		// but preserve the timezone name in extensions
 	}
 
 	return t, ext, nil
@@ -408,7 +383,6 @@ func Format(t time.Time, ext IXDTFExtensions) string {
 
 // FormatNano formats a time with IXDTF extensions using RFC 3339 format with nanoseconds.
 func FormatNano(t time.Time, ext IXDTFExtensions) string {
-	// Format the RFC 3339 portion with nanoseconds
 	b := []byte(t.Format(time.RFC3339Nano))
 	b = appendSuffix(b, ext)
 
@@ -418,10 +392,8 @@ func FormatNano(t time.Time, ext IXDTFExtensions) string {
 // Validate validates an IXDTF string for format correctness without parsing the time component.
 // This is useful for quick validation without the overhead of time parsing.
 func Validate(s string) error {
-	// Find where RFC 3339 portion ends and suffixes begin
 	rfc3339End := findRFC3339End(s)
 
-	// Quick validation of RFC 3339 portion
 	rfc3339Portion := s[:rfc3339End]
 	if len(rfc3339Portion) == 0 {
 		return &ParseError{
@@ -431,8 +403,6 @@ func Validate(s string) error {
 		}
 	}
 
-	// Validate RFC 3339 format by trying to parse it
-	// RFC3339Nano covers nanoseconds, RFC3339 covers standard format
 	layouts := []string{
 		time.RFC3339Nano,
 		time.RFC3339,
@@ -441,13 +411,12 @@ func Validate(s string) error {
 	var lastErr error
 	for _, layout := range layouts {
 		if _, err := time.Parse(layout, rfc3339Portion); err == nil {
-			break // Found valid format
+			break
 		} else {
 			lastErr = err
 		}
 	}
 
-	// If no layout matched, return error
 	if lastErr != nil {
 		return &ParseError{
 			Layout: "RFC3339",
@@ -456,7 +425,6 @@ func Validate(s string) error {
 		}
 	}
 
-	// Validate suffix elements if they exist
 	if rfc3339End < len(s) {
 		suffixPortion := s[rfc3339End:]
 		if _, err := parseSuffix(suffixPortion); err != nil {
@@ -474,22 +442,18 @@ func Validate(s string) error {
 // ValidateExtensions validates IXDTF extensions for correctness and processes critical extensions.
 // This function checks if all critical extensions can be handled and returns an error if not.
 func ValidateExtensions(ext IXDTFExtensions) error {
-	// Check timezone validity if specified
 	if ext.TimeZone != "" {
 		if _, err := time.LoadLocation(ext.TimeZone); err != nil {
 			return ErrInvalidTimezone
 		}
 	}
 
-	// Process critical extensions
 	for key, isCritical := range ext.Critical {
 		if isCritical {
-			// Check if we have the tag
 			if _, exists := ext.Tags[key]; !exists {
 				return ErrCriticalExtension
 			}
 
-			// Validate known critical extension patterns
 			if err := validateCriticalExtension(key, ext.Tags[key]); err != nil {
 				return err
 			}
@@ -499,9 +463,7 @@ func ValidateExtensions(ext IXDTFExtensions) error {
 	return nil
 }
 
-// validateCriticalExtension validates specific critical extension patterns.
 func validateCriticalExtension(key, value string) error {
-	// Basic validation for known extension patterns
 	switch {
 	case key == "u-ca": // Unicode calendar extension
 		if value == "" {
@@ -512,12 +474,10 @@ func validateCriticalExtension(key, value string) error {
 			return ErrCriticalExtension
 		}
 	case len(key) >= 2 && key[:2] == "x-": // Private use extensions
-		// Private extensions are always valid if they have a value
 		if value == "" {
 			return ErrCriticalExtension
 		}
 	default:
-		// Unknown critical extensions cannot be processed
 		return ErrCriticalExtension
 	}
 

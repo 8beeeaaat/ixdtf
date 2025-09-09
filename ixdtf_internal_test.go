@@ -49,7 +49,6 @@ func TestIsValidSuffixValueEdgeCases(t *testing.T) {
 
 // TestIsValidSuffixValueCoverage tests edge cases to reach 100% coverage
 func TestIsValidSuffixValueCoverage(t *testing.T) {
-	// Test the boundary conditions that might not be covered
 	tests := []struct {
 		value string
 		valid bool
@@ -67,13 +66,11 @@ func TestIsValidSuffixValueCoverage(t *testing.T) {
 
 // TestSplitOnHyphenEdgeCases tests edge cases for splitOnHyphen
 func TestSplitOnHyphenEdgeCases(t *testing.T) {
-	// Test with string that starts with hyphen
 	parts := splitOnHyphen("-test")
 	if len(parts) != 1 || parts[0] != "test" {
 		t.Errorf("splitOnHyphen(\"-test\") = %v, want [\"test\"]", parts)
 	}
 
-	// Test with string that ends with hyphen
 	parts = splitOnHyphen("test-")
 	if len(parts) != 1 || parts[0] != "test" {
 		t.Errorf("splitOnHyphen(\"test-\") = %v, want [\"test\"]", parts)
