@@ -37,7 +37,7 @@ import (
 
 func main() {
     // Parse IXDTF with timezone suffix
-    t, ext, err := ixdtf.ParseRFC9557("2006-01-02T15:04:05+09:00[Asia/Tokyo]")
+    t, ext, err := ixdtf.Parse("2006-01-02T15:04:05+09:00[Asia/Tokyo]")
     if err != nil {
         panic(err)
     }
@@ -47,7 +47,7 @@ func main() {
 
     // Format time with extensions
     ext.Tags = map[string]string{"u-ca": "japanese"}
-    formatted := ixdtf.FormatRFC9557(t, ext)
+    formatted, _ := ixdtf.Format(t, ext)
     fmt.Printf("Formatted: %s\n", formatted)      // 2006-01-02T15:04:05+09:00[Asia/Tokyo][u-ca=japanese]
 }
 ```
@@ -85,28 +85,28 @@ func main() {
 
 ### Core Functions
 
-#### `ParseRFC9557(s string) (time.Time, IXDTFExtensions, error)`
+#### `Parse(s string) (time.Time, IXDTFExtensions, error)`
 
 Parses an IXDTF string and returns the parsed time and extensions.
 
 ```go
-t, ext, err := ixdtf.ParseRFC9557("2006-01-02T15:04:05Z[UTC]")
+t, ext, err := ixdtf.Parse("2006-01-02T15:04:05Z[UTC]")
 ```
 
-#### `FormatRFC9557(t time.Time, ext IXDTFExtensions) string`
+#### `Format(t time.Time, ext IXDTFExtensions) (string, error)`
 
 Formats a time with IXDTF extensions using RFC 3339 format.
 
 ```go
-formatted := ixdtf.FormatRFC9557(time.Now(), ext)
+formatted, _ := ixdtf.Format(time.Now(), ext)
 ```
 
-#### `FormatRFC9557Nano(t time.Time, ext IXDTFExtensions) string`
+#### `FormatNano(t time.Time, ext IXDTFExtensions) (string, error)`
 
 Formats a time with IXDTF extensions using RFC 3339 format with nanoseconds.
 
 ```go
-formatted := ixdtf.FormatRFC9557Nano(time.Now(), ext)
+formatted, _ := ixdtf.FormatNano(time.Now(), ext)
 ```
 
 ### Data Structures
@@ -138,19 +138,19 @@ ext.Critical["u-ca"] = true
 
 ```go
 // Basic RFC 3339
-t, ext, _ := ixdtf.ParseRFC9557("2006-01-02T15:04:05Z")
+t, ext, _ := ixdtf.Parse("2006-01-02T15:04:05Z")
 
 // With timezone
-t, ext, _ := ixdtf.ParseRFC9557("2006-01-02T15:04:05Z[UTC]")
+t, ext, _ := ixdtf.Parse("2006-01-02T15:04:05Z[UTC]")
 
 // With extension tag
-t, ext, _ := ixdtf.ParseRFC9557("2006-01-02T15:04:05Z[u-ca=japanese]")
+t, ext, _ := ixdtf.Parse("2006-01-02T15:04:05Z[u-ca=japanese]")
 
 // With critical extension
-t, ext, _ := ixdtf.ParseRFC9557("2006-01-02T15:04:05Z[!u-ca=japanese]")
+t, ext, _ := ixdtf.Parse("2006-01-02T15:04:05Z[!u-ca=japanese]")
 
 // Complex example
-t, ext, _ := ixdtf.ParseRFC9557("2006-01-02T15:04:05+09:00[Asia/Tokyo][u-ca=japanese]")
+t, ext, _ := ixdtf.Parse("2006-01-02T15:04:05+09:00[Asia/Tokyo][u-ca=japanese]")
 ```
 
 ### Formatting Examples
@@ -160,19 +160,23 @@ t := time.Date(2006, 1, 2, 15, 4, 5, 0, time.UTC)
 
 // Basic formatting
 ext := ixdtf.NewIXDTFExtensions()
-fmt.Println(ixdtf.FormatRFC9557(t, ext))  // 2006-01-02T15:04:05Z
+formatted, _ := ixdtf.Format(t, ext)
+fmt.Println(formatted)  // 2006-01-02T15:04:05Z
 
 // With timezone
 ext.TimeZone = "UTC"
-fmt.Println(ixdtf.FormatRFC9557(t, ext))  // 2006-01-02T15:04:05Z[UTC]
+formatted, _ = ixdtf.Format(t, ext)
+fmt.Println(formatted)  // 2006-01-02T15:04:05Z[UTC]
 
 // With extension
 ext.Tags["u-ca"] = "japanese"
-fmt.Println(ixdtf.FormatRFC9557(t, ext))  // 2006-01-02T15:04:05Z[UTC][u-ca=japanese]
+formatted, _ = ixdtf.Format(t, ext)
+fmt.Println(formatted)  // 2006-01-02T15:04:05Z[UTC][u-ca=japanese]
 
 // With critical extension
 ext.Critical["u-ca"] = true
-fmt.Println(ixdtf.FormatRFC9557(t, ext))  // 2006-01-02T15:04:05Z[UTC][!u-ca=japanese]
+formatted, _ = ixdtf.Format(t, ext)
+fmt.Println(formatted)  // 2006-01-02T15:04:05Z[UTC][!u-ca=japanese]
 ```
 
 ## Error Handling
@@ -180,7 +184,7 @@ fmt.Println(ixdtf.FormatRFC9557(t, ext))  // 2006-01-02T15:04:05Z[UTC][!u-ca=jap
 The package provides detailed error information for invalid formats:
 
 ```go
-t, ext, err := ixdtf.ParseRFC9557("invalid-format")
+t, ext, err := ixdtf.Parse("invalid-format")
 if err != nil {
     fmt.Printf("Parse error: %v\n", err)
 }
