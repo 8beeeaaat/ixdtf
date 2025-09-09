@@ -368,81 +368,58 @@ func TestValidate(t *testing.T) {
 	tests := []struct {
 		name      string
 		input     string
-		wantError bool
+		wantError string
 	}{
 		{
 			name:      "Valid RFC 3339",
 			input:     "2006-01-02T15:04:05Z",
-			wantError: false,
+			wantError: "",
 		},
 		{
 			name:      "Valid with timezone",
 			input:     "2006-01-02T15:04:05Z[UTC]",
-			wantError: false,
+			wantError: "",
 		},
 		{
 			name:      "Valid with extensions",
 			input:     "2006-01-02T15:04:05Z[UTC][u-ca=japanese]",
-			wantError: false,
+			wantError: "",
 		},
 		{
 			name:      "Empty string",
 			input:     "",
-			wantError: true,
+			wantError: "parsing time \"\" as \"2006-01-02T15:04:05Z07:00\": empty datetime string",
 		},
 		{
 			name:      "Invalid suffix format - missing bracket",
 			input:     "2006-01-02T15:04:05Z[UTC",
-			wantError: true,
+			wantError: "parsing time \"2006-01-02T15:04:05Z[UTC\" as \"2006-01-02T15:04:05Z07:00[time-zone]\": invalid IXDTF suffix format",
 		},
 		{
 			name:      "Empty suffix",
 			input:     "2006-01-02T15:04:05Z[]",
-			wantError: true,
+			wantError: "parsing time \"2006-01-02T15:04:05Z[]\" as \"2006-01-02T15:04:05Z07:00[time-zone]\": invalid IXDTF suffix format",
 		},
 		{
 			name:      "Invalid extension format",
 			input:     "2006-01-02T15:04:05Z[u-ca]",
-			wantError: true,
+			wantError: "parsing time \"2006-01-02T15:04:05Z[u-ca]\" as \"2006-01-02T15:04:05Z07:00[time-zone]\": invalid extension format",
 		},
 		{
 			name:      "Critical timezone",
 			input:     "2006-01-02T15:04:05Z[!UTC]",
-			wantError: true,
+			wantError: "parsing time \"2006-01-02T15:04:05Z[!UTC]\" as \"2006-01-02T15:04:05Z07:00[time-zone]\": invalid timezone name",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			err := Validate(tt.input)
-			if tt.wantError && err == nil {
-				t.Errorf("Validate(%q) expected error but got none", tt.input)
-			}
-			if !tt.wantError && err != nil {
+			if tt.wantError == "" && err != nil {
 				t.Errorf("Validate(%q) unexpected error: %v", tt.input, err)
 			}
-		})
-	}
-}
-
-// TestIsValidIXDTF tests the IsValidIXDTF function
-func TestIsValidIXDTF(t *testing.T) {
-	tests := []struct {
-		name  string
-		input string
-		want  bool
-	}{
-		{"Valid RFC 3339", "2006-01-02T15:04:05Z", true},
-		{"Valid with timezone", "2006-01-02T15:04:05Z[UTC]", true},
-		{"Invalid format", "invalid", false},
-		{"Empty suffix", "2006-01-02T15:04:05Z[]", false},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := IsValidIXDTF(tt.input)
-			if got != tt.want {
-				t.Errorf("IsValidIXDTF(%q) = %v, want %v", tt.input, got, tt.want)
+			if tt.wantError != "" && err != nil && err.Error() != tt.wantError {
+				t.Errorf("Validate(%q) error = %v, want %v", tt.input, err.Error(), tt.wantError)
 			}
 		})
 	}

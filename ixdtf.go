@@ -474,9 +474,3 @@ func validateCriticalExtension(key, value string) error {
 
 	return nil
 }
-
-// IsValidIXDTF performs a quick check if a string could be a valid IXDTF format.
-// This is a lightweight check that doesn't parse the full datetime.
-func IsValidIXDTF(s string) bool {
-	return Validate(s) == nil
-}
