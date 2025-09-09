@@ -56,28 +56,28 @@ func main() {
 
 ### Basic RFC 3339 (unchanged)
 
-```
+```bash
 2006-01-02T15:04:05Z
 2006-01-02T15:04:05.999999999-07:00
 ```
 
 ### IXDTF with Timezone Suffix
 
-```
+```bash
 2006-01-02T15:04:05Z[UTC]
 2006-01-02T15:04:05+09:00[Asia/Tokyo]
 ```
 
 ### IXDTF with Extension Tags
 
-```
+```bash
 2006-01-02T15:04:05Z[u-ca=japanese]
 2006-01-02T15:04:05Z[!u-ca=japanese]  // Critical extension
 ```
 
 ### Complex IXDTF
 
-```
+```bash
 2006-01-02T15:04:05+09:00[Asia/Tokyo][u-ca=japanese][x-example=value]
 ```
 

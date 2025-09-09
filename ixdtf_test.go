@@ -169,7 +169,11 @@ func TestFormat(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, _ := Format(tt.time, tt.ext)
+			got, err := Format(tt.time, tt.ext)
+			if err != nil {
+				t.Errorf("Format() error = %v", err)
+				return
+			}
 			if got != tt.want {
 				t.Errorf("Format() = %v, want %v", got, tt.want)
 			}
@@ -274,7 +278,11 @@ func TestFormatNano(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, _ := FormatNano(tt.time, tt.ext)
+			got, err := FormatNano(tt.time, tt.ext)
+			if err != nil {
+				t.Errorf("FormatNano() error = %v", err)
+				return
+			}
 			if got != tt.want {
 				t.Errorf("FormatNano() = %v, want %v", got, tt.want)
 			}

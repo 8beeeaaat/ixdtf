@@ -56,9 +56,9 @@ type IXDTFExtensions struct {
 
 // ParseError represents an error that occurred during IXDTF parsing.
 type ParseError struct {
+	Err    error
 	Layout Layout
 	Value  string
-	Err    error
 }
 
 func (e *ParseError) Error() string {
@@ -548,7 +548,7 @@ func parseSuffixElement(content string, ext *IXDTFExtensions) error {
 }
 
 func splitOnHyphen(s string) []string {
-	if len(s) == 0 {
+	if s == "" {
 		return []string{}
 	}
 
