@@ -11,6 +11,7 @@ package ixdtf
 
 import (
 	"errors"
+	"strings"
 	"time"
 )
 
@@ -149,76 +150,71 @@ func parseSuffixElement(content string, ext *IXDTFExtensions) error {
 		return ErrInvalidSuffix
 	}
 
-	// Check for critical flag
+	// Check for critical flag - avoid string slice creation
 	critical := false
+	startIdx := 0
 	if content[0] == '!' {
 		critical = true
-		content = content[1:]
-		if len(content) == 0 {
+		startIdx = 1
+		if len(content) <= 1 {
 			return ErrInvalidSuffix
 		}
 	}
 
-	// Check if this is an extension tag (contains '=')
-	if equalIndex := findEqual(content); equalIndex >= 0 {
-		key := content[:equalIndex]
+	// Check if this is an extension tag (contains '=') - work with indices
+	if equalIndex := strings.IndexByte(content[startIdx:], '='); equalIndex >= 0 {
+		equalIndex += startIdx // adjust for offset
+		
+		if equalIndex == startIdx || equalIndex == len(content)-1 {
+			return ErrInvalidExtension // empty key or value
+		}
+
+		// Validate key and value using substrings without creating new strings
+		if !isValidSuffixKeyRange(content, startIdx, equalIndex) {
+			return ErrInvalidExtension
+		}
+		
+		if !isValidSuffixValueRange(content, equalIndex+1, len(content)) {
+			return ErrInvalidExtension
+		}
+
+		// Extract key and value only when validation passes
+		key := content[startIdx:equalIndex]
 		value := content[equalIndex+1:]
-
-		if key == "" || value == "" {
-			return ErrInvalidExtension
-		}
-
-		// Validate key format according to RFC 9557 ABNF grammar
-		if !isValidSuffixKey(key) {
-			return ErrInvalidExtension
-		}
-
-		// Validate value format according to RFC 9557 ABNF grammar
-		if !isValidSuffixValue(value) {
-			return ErrInvalidExtension
-		}
-
+		
 		ext.Tags[key] = value
 		if critical {
 			ext.Critical[key] = true
 		}
 	} else {
-		// This is a timezone name, but validate it's not an invalid extension format
+		// This is a timezone name
 		if critical {
 			return ErrInvalidTimezone // Timezone cannot be critical
 		}
 
-		// Check if this looks like an incomplete extension tag
-		// Extension tags typically contain hyphens or specific patterns
-		if containsHyphen(content) && !isValidTimezone(content) {
-			return ErrInvalidExtension // Looks like incomplete extension tag
+		// Optimized timezone validation - single check
+		tzContent := content[startIdx:]
+		if !isValidTimezoneContent(tzContent) {
+			return ErrInvalidExtension
 		}
 
 		if ext.TimeZone != "" {
 			return ErrInvalidTimezone // Multiple timezone suffixes not allowed
 		}
-		ext.TimeZone = content
+		ext.TimeZone = tzContent
 	}
 
 	return nil
 }
 
 func findEqual(s string) int {
-	for i, c := range s {
-		if c == '=' {
-			return i
-		}
-	}
-	return -1
+	// strings.IndexByte is optimized at assembly level
+	return strings.IndexByte(s, '=')
 }
 
 func containsHyphen(s string) bool {
-	for _, c := range s {
-		if c == '-' {
-			return true
-		}
-	}
-	return false
+	// strings.IndexByte is optimized at assembly level
+	return strings.IndexByte(s, '-') >= 0
 }
 
 func isValidTimezone(s string) bool {
@@ -240,18 +236,21 @@ func isValidSuffixKey(key string) bool {
 		return false
 	}
 
-	// Check first character (key-initial)
+	// Check first character (key-initial) - optimized byte comparison
 	first := key[0]
-	if !((first >= 'a' && first <= 'z') || first == '_') {
-		return false
-	}
-
-	// Check remaining characters (key-char)
-	for i := 1; i < len(key); i++ {
-		char := key[i]
-		if !((char >= 'a' && char <= 'z') || (char >= '0' && char <= '9') || char == '-' || char == '_') {
+	if first < 'a' || first > 'z' {
+		if first != '_' {
 			return false
 		}
+	}
+
+	// Check remaining characters (key-char) - single loop with byte comparison
+	for i := 1; i < len(key); i++ {
+		b := key[i]
+		if (b >= 'a' && b <= 'z') || (b >= '0' && b <= '9') || b == '-' || b == '_' {
+			continue
+		}
+		return false
 	}
 
 	return true
@@ -266,37 +265,122 @@ func isValidSuffixValue(value string) bool {
 		return false
 	}
 
-	// Check for leading or trailing hyphens
+	// Check for leading or trailing hyphens - single pass
 	if value[0] == '-' || value[len(value)-1] == '-' {
 		return false
 	}
 
-	// Check for consecutive hyphens
-	for i := 0; i < len(value)-1; i++ {
-		if value[i] == '-' && value[i+1] == '-' {
+	// Single pass validation: check consecutive hyphens and character validity
+	prevHyphen := false
+	hasValidChar := false
+	
+	for i := 0; i < len(value); i++ {
+		b := value[i]
+		
+		if b == '-' {
+			if prevHyphen {
+				return false // consecutive hyphens
+			}
+			prevHyphen = true
+			hasValidChar = false // reset for next segment
+		} else {
+			// Check if character is alphanum
+			if (b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') || (b >= '0' && b <= '9') {
+				prevHyphen = false
+				hasValidChar = true
+			} else {
+				return false // invalid character
+			}
+		}
+	}
+	
+	// Must end with a valid character (not hyphen, already checked above)
+	return hasValidChar
+}
+
+// isValidSuffixKeyRange validates suffix key in a string range without creating substrings
+func isValidSuffixKeyRange(s string, start, end int) bool {
+	if start >= end {
+		return false
+	}
+
+	// Check first character (key-initial) - optimized byte comparison
+	first := s[start]
+	if first < 'a' || first > 'z' {
+		if first != '_' {
 			return false
 		}
 	}
 
-	// Split on hyphens to validate each part
-	parts := splitOnHyphen(value)
-	if len(parts) == 0 {
+	// Check remaining characters (key-char) - single loop with byte comparison
+	for i := start + 1; i < end; i++ {
+		b := s[i]
+		if (b >= 'a' && b <= 'z') || (b >= '0' && b <= '9') || b == '-' || b == '_' {
+			continue
+		}
 		return false
 	}
 
-	for _, part := range parts {
-		if len(part) == 0 {
-			return false // Empty parts not allowed
-		}
+	return true
+}
 
-		// Each part must be 1*alphanum
-		for _, char := range part {
-			if !((char >= 'a' && char <= 'z') || (char >= 'A' && char <= 'Z') || (char >= '0' && char <= '9')) {
-				return false
+// isValidSuffixValueRange validates suffix value in a string range without creating substrings
+func isValidSuffixValueRange(s string, start, end int) bool {
+	if start >= end {
+		return false
+	}
+
+	// Check for leading or trailing hyphens
+	if s[start] == '-' || s[end-1] == '-' {
+		return false
+	}
+
+	// Single pass validation: check consecutive hyphens and character validity
+	prevHyphen := false
+	hasValidChar := false
+	
+	for i := start; i < end; i++ {
+		b := s[i]
+		
+		if b == '-' {
+			if prevHyphen {
+				return false // consecutive hyphens
+			}
+			prevHyphen = true
+			hasValidChar = false // reset for next segment
+		} else {
+			// Check if character is alphanum
+			if (b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') || (b >= '0' && b <= '9') {
+				prevHyphen = false
+				hasValidChar = true
+			} else {
+				return false // invalid character
 			}
 		}
 	}
+	
+	// Must end with a valid character (not hyphen, already checked above)
+	return hasValidChar
+}
 
+// isValidTimezoneContent combines timezone validation logic for efficiency
+func isValidTimezoneContent(s string) bool {
+	if len(s) == 0 {
+		return false
+	}
+	
+	// Check if this looks like an incomplete extension tag
+	// Extension tags typically contain hyphens with specific patterns
+	if strings.IndexByte(s, '-') >= 0 {
+		// If has hyphen and looks like extension prefix, it's invalid
+		if len(s) >= 2 && s[1] == '-' {
+			prefix := s[0]
+			if prefix == 'u' || prefix == 'x' || prefix == 't' {
+				return false // Likely an extension tag prefix
+			}
+		}
+	}
+	
 	return true
 }
 
