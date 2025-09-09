@@ -1,0 +1,86 @@
+run:
+  timeout: 5m
+  tests: true
+  skip-dirs-use-default: true
+  go: "1.23"  # Set to supported Go version
+
+output:
+  formats:
+    - format: colored-line-number
+      path: stdout
+
+linters-settings:
+  errcheck:
+    check-type-assertions: true
+    check-blank: true
+
+  gocyclo:
+    min-complexity: 15
+
+  govet:
+    enable-all: true
+    disable:
+      - fieldalignment # Can be noisy for this project
+
+  gofmt:
+    simplify: true
+
+  goimports:
+    local-prefixes: github.com/8beeeaaat/ixdtf
+
+  golint:
+    min-confidence: 0.8
+
+  misspell:
+    locale: US
+
+  unparam:
+    check-exported: true
+
+  unused:
+    check-exported: false
+
+  whitespace:
+    multi-if: false
+    multi-func: false
+
+linters:
+  enable:
+    - errcheck      # Check for unchecked errors
+    - gosimple      # Simplify code
+    - govet         # Go vet
+    - ineffassign   # Detect ineffectual assignments
+    - staticcheck   # Static analysis
+    - typecheck     # Type checking
+    - unused        # Check for unused code
+    - gofmt         # Format checking
+    - goimports     # Import checking
+    - misspell      # Spelling errors
+    - unparam       # Unused parameters
+    - unconvert     # Unnecessary conversions
+    - goconst       # Repeated strings that could be constants
+    - gocyclo       # Cyclomatic complexity
+    - whitespace    # Whitespace issues
+
+  disable:
+    - golint        # Deprecated in favor of revive
+    - maligned      # Deprecated in favor of govet 'fieldalignment'
+
+issues:
+  exclude-rules:
+    # Disable some linters for test files
+    - path: _test\.go
+      linters:
+        - gocyclo
+        - errcheck
+        - goconst
+        - unparam
+
+    # Ignore shadowing of 'err' variable
+    - text: "shadow: declaration of \"err\""
+      linters:
+        - govet
+
+  # Show all issues
+  max-issues-per-linter: 0
+  max-same-issues: 0

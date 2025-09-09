@@ -307,7 +307,7 @@ func TestIsValidTimezone(t *testing.T) {
 		s    string
 		want bool
 	}{
-		{"length < 2", "Z", true},          // len(s) < 2 -> true
+		{"length < 2", "Z", true},                 // len(s) < 2 -> true
 		{"no hyphen at index 1", "Etc/GMT", true}, // s[1] != '-' -> true
 		{"u- prefix (extension-like)", "u-test", false},
 		{"x- prefix (extension-like)", "x-foo", false},
@@ -342,14 +342,66 @@ func TestIsValidSuffixValueMore(t *testing.T) {
 		value string
 		want  bool
 	}{
-		{"", false},                  // len==0
-		{"Abc-DEF-123", true},        // mixed case alphanum parts
-		{"a@b", false},               // non-alphanum character
+		{"", false},           // len==0
+		{"Abc-DEF-123", true}, // mixed case alphanum parts
+		{"a@b", false},        // non-alphanum character
 	}
 	for _, tt := range tests {
 		got := isValidSuffixValue(tt.value)
 		if got != tt.want {
 			t.Errorf("isValidSuffixValue(%q) = %v, want %v", tt.value, got, tt.want)
 		}
+	}
+}
+
+// TestRoundTrip tests that parsing and formatting are reversible
+func TestRoundTrip(t *testing.T) {
+	tests := []string{
+		"2006-01-02T15:04:05Z",
+		"2006-01-02T15:04:05Z[UTC]",
+		"2006-01-02T15:04:05+09:00[Asia/Tokyo]",
+		"2006-01-02T15:04:05Z[u-ca=japanese]",
+		"2006-01-02T15:04:05Z[UTC][u-ca=japanese]",
+		"2006-01-02T15:04:05Z[!u-ca=japanese]",
+	}
+
+	for _, tt := range tests {
+		t.Run(tt, func(t *testing.T) {
+			parsedTime, parsedExt, err := Parse(tt)
+			if err != nil {
+				t.Errorf("Parse(%q) error = %v", tt, err)
+				return
+			}
+
+			formatted, _ := Format(parsedTime, parsedExt)
+
+			// For timezone cases, we might get a different but equivalent representation
+			// due to timezone loading, so we parse again to compare
+			reparsedTime, reparsedExt, err := Parse(formatted)
+			if err != nil {
+				t.Errorf("Re-parsing formatted result failed: %v", err)
+				return
+			}
+
+			// Times should be equal (within timezone differences)
+			if !parsedTime.Equal(reparsedTime) {
+				t.Errorf("Round trip time mismatch: original=%v, reparsed=%v", parsedTime, reparsedTime)
+			}
+
+			// Extensions should be equal
+			if parsedExt.TimeZone != reparsedExt.TimeZone {
+				t.Errorf("Round trip timezone mismatch: original=%v, reparsed=%v", parsedExt.TimeZone, reparsedExt.TimeZone)
+			}
+
+			if len(parsedExt.Tags) != len(reparsedExt.Tags) {
+				t.Errorf("Round trip tags count mismatch: original=%d, reparsed=%d", len(parsedExt.Tags), len(reparsedExt.Tags))
+			}
+
+			for k, v := range parsedExt.Tags {
+				if reparsedExt.Tags[k] != v {
+					t.Errorf("Round trip tag[%s] mismatch: original=%v, reparsed=%v", k, v, reparsedExt.Tags[k])
+				}
+			}
+		})
 	}
 }

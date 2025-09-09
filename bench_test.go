@@ -83,7 +83,7 @@ func BenchmarkParse_WithNanoseconds(b *testing.B) {
 func BenchmarkFormat_RFC3339(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = Format(benchmarkTimeUTC, benchmarkExtEmpty)
+		Format(benchmarkTimeUTC, benchmarkExtEmpty)
 	}
 }
 
@@ -91,7 +91,7 @@ func BenchmarkFormat_RFC3339(b *testing.B) {
 func BenchmarkFormat_WithTimezone(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = Format(benchmarkTimeJST, benchmarkExtTimezone)
+		Format(benchmarkTimeJST, benchmarkExtTimezone)
 	}
 }
 
@@ -99,7 +99,7 @@ func BenchmarkFormat_WithTimezone(b *testing.B) {
 func BenchmarkFormat_WithExtensions(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = Format(benchmarkTimeJST, benchmarkExtFull)
+		Format(benchmarkTimeJST, benchmarkExtFull)
 	}
 }
 
@@ -107,7 +107,7 @@ func BenchmarkFormat_WithExtensions(b *testing.B) {
 func BenchmarkFormatNano_RFC3339(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = FormatNano(benchmarkTimeUTC, benchmarkExtEmpty)
+		FormatNano(benchmarkTimeUTC, benchmarkExtEmpty)
 	}
 }
 
@@ -115,7 +115,7 @@ func BenchmarkFormatNano_RFC3339(b *testing.B) {
 func BenchmarkFormatNano_WithExtensions(b *testing.B) {
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		_ = FormatNano(benchmarkTimeJST, benchmarkExtFull)
+		FormatNano(benchmarkTimeJST, benchmarkExtFull)
 	}
 }
 
@@ -128,7 +128,7 @@ func BenchmarkRoundTrip_RFC3339(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		_ = Format(t, ext)
+		Format(t, ext)
 	}
 }
 
@@ -141,7 +141,7 @@ func BenchmarkRoundTrip_WithExtensions(b *testing.B) {
 		if err != nil {
 			b.Fatal(err)
 		}
-		_ = Format(t, ext)
+		Format(t, ext)
 	}
 }
 
