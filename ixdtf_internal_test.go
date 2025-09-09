@@ -221,7 +221,7 @@ func TestIsValidSuffixKey(t *testing.T) {
 		{"with digits", "x-test123", true},
 		{"with hyphens", "u-ca-variant", true},
 		{"underscore and hyphen", "_test-123", true},
-		
+
 		// Invalid keys
 		{"empty", "", false},
 		{"uppercase start", "U-ca", false},
