@@ -70,14 +70,17 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.24', '1.25']
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v6
       with:
-        go-version: '1.23'
+        go-version: ${{ matrix.go-version }}
 
     - name: golangci-lint
       uses: golangci/golangci-lint-action@v3
@@ -88,14 +91,17 @@ jobs:
   security:
     name: Security
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ['1.24', '1.25']
 
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@v5
 
     - name: Set up Go
-      uses: actions/setup-go@v4
+      uses: actions/setup-go@v6
       with:
-        go-version: '1.23'
+        go-version: ${{ matrix.go-version }}
 
     - name: Run Gosec Security Scanner
       uses: securego/gosec@master
