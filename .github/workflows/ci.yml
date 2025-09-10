@@ -10,18 +10,14 @@ jobs:
   test:
     name: Test
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: ['1.24', '1.25']
 
     steps:
     - uses: actions/checkout@v5
 
-    - name: Set up Go ${{ matrix.go-version }}
+    - name: Set up Go
       uses: actions/setup-go@v6
       with:
-        go-version: ${{ matrix.go-version }}
-        check-latest: true
+        go-version-file: go.mod
 
     - name: Cache Go modules
       uses: actions/cache@v3
@@ -70,9 +66,6 @@ jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: ['1.24', '1.25']
 
     steps:
     - uses: actions/checkout@v5
@@ -80,20 +73,14 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v6
       with:
-        go-version: ${{ matrix.go-version }}
+        go-version-file: go.mod
 
     - name: golangci-lint
-      uses: golangci/golangci-lint-action@v3
-      with:
-        version: latest
-        args: --timeout=5m
+      uses: golangci/golangci-lint-action@v6
 
   security:
     name: Security
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: ['1.24', '1.25']
 
     steps:
     - uses: actions/checkout@v5
@@ -101,7 +88,8 @@ jobs:
     - name: Set up Go
       uses: actions/setup-go@v6
       with:
-        go-version: ${{ matrix.go-version }}
+        go-version-file: go.mod
+
 
     - name: Run Gosec Security Scanner
       uses: securego/gosec@master
