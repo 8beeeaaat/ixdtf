@@ -66,12 +66,12 @@ func TestFormat(t *testing.T) {
 			name: "no extensions",
 			tm:   time.Date(2025, 1, 2, 3, 4, 5, 0, time.UTC),
 			ext:  ixdtf.NewIXDTFExtensions(nil),
-			want: "2025-01-02T03:04:05Z[UTC]",
+			want: "2025-01-02T03:04:05Z",
 		},
 		{
-			name: "with timezone",
+			name: "with offset and timezone",
 			tm:   time.Date(2025, 2, 3, 4, 5, 6, 0, tokyo),
-			ext:  ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{Location: tokyo}),
+			ext:  ixdtf.NewIXDTFExtensions(nil),
 			want: "2025-02-03T04:05:06+09:00[Asia/Tokyo]",
 		},
 		{
@@ -86,7 +86,7 @@ func TestFormat(t *testing.T) {
 					"b-tag": true,
 				},
 			}),
-			want: "2025-03-04T05:06:07Z[UTC][a-tag=1][!b-tag=2]",
+			want: "2025-03-04T05:06:07Z[a-tag=1][!b-tag=2]",
 		},
 		{
 			name: "timezone and tags",
@@ -154,6 +154,117 @@ func TestFormat(t *testing.T) {
 	}
 }
 
+func TestFormatNano(t *testing.T) {
+	tokyo, paris, cet := getTestTimezones()
+
+	tests := []struct {
+		name    string
+		tm      time.Time
+		ext     *ixdtf.IXDTFExtensions
+		want    string
+		wantErr string
+	}{
+		{
+			name: "basic with nanoseconds",
+			tm:   time.Date(2025, 1, 2, 3, 4, 5, 123456789, time.UTC),
+			ext:  ixdtf.NewIXDTFExtensions(nil),
+			want: "2025-01-02T03:04:05.123456789Z",
+		},
+		{
+			name: "with timezone and nanoseconds",
+			tm:   time.Date(2025, 2, 3, 4, 5, 6, 789000000, tokyo),
+			ext:  ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{Location: tokyo}),
+			want: "2025-02-03T04:05:06.789+09:00[Asia/Tokyo]",
+		},
+		{
+			name: "with tags and nanoseconds",
+			tm:   time.Date(2025, 3, 4, 5, 6, 7, 500000000, time.UTC),
+			ext: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
+				Tags: map[string]string{"u-ca": "gregory"},
+			}),
+			want: "2025-03-04T05:06:07.5Z[u-ca=gregory]",
+		},
+		{
+			name: "with timezone, tags and nanoseconds",
+			tm:   time.Date(2025, 6, 7, 8, 9, 10, 250000000, paris),
+			ext: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
+				Location: paris,
+				Tags:     map[string]string{"u-ca": "gregory"},
+				Critical: map[string]bool{"u-ca": true},
+			}),
+			want: "2025-06-07T08:09:10.25+01:00[Europe/Paris][!u-ca=gregory]",
+		},
+		{
+			name: "CET timezone with nanoseconds",
+			tm:   time.Date(2025, 12, 25, 15, 30, 45, 999000000, cet),
+			ext:  ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{Location: cet}),
+			want: "2025-12-25T15:30:45.999+01:00[CET]",
+		},
+		{
+			name: "zero nanoseconds",
+			tm:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+			ext:  ixdtf.NewIXDTFExtensions(nil),
+			want: "2025-01-01T00:00:00Z",
+		},
+		{
+			name: "invalid critical extension - empty value",
+			tm:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+			ext: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
+				Tags:     map[string]string{"u-ca": ""},
+				Critical: map[string]bool{"u-ca": true},
+			}),
+			wantErr: "critical extension cannot be processed",
+		},
+		{
+			name: "missing critical extension",
+			tm:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+			ext: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
+				Tags:     map[string]string{},
+				Critical: map[string]bool{"u-ca": true},
+			}),
+			wantErr: "critical extension cannot be processed",
+		},
+		{
+			name: "invalid tag key format",
+			tm:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+			ext: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
+				Tags: map[string]string{"INVALID-KEY": "value"},
+			}),
+			wantErr: "invalid extension format",
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			got, err := ixdtf.FormatNano(tc.tm, tc.ext)
+
+			if tc.wantErr != "" {
+				if err == nil {
+					t.Fatalf("FormatNano(%v, %+v) expected error containing %q, got nil", tc.tm, tc.ext, tc.wantErr)
+				}
+				if !containsString(err.Error(), tc.wantErr) {
+					t.Fatalf(
+						"FormatNano(%v, %+v) error = %q, want error containing %q",
+						tc.tm,
+						tc.ext,
+						err.Error(),
+						tc.wantErr,
+					)
+				}
+				return
+			}
+
+			if err != nil {
+				t.Fatalf("FormatNano(%v, %+v) unexpected error: %v", tc.tm, tc.ext, err)
+			}
+
+			if got != tc.want {
+				t.Errorf("FormatNano(%v, %+v) = %q, want %q", tc.tm, tc.ext, got, tc.want)
+			}
+		})
+	}
+}
+
 func TestValidate(t *testing.T) {
 	tests := []struct {
 		name    string
@@ -173,6 +284,11 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			name:   "valid with timezone",
+			input:  "2025-02-03T04:05:06Z[Asia/Tokyo]",
+			strict: false,
+		},
+		{
+			name:   "valid with offset and timezone",
 			input:  "2025-02-03T04:05:06+09:00[Asia/Tokyo]",
 			strict: false,
 		},
@@ -442,6 +558,15 @@ func TestParse(t *testing.T) {
 			wantErr: "parsing time",
 		},
 		{
+			name:     "timezone offset mismatch - non-strict",
+			input:    "2025-06-01T12:00:00+09:00[America/New_York]",
+			strict:   false,
+			wantTime: time.Date(2025, 6, 1, 12, 0, 0, 0, time.FixedZone("+0900", 9*3600)),
+			wantExt: ixdtf.NewIXDTFExtensions(
+				&ixdtf.NewIXDTFExtensionsArgs{Location: time.FixedZone("America/New_York", -4*3600)},
+			),
+		},
+		{
 			name:    "timezone offset mismatch - strict",
 			input:   "2025-06-01T12:00:00+09:00[America/New_York]",
 			strict:  true,
@@ -489,6 +614,18 @@ func TestParse(t *testing.T) {
 			strict:  false,
 			wantErr: "experimental extension cannot be processed",
 		},
+		{
+			name:    "critical private extension",
+			input:   "2025-01-01T00:00:00Z[!x-private=test]",
+			strict:  false,
+			wantErr: "private extension cannot be processed",
+		},
+		{
+			name:    "critical experimental extension",
+			input:   "2025-01-01T00:00:00Z[!_experiment=test]",
+			strict:  false,
+			wantErr: "experimental extension cannot be processed",
+		},
 	}
 
 	for _, tc := range tests {
@@ -505,117 +642,6 @@ func TestParse(t *testing.T) {
 			}
 
 			compareParseResults(t, gotTime, gotExt, tc.input, tc.strict, tc.wantTime, tc.wantExt)
-		})
-	}
-}
-
-func TestFormatNano(t *testing.T) {
-	tokyo, paris, cet := getTestTimezones()
-
-	tests := []struct {
-		name    string
-		tm      time.Time
-		ext     *ixdtf.IXDTFExtensions
-		want    string
-		wantErr string
-	}{
-		{
-			name: "basic with nanoseconds",
-			tm:   time.Date(2025, 1, 2, 3, 4, 5, 123456789, time.UTC),
-			ext:  ixdtf.NewIXDTFExtensions(nil),
-			want: "2025-01-02T03:04:05.123456789Z[UTC]",
-		},
-		{
-			name: "with timezone and nanoseconds",
-			tm:   time.Date(2025, 2, 3, 4, 5, 6, 789000000, tokyo),
-			ext:  ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{Location: tokyo}),
-			want: "2025-02-03T04:05:06.789+09:00[Asia/Tokyo]",
-		},
-		{
-			name: "with tags and nanoseconds",
-			tm:   time.Date(2025, 3, 4, 5, 6, 7, 500000000, time.UTC),
-			ext: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
-				Tags: map[string]string{"u-ca": "gregory"},
-			}),
-			want: "2025-03-04T05:06:07.5Z[UTC][u-ca=gregory]",
-		},
-		{
-			name: "with timezone, tags and nanoseconds",
-			tm:   time.Date(2025, 6, 7, 8, 9, 10, 250000000, paris),
-			ext: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
-				Location: paris,
-				Tags:     map[string]string{"u-ca": "gregory"},
-				Critical: map[string]bool{"u-ca": true},
-			}),
-			want: "2025-06-07T08:09:10.25+01:00[Europe/Paris][!u-ca=gregory]",
-		},
-		{
-			name: "CET timezone with nanoseconds",
-			tm:   time.Date(2025, 12, 25, 15, 30, 45, 999000000, cet),
-			ext:  ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{Location: cet}),
-			want: "2025-12-25T15:30:45.999+01:00[CET]",
-		},
-		{
-			name: "zero nanoseconds",
-			tm:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-			ext:  ixdtf.NewIXDTFExtensions(nil),
-			want: "2025-01-01T00:00:00Z[UTC]",
-		},
-		{
-			name: "invalid critical extension - empty value",
-			tm:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-			ext: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
-				Tags:     map[string]string{"u-ca": ""},
-				Critical: map[string]bool{"u-ca": true},
-			}),
-			wantErr: "critical extension cannot be processed",
-		},
-		{
-			name: "missing critical extension",
-			tm:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-			ext: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
-				Tags:     map[string]string{},
-				Critical: map[string]bool{"u-ca": true},
-			}),
-			wantErr: "critical extension cannot be processed",
-		},
-		{
-			name: "invalid tag key format",
-			tm:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-			ext: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
-				Tags: map[string]string{"INVALID-KEY": "value"},
-			}),
-			wantErr: "invalid extension format",
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			got, err := ixdtf.FormatNano(tc.tm, tc.ext)
-
-			if tc.wantErr != "" {
-				if err == nil {
-					t.Fatalf("FormatNano(%v, %+v) expected error containing %q, got nil", tc.tm, tc.ext, tc.wantErr)
-				}
-				if !containsString(err.Error(), tc.wantErr) {
-					t.Fatalf(
-						"FormatNano(%v, %+v) error = %q, want error containing %q",
-						tc.tm,
-						tc.ext,
-						err.Error(),
-						tc.wantErr,
-					)
-				}
-				return
-			}
-
-			if err != nil {
-				t.Fatalf("FormatNano(%v, %+v) unexpected error: %v", tc.tm, tc.ext, err)
-			}
-
-			if got != tc.want {
-				t.Errorf("FormatNano(%v, %+v) = %q, want %q", tc.tm, tc.ext, got, tc.want)
-			}
 		})
 	}
 }

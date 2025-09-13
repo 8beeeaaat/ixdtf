@@ -100,10 +100,7 @@ func Format(t time.Time, ext *IXDTFExtensions) (string, error) {
 	if err := validateExtensions(ext); err != nil {
 		return "", err
 	}
-
-	// Format the RFC 3339 portion.
-	b := []byte(t.Format(time.RFC3339))
-	b = appendSuffix(b, ext)
+	b := appendSuffix(t, ext, time.RFC3339)
 
 	return string(b), nil
 }
@@ -114,9 +111,7 @@ func FormatNano(t time.Time, ext *IXDTFExtensions) (string, error) {
 	if err := validateExtensions(ext); err != nil {
 		return "", err
 	}
-
-	b := []byte(t.Format(time.RFC3339Nano))
-	b = appendSuffix(b, ext)
+	b := appendSuffix(t, ext, time.RFC3339Nano)
 
 	return string(b), nil
 }
@@ -131,7 +126,7 @@ type NewIXDTFExtensionsArgs struct {
 // NewIXDTFExtensions creates a new IXDTFExtensions with initialized maps.
 func NewIXDTFExtensions(args *NewIXDTFExtensionsArgs) *IXDTFExtensions {
 	ext := &IXDTFExtensions{
-		Location: time.UTC,
+		Location: nil,
 		Tags:     make(map[string]string),
 		Critical: make(map[string]bool),
 	}
@@ -169,7 +164,7 @@ func Parse(s string, strict bool) (time.Time, *IXDTFExtensions, error) {
 		}
 	}
 
-	// Apply the timezone to the timestamp if provided
+	// Check timezone consistency if timezone is provided
 	if ext.Location != nil {
 		result, checkErr := checkTimezoneConsistency(t, ext.Location, strict)
 		if checkErr != nil {
@@ -179,9 +174,13 @@ func Parse(s string, strict bool) (time.Time, *IXDTFExtensions, error) {
 				checkErr,
 			)
 		}
-		if result.Location != nil {
+		
+		// Per RFC 9557: In non-strict mode with inconsistent timezone,
+		// preserve the original timestamp and only apply timezone if consistent
+		if result.IsConsistent && result.Location != nil {
 			t = t.In(result.Location)
 		}
+		// In non-strict mode with inconsistency, keep original timestamp as-is
 	}
 
 	return t, ext, nil
@@ -234,14 +233,28 @@ func Validate(s string, strict bool) error {
 	return nil
 }
 
-// Private functions in alphabetical order.
-func appendSuffix(b []byte, ext *IXDTFExtensions) []byte {
+func appendSuffix(t time.Time, ext *IXDTFExtensions, format string) []byte {
+	b := []byte(t.Format(format))
+
+	// Determine which location to use for timezone information
+	var loc *time.Location
 	if ext.Location != nil {
+		// Extension explicitly specifies a location
+		loc = ext.Location
+	} else if t.Location() != time.UTC && t.Location().String() != "Local" {
+		// time.Time has a specific location (not UTC or Local)
+		loc = t.Location()
+	}
+	// If ext.Location is nil and t.Location() is UTC or Local, don't add timezone
+
+	// Add timezone if we have a valid location to display
+	if loc != nil {
 		b = append(b, '[')
-		b = append(b, ext.Location.String()...)
+		b = append(b, loc.String()...)
 		b = append(b, ']')
 	}
 
+	// set tags
 	keys := make([]string, 0, len(ext.Tags))
 	for key := range ext.Tags {
 		keys = append(keys, key)
@@ -257,6 +270,7 @@ func appendSuffix(b []byte, ext *IXDTFExtensions) []byte {
 		keys[j+1] = key
 	}
 
+	// Append tags in sorted order for consistency
 	for _, key := range keys {
 		value := ext.Tags[key]
 		b = append(b, '[')
@@ -509,6 +523,7 @@ func handleExtensionTag(content string, critical bool, startIdx int, ext *IXDTFE
 	}
 
 	key := content[startIdx:equalIndex]
+	
 	// Respect RFC 9557: first occurrence wins.
 	if _, exists := ext.Tags[key]; exists {
 		return nil

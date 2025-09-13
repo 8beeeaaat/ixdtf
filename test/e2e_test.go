@@ -17,7 +17,15 @@ func TestE2E_RoundTrip(t *testing.T) {
 			input: "2025-01-02T03:04:05Z[UTC]",
 		},
 		{
-			name:  "timezone with offset",
+			name:  "offset time",
+			input: "2025-02-03T04:05:06+09:00",
+		},
+		{
+			name:  "timezone with offset - New York",
+			input: "2025-02-03T04:05:06-05:00[America/New_York]",
+		},
+		{
+			name:  "timezone with offset - Tokyo",
 			input: "2025-02-03T04:05:06+09:00[Asia/Tokyo]",
 		},
 		{
@@ -47,7 +55,7 @@ func TestE2E_RoundTrip(t *testing.T) {
 			}
 
 			if formatted != tc.input {
-				t.Fatalf("round trip failed: input %q, got %q", tc.input, formatted)
+				t.Fatalf("round trip failed: input %q, formatted %q", tc.input, formatted)
 			}
 		})
 	}
@@ -70,5 +78,38 @@ func TestE2E_TimezoneConversion(t *testing.T) {
 
 	if !parsedUTC.Equal(parsedTokyo) {
 		t.Fatalf("times should be equal: UTC=%v, Tokyo=%v", parsedUTC, parsedTokyo)
+	}
+}
+
+func TestE2E_TimezoneInconsistency(t *testing.T) {
+	// Test RFC 9557 compliant handling of timezone offset mismatches
+	// Input has +09:00 offset but [America/New_York] timezone (which should be -4/-5 hours)
+	input := "2025-06-01T12:00:00+09:00[America/New_York]"
+
+	// In non-strict mode, preserve original timestamp and detect inconsistency
+	parsedTime, ext, err := ixdtf.Parse(input, false)
+	if err != nil {
+		t.Fatalf("failed to parse inconsistent timezone in non-strict mode: %v", err)
+	}
+
+	// Should preserve original +09:00 offset as per RFC 9557
+	expectedTime := "2025-06-01T12:00:00+09:00"
+	if parsedTime.Format("2006-01-02T15:04:05Z07:00") != expectedTime {
+		t.Fatalf("non-strict mode should preserve original timestamp: got %s, want %s",
+			parsedTime.Format("2006-01-02T15:04:05Z07:00"), expectedTime)
+	}
+
+	// Extension should still contain the parsed timezone information
+	if ext.Location == nil {
+		t.Fatalf("extension should contain location information")
+	}
+	if ext.Location.String() != "America/New_York" {
+		t.Fatalf("extension location should be America/New_York, got %s", ext.Location.String())
+	}
+
+	// In strict mode, should return error
+	_, _, err = ixdtf.Parse(input, true)
+	if err == nil {
+		t.Fatalf("strict mode should return error for timezone offset mismatch")
 	}
 }

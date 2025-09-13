@@ -38,19 +38,31 @@ import (
 )
 
 func main() {
-    // Parse an IXDTF string
-    t, extensions, err := ixdtf.Parse("2023-08-07T14:30:00Z[America/New_York][u-ca=gregorian]")
-    if err != nil {
-        panic(err)
-    }
+ // Parse an IXDTF string
+ t, extensions, err := ixdtf.Parse("2023-08-07T14:30:00Z[America/New_York][u-ca=gregorian]", false)
+ if err != nil {
+  panic(err)
+ }
 
-    fmt.Printf("Time: %v\n", t)
-    fmt.Printf("Extensions: %+v\n", extensions)
+ fmt.Printf("Time: %v\n", t)                 // Time: 2023-08-07 10:30:00 -0400 EDT
+ fmt.Printf("Extensions: %+v\n", extensions) // &ixdtf.IXDTFExtensions{Location:America/New_York Tags:map[u-ca:gregorian] Critical:map[]}
 
-    // Format a time with extensions
-    now := time.Now()
-    formatted := ixdtf.Format(now, extensions)
-    fmt.Printf("Formatted: %s\n", formatted)
+ // Format a time with extensions
+ now := time.Now()
+ formatted, err := ixdtf.Format(now, extensions)
+ if err != nil {
+  panic(err)
+ }
+ fmt.Printf("Formatted: %s\n", formatted) // 2025-09-13T23:26:20+09:00[America/New_York][u-ca=gregorian]
+
+ t, extensions, err = ixdtf.Parse(formatted, false)
+ if err != nil {
+  panic(err)
+ }
+
+ fmt.Printf("Time: %v\n", t)                 // Time: 2023-08-07 10:30:00 -0400 EDT
+ fmt.Printf("Extensions: %+v\n", extensions) // &ixdtf.IXDTFExtensions{Location:America/New_York Tags:map[u-ca:gregorian] Critical:map[]}
+
 }
 ```
 
@@ -78,6 +90,47 @@ IXDTF extends RFC 3339 with optional suffix elements:
 - `2023-08-07T14:30:00Z[America/New_York]` - With timezone name
 - `2023-08-07T14:30:00Z[u-ca=gregorian]` - With Unicode calendar extension
 - `2023-08-07T14:30:00Z[America/New_York][u-ca=gregorian]` - Multiple suffixes
+- `2023-08-07T14:30:00Z[!u-ca=gregorian]` - Critical extension (must be processed)
+
+## Extension Tag Validation
+
+IXDTF supports extension tags with specific validation rules following RFC 9557:
+
+### Validation Flow
+
+Extension tags undergo multi-layer validation:
+
+1. **ABNF Syntax Validation**: Keys and values must conform to RFC-defined patterns
+2. **Extension Type Validation**:
+   - **Private extensions** (`x-*`, `X-*`): Rejected per [BCP 178](https://www.rfc-editor.org/info/bcp178)
+   - **Experimental extensions** (`_*`): Rejected unless specifically configured
+   - **Standard extensions** (`u-*`, `t-*`): Subject to format validation
+3. **Critical Extension Processing**: Extensions marked with `!` must be processable or rejected
+
+ref: <https://www.rfc-editor.org/rfc/rfc9557.html#section-3.2>
+
+#### Rejection Cases
+
+The following extension patterns are automatically rejected:
+
+```go
+// Private extensions
+"2023-08-07T14:30:00Z[x-custom=value]"       // Error: private extension cannot be processed
+
+// Experimental extensions
+"2023-08-07T14:30:00Z[_experimental=value]"  // Error: experimental extension cannot be processed
+
+// Critical private/experimental extensions also
+"2023-08-07T14:30:00Z[!x-custom=value]"      // Error: private extension cannot be processed
+"2023-08-07T14:30:00Z[!_experimental=value]" // Error: experimental extension cannot be processed
+```
+
+### Supported Extensions
+
+- **Unicode Extensions** (`u-*`): Calendar, locale, and formatting preferences
+  - Example: `u-ca=gregorian` (Gregorian calendar)
+- **Transform Extensions** (`t-*`): Text transformation specifications
+- **Custom Extensions**: Application-specific extensions following RFC patterns
 
 ## API Reference
 
