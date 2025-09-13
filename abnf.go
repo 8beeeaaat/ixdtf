@@ -1,0 +1,83 @@
+// Copyright 2025 8beeeaaat. All rights reserved.
+// Use of this source code is governed by a BSD-style.
+// license that can be found in the LICENSE file.
+
+// ABNF patterns and validation for RFC 9557 Internet Extended Date/Time Format (IXDTF).
+//
+// This file contains compiled regular expression patterns that correspond to the.
+// ABNF (Augmented Backus-Naur Form) definitions specified in RFC 9557.
+//
+// Note: Due to limitations in Go's regexp engine, some ABNF constraints cannot.
+// be fully expressed in regular expressions alone and require additional validation logic:
+//   - Negative lookaheads (e.g., "but not '.' or '..'")
+//   - Context-dependent rules
+//   - Semantic validation (timezone existence, date validity)
+//
+// For complete validation, use these patterns in combination with the parsing.
+// functions provided in the main ixdtf package.
+
+package ixdtf
+
+import (
+	"regexp"
+	"time"
+)
+
+type Abnf struct {
+	regexp *regexp.Regexp
+}
+
+func newAbnf(pattern string) *Abnf {
+	return &Abnf{regexp: regexp.MustCompile(pattern)}
+}
+
+// Syntax Extensions to RFC 3339.
+// Note: Some ABNF constraints (like negative lookaheads and context-dependent rules).
+// cannot be fully expressed in Go's regexp engine and require additional validation logic.
+// https://www.rfc-editor.org/rfc/rfc9557.html#section-4
+//
+//nolint:gochecknoglobals // ABNF patterns are constants used for validation
+var (
+	AbnfTimezoneName = newAbnf(`^[A-Za-z_][A-Za-z._0-9+-]*(/[A-Za-z_][A-Za-z._0-9+-]*)*$`)
+	AbnfTimezone     = newAbnf(
+		`^\[!?[A-Za-z_][A-Za-z._0-9+-]*(/[A-Za-z_][A-Za-z._0-9+-]*)*\]$|^\[!?[+-][0-9]{2}:[0-9]{2}\]$`,
+	)
+
+	AbnfSuffixKey    = newAbnf(`^[a-z_][a-z_0-9-]*$`)
+	AbnfSuffixValues = newAbnf(`^[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*$`)
+
+	AbnfDateTimeExt = newAbnf(
+		`^[0-9]{4}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])T([01][0-9]|2[0-3]):[0-9]{2}:[0-9]{2}(\.[0-9]+)?(Z|[+-][0-9]{2}:[0-9]{2})(?:\[\]|\[!?[A-Za-z._0-9+/:-]+\]|\[!?[a-z_][a-z_0-9-]*=[A-Za-z0-9]+(?:-[A-Za-z0-9]+)*\])*$`,
+	)
+)
+
+// Validate validates a string against a specific ABNF pattern.
+func (a *Abnf) Validate(input string) error {
+	if !a.regexp.MatchString(input) {
+		return ErrInvalidExtension
+	}
+	// additional validation for patterns that cannot be fully expressed with regex
+	switch a {
+	case AbnfSuffixKey:
+		return validateSuffixKey(input)
+	case AbnfTimezoneName:
+		return validateTimezoneName(input)
+	default:
+		return nil
+	}
+}
+
+func validateTimezoneName(name string) error {
+	_, err := time.LoadLocation(name)
+	return err
+}
+
+func validateSuffixKey(key string) error {
+	switch {
+	case len(key) >= 2 && (key[:2] == "x-" || key[:2] == "X-"): // Private use extensions. https://www.rfc-editor.org/info/rfc6648
+		return ErrPrivateExtension
+	case len(key) >= 1 && key[0] == '_': // Experimental extensions. https://www.rfc-editor.org/info/rfc6648
+		return ErrExperimentalExtension
+	}
+	return nil
+}
