@@ -36,12 +36,14 @@ jobs:
     - name: Verify dependencies
       run: go mod verify
 
-    - name: Format check
+    - name: Format check (gofmt -l)
       run: |
-        go fmt ./...
-        if [ -n "$(git status --porcelain)" ]; then
-          echo "Code is not formatted. Please run 'go fmt ./...'"
-          git diff
+        CHANGED=$(gofmt -l .)
+        if [ -n "$CHANGED" ]; then
+          echo "The following files are not gofmt-ed:" >&2
+          echo "$CHANGED" | sed 's/^/  - /'
+          echo
+          echo "Run: gofmt -w ." >&2
           exit 1
         fi
 
@@ -58,9 +60,9 @@ jobs:
       run: go test -coverprofile=coverage.txt
 
     - name: Upload coverage to Codecov
-      uses: codecov/codecov-action@v3
+      uses: codecov/codecov-action@v5
       with:
-        file: ./coverage.out
+        files: ./coverage.out
         flags: unittests
 
     - name: Upload coverage reports to Codecov

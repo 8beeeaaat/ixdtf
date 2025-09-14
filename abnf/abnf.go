@@ -16,6 +16,8 @@
 // For complete validation, use these patterns in combination with the parsing.
 // functions provided in the main ixdtf package.
 
+// Package abnf provides ABNF patterns and validation for RFC 9557 Internet Extended Date/Time Format (IXDTF).
+// https://www.rfc-editor.org/rfc/rfc9557.html#section-4.1
 package abnf
 
 import (
@@ -41,7 +43,6 @@ func newAbnf(pattern string) *Abnf {
 // Syntax Extensions to RFC 3339.
 // Note: Some ABNF constraints (like negative lookaheads and context-dependent rules).
 // cannot be fully expressed in Go's regexp engine and require additional validation logic.
-// https://www.rfc-editor.org/rfc/rfc9557.html#section-4
 //
 //nolint:gochecknoglobals // ABNF patterns are constants used for validation
 var (
