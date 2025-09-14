@@ -251,9 +251,12 @@ func appendSuffix(t time.Time, ext *IXDTFExtensions, format string) []byte {
 
 	// Add timezone if we have a valid location to display
 	if loc != nil {
-		b = append(b, '[')
-		b = append(b, loc.String()...)
-		b = append(b, ']')
+		locName := loc.String()
+		if locName != "" {
+			b = append(b, '[')
+			b = append(b, locName...)
+			b = append(b, ']')
+		}
 	}
 
 	// set tags
