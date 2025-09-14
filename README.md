@@ -44,7 +44,7 @@ func main() {
   panic(err)
  }
 
- fmt.Printf("Time: %v\n", t)                 // Time: 2023-08-07 10:30:00 -0400 EDT
+ fmt.Printf("Time: %v\n", t)                 // Time: 2023-08-07 14:30:00 +0000 UTC
  fmt.Printf("Extensions: %+v\n", extensions) // &ixdtf.IXDTFExtensions{Location:America/New_York Tags:map[u-ca:gregorian] Critical:map[]}
 
  // Format a time with extensions
@@ -60,7 +60,7 @@ func main() {
   panic(err)
  }
 
- fmt.Printf("Time: %v\n", t)                 // Time: 2023-08-07 10:30:00 -0400 EDT
+ fmt.Printf("Time: %v\n", t)                 // Time: 2023-08-07 14:30:00 +0000 UTC
  fmt.Printf("Extensions: %+v\n", extensions) // &ixdtf.IXDTFExtensions{Location:America/New_York Tags:map[u-ca:gregorian] Critical:map[]}
 
 }
@@ -69,8 +69,8 @@ func main() {
 ### Validation Only
 
 ```go
-// Validate without full parsing
-err := ixdtf.Validate("2023-08-07T14:30:00Z[America/New_York]")
+// Validate without strict mode
+err := ixdtf.Validate("2023-08-07T14:30:00Z[America/New_York]", false)
 if err != nil {
     fmt.Printf("Invalid format: %v\n", err)
 }
@@ -136,10 +136,10 @@ The following extension patterns are automatically rejected:
 
 ### Core Functions
 
-- `Parse(s string) (time.Time, *IXDTFExtensions, error)` - Parse IXDTF string
-- `Format(t time.Time, ext *IXDTFExtensions) string` - Format time with extensions
-- `FormatNano(t time.Time, ext *IXDTFExtensions) string` - Format with nanosecond precision
-- `Validate(s string) error` - Validate format without parsing
+- `Parse(s string, strict bool) (time.Time, *IXDTFExtensions, error)` - Parse IXDTF string
+- `Format(t time.Time, ext *IXDTFExtensions) (string, error)` - Format time with extensions
+- `FormatNano(t time.Time, ext *IXDTFExtensions) (string, error)` - Format with nanosecond precision
+- `Validate(s string, strict bool) error` - Validate format without parsing
 
 ### Types
 

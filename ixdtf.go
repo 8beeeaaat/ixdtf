@@ -91,7 +91,7 @@ func (e *ParseError) Error() string {
 	if e.Err == nil {
 		return ""
 	}
-	return "parsing time \"" + e.Value + "\" as \"" + string(e.Layout) + "\": " + e.Err.Error()
+	return "IXDTFE parsing time \"" + e.Value + "\" as \"" + string(e.Layout) + "\": " + e.Err.Error()
 }
 
 // Format formats a time with IXDTF extensions using RFC 3339 format.
@@ -174,7 +174,7 @@ func Parse(s string, strict bool) (time.Time, *IXDTFExtensions, error) {
 				checkErr,
 			)
 		}
-		
+
 		// Per RFC 9557: In non-strict mode with inconsistent timezone,
 		// preserve the original timestamp and only apply timezone if consistent
 		if result.IsConsistent && result.Location != nil {
@@ -523,7 +523,7 @@ func handleExtensionTag(content string, critical bool, startIdx int, ext *IXDTFE
 	}
 
 	key := content[startIdx:equalIndex]
-	
+
 	// Respect RFC 9557: first occurrence wins.
 	if _, exists := ext.Tags[key]; exists {
 		return nil
