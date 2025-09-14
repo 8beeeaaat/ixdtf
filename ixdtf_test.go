@@ -92,6 +92,14 @@ func TestFormat(t *testing.T) {
 			}),
 			wantErr: ixdtf.ErrCriticalExtension,
 		},
+		{
+			name: "empty timezone name should not add brackets",
+			tm:   time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC),
+			ext: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
+				Location: time.FixedZone("", 0), // Empty timezone name
+			}),
+			want: "2025-01-01T12:00:00Z", // No brackets should be added
+		},
 	}
 
 	for _, tc := range tests {
