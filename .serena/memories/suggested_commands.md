@@ -61,7 +61,7 @@ go install ./...
 - Coverage reporting to codecov
 
 ## Go Version
-- Requires Go 1.25.1 (as specified in go.mod and .go-version)
+- Requires Go 1.24 (as specified in go.mod and .go-version)
 
 ## macOS Specific Notes
 - Commands should work identically on macOS as on Linux

@@ -1,21 +1,21 @@
-package ixdtf_test
+package abnf_test
 
 import (
 	"testing"
 
-	"github.com/8beeeaaat/ixdtf"
+	"github.com/8beeeaaat/ixdtf/abnf"
 )
 
 func TestAbnf_Validate(t *testing.T) {
 	tests := []struct {
 		name     string
-		pat      *ixdtf.Abnf
+		pat      *abnf.Abnf
 		valids   []string
 		invalids []string
 	}{
 		{
 			name: "TimezoneName",
-			pat:  ixdtf.AbnfTimezoneName,
+			pat:  abnf.AbnfTimezoneName,
 			valids: []string{
 				"Asia/Tokyo",
 				"Europe/Paris",
@@ -32,7 +32,7 @@ func TestAbnf_Validate(t *testing.T) {
 		},
 		{
 			name: "Timezone",
-			pat:  ixdtf.AbnfTimezone,
+			pat:  abnf.AbnfTimezone,
 			valids: []string{
 				"[Europe/London]",
 				"[!Europe/Paris]",
@@ -54,19 +54,19 @@ func TestAbnf_Validate(t *testing.T) {
 		},
 		{
 			name:     "SuffixKey",
-			pat:      ixdtf.AbnfSuffixKey,
+			pat:      abnf.AbnfSuffixKey,
 			valids:   []string{"a", "a--", "ab", "a_b", "a-b", "a--b"},
 			invalids: []string{"A", "-a", "a.", "", "_k9"},
 		},
 		{
 			name:     "SuffixValues",
-			pat:      ixdtf.AbnfSuffixValues,
+			pat:      abnf.AbnfSuffixValues,
 			valids:   []string{"a", "abc-123", "A1-b2-C3"},
 			invalids: []string{"-a", "a-", "a--b", "", "a_b"},
 		},
 		{
 			name: "DateTimeExt",
-			pat:  ixdtf.AbnfDateTimeExt,
+			pat:  abnf.AbnfDateTimeExt,
 			valids: []string{
 				"2025-01-02T03:04:05Z",
 				"2025-12-31T23:59:59+09:00",

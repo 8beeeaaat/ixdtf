@@ -6,7 +6,7 @@ IXDTF is a Go implementation of RFC 9557 Internet Extended Date/Time Format (IXD
 IXDTF extends RFC 3339 by adding optional suffix elements for timezone names and additional metadata while maintaining full backward compatibility.
 
 ## Tech Stack
-- **Language**: Go 1.25.1
+- **Language**: Go 1.24
 - **Testing**: Built-in Go testing framework
 - **Linting**: golangci-lint with extensive configuration
 - **CI/CD**: GitHub Actions with codecov integration

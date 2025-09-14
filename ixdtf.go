@@ -13,6 +13,8 @@ import (
 	"errors"
 	"strings"
 	"time"
+
+	"github.com/8beeeaaat/ixdtf/abnf"
 )
 
 // Layout represents time layout strings.
@@ -41,12 +43,12 @@ const (
 // Common parsing errors.
 var (
 	ErrCriticalExtension      = errors.New("critical extension cannot be processed")
-	ErrExperimentalExtension  = errors.New("experimental extension cannot be processed")
-	ErrPrivateExtension       = errors.New("private extension cannot be processed")
 	ErrInvalidExtension       = errors.New("invalid extension format")
 	ErrInvalidSuffix          = errors.New("invalid IXDTF suffix format")
 	ErrInvalidTimezone        = errors.New("invalid timezone name")
 	ErrTimezoneOffsetMismatch = errors.New("timezone offset does not match the specified timezone")
+	ErrPrivateExtension       = abnf.ErrPrivateExtension
+	ErrExperimentalExtension  = abnf.ErrExperimentalExtension
 )
 
 // IXDTFExtensions holds IXDTF suffix information that extends RFC 3339.
@@ -223,7 +225,7 @@ func Validate(s string, strict bool) error {
 	// This serves as an additional validation layer, but only for well-formed strings.
 	// Skip for empty strings and malformed inputs to avoid double error reporting.
 	if rfc3339Portion != "" && (rfc3339End >= len(s) || s[rfc3339End:] != "") {
-		if abnfErr := AbnfDateTimeExt.Validate(s); abnfErr != nil {
+		if abnfErr := abnf.AbnfDateTimeExt.Validate(s); abnfErr != nil {
 			// Only report ABNF mismatch if basic validation passes.
 			// This prevents confusing error messages for clearly invalid input.
 			return newParseError(LayoutRFC3339Extended, s, abnfErr)
@@ -351,7 +353,7 @@ func isValidSuffixKeyRange(s string, start, end int) error {
 	if start >= end {
 		return ErrInvalidExtension
 	}
-	return AbnfSuffixKey.Validate(s[start:end])
+	return abnf.AbnfSuffixKey.Validate(s[start:end])
 }
 
 func isValidSuffixValue(value string) error {
@@ -359,7 +361,7 @@ func isValidSuffixValue(value string) error {
 		return nil
 	}
 	// Use ABNF pattern for basic validation, then check additional constraints
-	if err := AbnfSuffixValues.Validate(value); err != nil {
+	if err := abnf.AbnfSuffixValues.Validate(value); err != nil {
 		return err
 	}
 	// Additional validation: no leading/trailing hyphens, no consecutive hyphens
@@ -490,10 +492,10 @@ func parseSuffixElement(content string, ext *IXDTFExtensions) error {
 	tzContent := content[startIdx:]
 	if tzContent != "" {
 		// Validate using ABNF pattern first - check both timezone name and offset patterns
-		if err := AbnfTimezoneName.Validate(tzContent); err != nil {
+		if err := abnf.AbnfTimezoneName.Validate(tzContent); err != nil {
 			// If not a timezone name, check if it's a valid timezone offset (+HH:MM, -HH:MM)
 			offsetPattern := "[" + tzContent + "]"
-			if offsetErr := AbnfTimezone.Validate(offsetPattern); offsetErr != nil {
+			if offsetErr := abnf.AbnfTimezone.Validate(offsetPattern); offsetErr != nil {
 				return ErrInvalidExtension
 			}
 		}
@@ -550,7 +552,7 @@ func validateExtensions(ext *IXDTFExtensions) error {
 
 	// Basic tag key validation (syntactic). Value validation is already handled when creating tags.
 	for key := range ext.Tags {
-		if err := AbnfSuffixKey.Validate(key); err != nil {
+		if err := abnf.AbnfSuffixKey.Validate(key); err != nil {
 			return err
 		}
 	}

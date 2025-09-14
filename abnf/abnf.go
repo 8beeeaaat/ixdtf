@@ -16,11 +16,18 @@
 // For complete validation, use these patterns in combination with the parsing.
 // functions provided in the main ixdtf package.
 
-package ixdtf
+package abnf
 
 import (
+	"errors"
 	"regexp"
 	"time"
+)
+
+// Common validation errors.
+var (
+	ErrPrivateExtension      = errors.New("private extension cannot be processed")
+	ErrExperimentalExtension = errors.New("experimental extension cannot be processed")
 )
 
 type Abnf struct {
@@ -54,7 +61,7 @@ var (
 // Validate validates a string against a specific ABNF pattern.
 func (a *Abnf) Validate(input string) error {
 	if !a.regexp.MatchString(input) {
-		return ErrInvalidExtension
+		return errors.New("invalid extension format")
 	}
 	// additional validation for patterns that cannot be fully expressed with regex
 	switch a {

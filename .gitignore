@@ -31,4 +31,4 @@ go.work.sum
 # .idea/
 # .vscode/
 CLAUDE.md
-.serena/cache
+.serena
