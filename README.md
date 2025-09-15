@@ -1,12 +1,24 @@
-# IXDTF - RFC 9557 Internet Extended Date/Time Format (IXDTF) Support for Go
+# IXDTF - RFC 9557: Internet Extended Date/Time Format Support for Go
 
 [![Go Reference](https://pkg.go.dev/badge/github.com/8beeeaaat/ixdtf.svg)](https://pkg.go.dev/github.com/8beeeaaat/ixdtf)
 [![codecov](https://codecov.io/gh/8beeeaaat/ixdtf/graph/badge.svg?token=B7ECLHCZS1)](https://codecov.io/gh/8beeeaaat/ixdtf)
 [![CI](https://github.com/8beeeaaat/ixdtf/workflows/CI/badge.svg)](https://github.com/8beeeaaat/ixdtf/actions)
 
-A Go implementation of [RFC 9557 Internet Extended Date/Time Format (IXDTF)](https://datatracker.ietf.org/doc/rfc9557/).
+A Go implementation of [RFC 9557: Internet Extended Date/Time Format (IXDTF)](https://datatracker.ietf.org/doc/rfc9557/).
 
 IXDTF extends RFC 3339 by adding optional suffix elements for timezone names and additional metadata while maintaining full backward compatibility.
+
+```go
+strictMode := false
+rfc9557 := "2025-02-03T04:05:06+09:00[Asia/Tokyo][!u-ca=gregory]"
+
+parsedTime, ixdtfExtensions, _ := ixdtf.Parse(rfc9557, strictMode)
+// parsedTime => 2025-02-03 04:05:06 +0900 JST
+// ixdtfExtensions => &ixdtf.IXDTFExtensions{Asia/Tokyo map[u-ca:gregory] map[u-ca:true]}
+
+result, _ := ixdtf.Format(parsedTime, ixdtfExtensions)
+// result is the same rfc9557
+```
 
 ## Features
 
@@ -14,8 +26,6 @@ IXDTF extends RFC 3339 by adding optional suffix elements for timezone names and
 - **Extended Format Support**: Handles timezone names and additional metadata via suffix elements
 - **Zero Dependencies**: Pure Go implementation using only the standard library
 - **Comprehensive Validation**: ABNF-based validation ensuring format compliance
-- **Detailed Error Reporting**: Structured error types with position information
-- **High Performance**: Optimized parsing and formatting operations
 
 ## Installation
 
@@ -38,31 +48,45 @@ import (
 )
 
 func main() {
- strictMode := false
- // Parse an IXDTF string
- t, extensions, err := ixdtf.Parse("2023-08-07T14:30:00Z[America/New_York][u-ca=gregorian]", strictMode)
- if err != nil {
-  panic(err)
- }
+    rfc9557InNY := "2025-01-02T03:04:05-05:00[America/New_York][!u-ca=gregorian]"
+    // Parse an IXDTF string in strict mode
+    parsedTime, parsedExt, err := ixdtf.Parse(rfc9557InNY, true)
+    if err != nil {
+        panic(err)
+    }
 
- fmt.Printf("Time: %v\n", t)                 // Time: 2023-08-07 14:30:00 +0000 UTC
- fmt.Printf("Extensions: %+v\n", extensions) // &ixdtf.IXDTFExtensions{Location:America/New_York Tags:map[u-ca:gregorian] Critical:map[]}
+    fmt.Printf("Parsed Time: %v\n", parsedTime)
+    // => Time: 2025-01-02 03:04:05 -0500 EST
+    fmt.Printf("Extensions: %+v\n", parsedExt)
+    // => &ixdtf.IXDTFExtensions{Location:America/New_York Tags:map[u-ca:gregorian] Critical:map[u-ca:true]}
 
- // Format a time with extensions
- now := time.Now()
- formatted, err := ixdtf.Format(now, extensions)
- if err != nil {
-  panic(err)
- }
- fmt.Printf("Formatted: %s\n", formatted) // 2025-09-13T23:26:20+09:00[America/New_York][u-ca=gregorian]
+    // Format a time with same extensions
+    now := time.Now()
+    fmt.Printf("Now: %v\n", now)
+    // => Now: 2025-09-01 12:34:56.123456789 +0900 JST
 
- t, extensions, err = ixdtf.Parse(formatted, strictMode)
- if err != nil {
-  panic(err)
- }
+    formattedNano, err := ixdtf.FormatNano(now, parsedExt)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Printf("FormattedNano: %s\n", formattedNano)
+    // => 2025-09-01T12:34:56.123456789+09:00[America/New_York][!u-ca=gregorian]
 
- fmt.Printf("Time: %v\n", t)                 // Time: 2023-08-07 14:30:00 +0000 UTC
- fmt.Printf("Extensions: %+v\n", extensions) // &ixdtf.IXDTFExtensions{Location:America/New_York Tags:map[u-ca:gregorian] Critical:map[]}
+    // Parse back the formattedNano string
+    // In non-strict mode, this should succeed even if there's an offset mismatch
+    reParsedTime, _, err := ixdtf.Parse(formattedNano, false)
+    if err != nil {
+        panic(err)
+    }
+    fmt.Printf("Re:Parsed Time: %v\n", reParsedTime)
+    // => Re:Parsed Time: 2025-09-01 12:34:56.123456789 +0900 JST
+
+    // In strict mode, this should error if the offset does not match the timezone
+    _, _, err = ixdtf.Parse(formattedNano, true)
+    if err != nil {
+        panic(err)
+        // => panic: IXDTFE parsing time "2025-09-01T12:34:56.123456789+09:00[America/New_York][!u-ca=gregorian]" as "2006-01-02T15:04:05.999999999Z07:00*([time-zone-name][tags])": timezone offset does not match the specified timezone
+    }
 
 }
 ```
@@ -71,10 +95,11 @@ func main() {
 
 ```go
 strictMode := true
-err := ixdtf.Validate("2023-08-07T14:30:00Z[America/New_York]", strictMode)
+err = ixdtf.Validate("2023-08-07T14:30:00+09:00[America/New_York]", strictMode)
 if err != nil {
     fmt.Printf("Invalid format: %v\n", err)
 }
+// => Invalid format: IXDTFE parsing time "2023-08-07T14:30:00+09:00[America/New_York]" as "2006-01-02T15:04:05.999999999Z07:00*([time-zone-name][tags])": timezone offset does not match the specified timezone
 ```
 
 ## IXDTF Format
@@ -90,7 +115,7 @@ IXDTF extends RFC 3339 with optional suffix elements:
 - `2023-08-07T14:30:00Z` - Standard RFC 3339
 - `2023-08-07T14:30:00Z[America/New_York]` - With timezone name
 - `2023-08-07T14:30:00Z[u-ca=gregorian]` - With Unicode calendar extension
-- `2023-08-07T14:30:00Z[America/New_York][u-ca=gregorian]` - Multiple suffixes
+- `2025-02-03T04:05:06+09:00[Asia/Tokyo][!u-ca=gregory]` - Multiple suffixes
 - `2023-08-07T14:30:00Z[!u-ca=gregorian]` - Critical extension (must be processed)
 
 ## Extension Tag Validation
