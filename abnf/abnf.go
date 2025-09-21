@@ -37,14 +37,37 @@ func newAbnf(pattern string) *Abnf {
 	return &Abnf{regexp: regexp.MustCompile(pattern)}
 }
 
+var (
+	errInvalidExtensionFormat = errors.New("invalid extension format")
+	errUnknownDateTimeExt     = errors.New("unknown ABNF for date-time extension")
+	errUnknownSuffixKey       = errors.New("unknown ABNF for suffix key")
+	errUnknownSuffixValues    = errors.New("unknown ABNF for suffix values")
+	errUnknownTimeZone        = errors.New("unknown ABNF for timezone name")
+	errUnknownTimeZoneTag     = errors.New("unknown ABNF for timezone tag")
+)
+
+func (a *Abnf) ensure(expected *Abnf, err error) error {
+	if a != expected {
+		return err
+	}
+	return nil
+}
+
+func (a *Abnf) ensurePattern(input string) error {
+	if !a.regexp.MatchString(input) {
+		return errInvalidExtensionFormat
+	}
+	return nil
+}
+
 // Syntax Extensions to RFC 3339.
 // Note: Some ABNF constraints (like negative lookaheads and context-dependent rules).
 // cannot be fully expressed in Go's regexp engine and require additional validation logic.
 //
 //nolint:gochecknoglobals // ABNF patterns are constants used for validation
 var (
-	AbnfTimezoneName = newAbnf(`^[A-Za-z_][A-Za-z._0-9+-]*(/[A-Za-z_][A-Za-z._0-9+-]*)*$`)
-	AbnfTimezone     = newAbnf(
+	AbnfTimeZone    = newAbnf(`^[A-Za-z_][A-Za-z._0-9+-]*(/[A-Za-z_][A-Za-z._0-9+-]*)*$`)
+	AbnfTimeZoneTag = newAbnf(
 		`^\[!?[A-Za-z_][A-Za-z._0-9+-]*(/[A-Za-z_][A-Za-z._0-9+-]*)*\]$|^\[!?[+-][0-9]{2}:[0-9]{2}\]$`,
 	)
 
@@ -56,33 +79,83 @@ var (
 	)
 )
 
-// IsTimezoneNameSyntax returns true if the input matches the lexical pattern of a timezone name.
+// IsTimeZoneSyntax returns true if the input matches the lexical pattern of a timezone name.
 // (ABNF for tz name) without performing existence (time.LoadLocation) validation.
-func IsTimezoneNameSyntax(input string) bool {
-	return AbnfTimezoneName.regexp.MatchString(input)
+func IsTimeZoneSyntax(input string) bool {
+	return AbnfTimeZone.regexp.MatchString(input)
 }
 
-// Validate validates a string against a specific ABNF pattern.
-func (a *Abnf) Validate(input string) error {
-	if !a.regexp.MatchString(input) {
-		return errors.New("invalid extension format")
+// ValidateDateTimeExt validates a date-time string with extensions according to the ABNF and additional rules.
+func (a *Abnf) ValidateDateTimeExt(input string) error {
+	if err := a.ensure(AbnfDateTimeExt, errUnknownDateTimeExt); err != nil {
+		return err
 	}
-	// additional validation for patterns that cannot be fully expressed with regex
-	switch a {
-	case AbnfSuffixKey:
-		return validateSuffixKey(input)
-	case AbnfTimezoneName:
-		return validateTimezoneName(input)
-	default:
+	return a.ensurePattern(input)
+}
+
+// ValidateSuffixKey validates a suffix key according to the ABNF and additional rules.
+func (a *Abnf) ValidateSuffixKey(input string) error {
+	if err := a.ensure(AbnfSuffixKey, errUnknownSuffixKey); err != nil {
+		return err
+	}
+	if err := a.ensurePattern(input); err != nil {
+		return err
+	}
+	return validateSuffixKey(input)
+}
+
+// ValidateSuffixValues validates suffix values according to the ABNF and additional rules.
+func (a *Abnf) ValidateSuffixValues(input string) error {
+	if err := a.ensure(AbnfSuffixValues, errUnknownSuffixValues); err != nil {
+		return err
+	}
+	return a.ensurePattern(input)
+}
+
+func (a *Abnf) ValidateTimeZone(input string, strict bool) error {
+	if err := a.ensure(AbnfTimeZone, errUnknownTimeZone); err != nil {
+		return err
+	}
+	if err := a.ensurePattern(input); err != nil {
+		return err
+	}
+	return validateTimeZone(input, strict)
+}
+
+func (a *Abnf) ValidateTimeZoneTag(input string, strict bool) error {
+	if err := a.ensure(AbnfTimeZoneTag, errUnknownTimeZoneTag); err != nil {
+		return err
+	}
+	if err := a.ensurePattern(input); err != nil {
+		return err
+	}
+	return validateTimeZoneTag(input, strict)
+}
+
+func validateTimeZone(name string, strict bool) error {
+	if !strict {
+		// In non-strict mode, skip time.LoadLocation validation
 		return nil
 	}
+	_, err := time.LoadLocation(name)
+	return err
 }
 
-func validateTimezoneName(name string) error {
-	if !IsTimezoneNameSyntax(name) {
-		return errors.New("invalid timezone name syntax")
+func validateTimeZoneTag(name string, strict bool) error {
+	if !strict {
+		// In non-strict mode, skip time.LoadLocation validation
+		return nil
 	}
-	_, err := time.LoadLocation(name)
+	// Remove leading '[', trailing ']', and optional leading '!' for strict validation
+	cleanName := name[1 : len(name)-1]
+	if cleanName[0] == '!' {
+		cleanName = cleanName[1:]
+	}
+	if cleanName[0] == '+' || cleanName[0] == '-' {
+		// Offset format, no need to validate with time.LoadLocation
+		return nil
+	}
+	_, err := time.LoadLocation(cleanName)
 	return err
 }
 

@@ -31,6 +31,16 @@ func TestE2E_RoundTrip(t *testing.T) {
 			inputHasErrorInStrictMode:    true,
 		},
 		{
+			name:                                     "with unknown time zone tag",
+			input:                                    "2025-01-02T03:04:05+09:00[Foo/Bar]",
+			inputHasErrorInNonStrictMode:             false,
+			inputHasErrorInStrictMode:                true,
+			inputFormatted:                           "2025-01-02T03:04:05+09:00",
+			overrideWithNyExt:                        "2025-01-02T03:04:05+09:00[America/New_York]",
+			overrideWithNyExtHasErrorInNonStrictMode: false,
+			overrideWithNyExtHasErrorInStrictMode:    true,
+		},
+		{
 			name:                                     "offset time",
 			input:                                    "2025-02-03T04:05:06+09:00",
 			inputHasErrorInNonStrictMode:             false,
@@ -92,7 +102,7 @@ func TestE2E_RoundTrip(t *testing.T) {
 	}
 }
 
-func TestE2E_TimezoneConversion(t *testing.T) {
+func TestE2E_TimeZoneConversion(t *testing.T) {
 	// Test that times in different timezones represent the same instant
 	utcTime := "2025-01-01T12:00:00Z[UTC]"
 	tokyoTime := "2025-01-01T21:00:00+09:00[Asia/Tokyo]"
@@ -112,7 +122,7 @@ func TestE2E_TimezoneConversion(t *testing.T) {
 	}
 }
 
-func TestE2E_TimezoneInconsistency(t *testing.T) {
+func TestE2E_TimeZoneInconsistency(t *testing.T) {
 	// Test RFC 9557 compliant handling of timezone offset mismatches
 	// Input has +09:00 offset but [America/New_York] timezone (which should be -4/-5 hours)
 	input := "2025-06-01T12:00:00+09:00[America/New_York]"
@@ -150,6 +160,7 @@ type testRoundTripArgs struct {
 	input                                    string
 	inputHasErrorInNonStrictMode             bool
 	inputHasErrorInStrictMode                bool
+	inputFormatted                           string
 	overrideWithNyExt                        string
 	overrideWithNyExtHasErrorInNonStrictMode bool
 	overrideWithNyExtHasErrorInStrictMode    bool
@@ -192,8 +203,12 @@ func parseAndValidateRoundTrip(t *testing.T, tc testRoundTripArgs) (time.Time, *
 		t.Fatalf("failed to format: %v", err)
 	}
 
-	if formatted != tc.input {
-		t.Fatalf("round trip failed: input %q, formatted %q", tc.input, formatted)
+	if tc.inputFormatted != "" && formatted != tc.inputFormatted {
+		t.Fatalf("round trip failed: inputFormatted %q, formatted %q", tc.inputFormatted, formatted)
+	}
+
+	if tc.inputFormatted == "" && formatted != tc.input {
+		t.Fatalf("round trip failed: should be same as input %q, formatted %q", tc.input, formatted)
 	}
 
 	return parsedTime, ext

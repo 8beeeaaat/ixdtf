@@ -1,6 +1,7 @@
 package ixdtf_test
 
 import (
+	"sort"
 	"testing"
 	"time"
 
@@ -34,12 +35,17 @@ func BenchmarkFormat(b *testing.B) {
 			),
 		},
 	}
+
+	sort.Slice(cases, func(i, j int) bool { return cases[i].name < cases[j].name })
+
 	b.ReportAllocs()
 	for _, c := range cases {
 		b.Run(c.name, func(sb *testing.B) {
-			for range sb.N {
-				_, _ = ixdtf.Format(c.t, c.ext)
-			}
+			sb.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					_, _ = ixdtf.Format(c.t, c.ext)
+				}
+			})
 		})
 	}
 }
@@ -59,12 +65,17 @@ func BenchmarkFormatNano(b *testing.B) {
 			ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{Tags: map[string]string{"u-ca": "gregory"}}),
 		},
 	}
+
+	sort.Slice(cases, func(i, j int) bool { return cases[i].name < cases[j].name })
+
 	b.ReportAllocs()
 	for _, c := range cases {
 		b.Run(c.name, func(sb *testing.B) {
-			for range sb.N {
-				_, _ = ixdtf.FormatNano(c.t, c.ext)
-			}
+			sb.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					_, _ = ixdtf.FormatNano(c.t, c.ext)
+				}
+			})
 		})
 	}
 }
@@ -82,12 +93,17 @@ func BenchmarkParse(b *testing.B) {
 		{"mismatch_strict", "2025-06-01T12:00:00+09:00[America/New_York]", true},
 		{"invalid_suffix", "2025-01-01T00:00:00Z[unclosed", false},
 	}
+
+	sort.Slice(cases, func(i, j int) bool { return cases[i].name < cases[j].name })
+
 	b.ReportAllocs()
 	for _, c := range cases {
 		b.Run(c.name, func(sb *testing.B) {
-			for range sb.N {
-				_, _, _ = ixdtf.Parse(c.input, c.strict)
-			}
+			sb.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					_, _, _ = ixdtf.Parse(c.input, c.strict)
+				}
+			})
 		})
 	}
 }
@@ -103,12 +119,17 @@ func BenchmarkValidate(b *testing.B) {
 		{"mismatch_strict", "2025-06-01T12:00:00+09:00[America/New_York]", true},
 		{"invalid_ext", "2025-01-01T00:00:00Z[INVALID=val]", false},
 	}
+
+	sort.Slice(cases, func(i, j int) bool { return cases[i].name < cases[j].name })
+
 	b.ReportAllocs()
 	for _, c := range cases {
 		b.Run(c.name, func(sb *testing.B) {
-			for range sb.N {
-				_ = ixdtf.Validate(c.input, c.strict)
-			}
+			sb.RunParallel(func(pb *testing.PB) {
+				for pb.Next() {
+					_ = ixdtf.Validate(c.input, c.strict)
+				}
+			})
 		})
 	}
 }

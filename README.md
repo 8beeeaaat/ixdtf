@@ -130,7 +130,6 @@ Extension tags undergo multi-layer validation:
 2. **Extension Type Validation**:
    - **Private extensions** (`x-*`, `X-*`): Rejected per [BCP 178](https://www.rfc-editor.org/info/bcp178)
    - **Experimental extensions** (`_*`): Rejected unless specifically configured
-   - **Standard extensions** (`u-*`, `t-*`): Subject to format validation
 3. **Critical Extension Processing**: Extensions marked with `!` must be processable or rejected
 
 ref: <https://www.rfc-editor.org/rfc/rfc9557.html#section-3.2>
@@ -176,7 +175,7 @@ The second argument `strict` in `Parse` / `Validate` controls how strictly the l
 
 | Mode | Behavior | Example |
 |------|----------|---------|
-| `true` | If the zone-derived offset for that instant differs from the RFC 3339 numeric offset, an **error (ErrTimezoneOffsetMismatch)** is returned. | `2025-01-01T12:00:00+09:00[America/New_York]` → New York at that instant is `-05:00`, so mismatch → error |
+| `true` | If the zone-derived offset for that instant differs from the RFC 3339 numeric offset, an **error (ErrTimeZoneOffsetMismatch)** is returned. | `2025-01-01T12:00:00+09:00[America/New_York]` → New York at that instant is `-05:00`, so mismatch → error |
 | `false` | Mismatches do NOT produce an error. The original timestamp (its instant + numeric offset) is kept; the location is only applied if offsets match. | Same example above: no error; the provided time value is kept as-is (location not applied) |
 
 Notes:
@@ -191,7 +190,7 @@ Notes:
 
 - `IXDTFExtensions` - Container for extension data
 - `ParseError` - Detailed parsing error with position information
-- `TimezoneConsistencyResult` - Timezone validation results
+- `TimeZoneConsistencyResult` - TimeZone validation results
 
 ## Error Handling
 
