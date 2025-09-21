@@ -5,6 +5,29 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.0] - 2025-09-21
+
+### Changed
+
+- Refactored timezone handling with improved error messages and consistency (PR #10)
+- Enhanced parsing logic to support numeric timezone offsets and improved validation for timezone names
+- Modified suffix parsing to handle multiple tags and critical flags more effectively
+- Improved error handling in strict and non-strict modes for better RFC 9557 compliance
+
+### Technical
+
+- Refactored E2E tests for timezone validation with improved variable naming and error handling (PR #9)
+- Enhanced test coverage with new test cases covering unknown time zones and timezone inconsistencies
+- Improved benchmark testing with more comprehensive scenarios
+- Added comprehensive internal testing for timezone validation logic
+- Enhanced ABNF validation patterns with better regex-based format checking
+
+### Fixed
+
+- Better timezone offset validation and error reporting
+- Improved handling of timezone name parsing edge cases
+- Enhanced error message clarity for timezone-related validation failures
+
 ## [0.1.1] - 2025-09-15
 
 ### Changed
