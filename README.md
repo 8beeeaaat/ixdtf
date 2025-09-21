@@ -56,7 +56,7 @@ func main() {
     }
 
     fmt.Printf("Parsed Time: %v\n", parsedTime)
-    // => Time: 2025-01-02 03:04:05 -0500 EST
+    // => Parsed Time: 2025-01-02 03:04:05 -0500 EST
     fmt.Printf("Extensions: %+v\n", parsedExt)
     // => &ixdtf.IXDTFExtensions{Location:America/New_York Tags:map[u-ca:gregorian] Critical:map[u-ca:true]}
 
@@ -70,7 +70,7 @@ func main() {
         panic(err)
     }
     fmt.Printf("FormattedNano: %s\n", formattedNano)
-    // => 2025-09-01T12:34:56.123456789+09:00[America/New_York][!u-ca=gregorian]
+    // => FormattedNano: 2025-09-01T12:34:56.123456789+09:00[America/New_York][!u-ca=gregorian]
 
     // Parse back the formattedNano string
     // In non-strict mode, this should succeed even if there's an offset mismatch
@@ -150,13 +150,6 @@ The following extension patterns are automatically rejected:
 "2023-08-07T14:30:00Z[!_experimental=value]" // Error: experimental extension cannot be processed
 ```
 
-### Supported Extensions
-
-- **Unicode Extensions** (`u-*`): Calendar, locale, and formatting preferences
-  - Example: `u-ca=gregorian` (Gregorian calendar)
-- **Transform Extensions** (`t-*`): Text transformation specifications
-- **Custom Extensions**: Application-specific extensions following RFC patterns
-
 ## API Reference
 
 ### Core Functions
@@ -197,12 +190,13 @@ Notes:
 The library provides structured error types for different failure scenarios:
 
 ```go
-t, ext, err := ixdtf.Parse("invalid-date")
-if err != nil {
-    if parseErr, ok := err.(*ixdtf.ParseError); ok {
-        fmt.Printf("Parse error at position %d: %s\n", parseErr.Position, parseErr.Message)
-    }
-}
+ _, _, err := ixdtf.Parse("invalid-date", false)
+ if err != nil {
+  if parseErr, ok := err.(*ixdtf.ParseError); ok {
+   fmt.Printf("Parse error, %s: %s\n", parseErr.Layout, parseErr.Value)
+   // => Parse error, 2006-01-02T15:04:05Z07:00: invalid-date
+  }
+ }
 ```
 
 ## Development
