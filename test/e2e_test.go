@@ -7,134 +7,87 @@ import (
 	"github.com/8beeeaaat/ixdtf"
 )
 
-//nolint:gocognit // test complexity is acceptable
 func TestE2E_RoundTrip(t *testing.T) {
-	tests := []struct {
-		name                            string
-		input                           string
-		formattedWithNyExt              string
-		hasErrorInNonStrictMode         bool
-		nyFormattedHasErrorInStrictMode bool
-	}{
+	tests := []testRoundTripArgs{
 		{
-			name:                            "basic UTC time",
-			input:                           "2025-01-02T03:04:05Z",
-			formattedWithNyExt:              "2025-01-02T03:04:05Z[America/New_York]",
-			nyFormattedHasErrorInStrictMode: true,
+			name:                                     "basic UTC time",
+			input:                                    "2025-01-02T03:04:05Z",
+			inputHasErrorInNonStrictMode:             false,
+			inputHasErrorInStrictMode:                false,
+			overrideWithNyExt:                        "2025-01-02T03:04:05Z[America/New_York]",
+			overrideWithNyExtHasErrorInNonStrictMode: false,
+			overrideWithNyExtHasErrorInStrictMode:    true,
 		},
 		{
-			name:                    "basic UTC time with invalid critical time zone tag",
-			input:                   "2025-01-02T03:04:05Z[!America/New_York]",
-			hasErrorInNonStrictMode: true,
+			name:                         "basic UTC time with invalid critical time zone tag",
+			input:                        "2025-01-02T03:04:05Z[!America/New_York]",
+			inputHasErrorInNonStrictMode: true,
+			inputHasErrorInStrictMode:    true,
 		},
 		{
-			name:                            "offset time",
-			input:                           "2025-02-03T04:05:06+09:00",
-			formattedWithNyExt:              "2025-02-03T04:05:06+09:00[America/New_York]",
-			nyFormattedHasErrorInStrictMode: true,
+			name:                         "invalid offset time with critical time zone tag",
+			input:                        "2025-01-02T03:04:05+09:00[!America/New_York]",
+			inputHasErrorInNonStrictMode: true,
+			inputHasErrorInStrictMode:    true,
 		},
 		{
-			name:                            "timezone with offset - New York",
-			input:                           "2025-02-03T04:05:06-05:00[America/New_York]",
-			formattedWithNyExt:              "2025-02-03T04:05:06-05:00[America/New_York]",
-			nyFormattedHasErrorInStrictMode: false,
+			name:                                     "offset time",
+			input:                                    "2025-02-03T04:05:06+09:00",
+			inputHasErrorInNonStrictMode:             false,
+			inputHasErrorInStrictMode:                false,
+			overrideWithNyExt:                        "2025-02-03T04:05:06+09:00[America/New_York]",
+			overrideWithNyExtHasErrorInNonStrictMode: false,
+			overrideWithNyExtHasErrorInStrictMode:    true,
 		},
 		{
-			name:                            "timezone with offset - Tokyo",
-			input:                           "2025-02-03T04:05:06+09:00[Asia/Tokyo]",
-			formattedWithNyExt:              "2025-02-03T04:05:06+09:00[America/New_York]",
-			nyFormattedHasErrorInStrictMode: true,
+			name:                                     "timezone with offset - New York",
+			input:                                    "2025-02-03T04:05:06-05:00[America/New_York]",
+			inputHasErrorInNonStrictMode:             false,
+			inputHasErrorInStrictMode:                false,
+			overrideWithNyExt:                        "2025-02-03T04:05:06-05:00[America/New_York]",
+			overrideWithNyExtHasErrorInNonStrictMode: false,
+			overrideWithNyExtHasErrorInStrictMode:    false,
 		},
 		{
-			name:                            "with tags",
-			input:                           "2025-03-04T05:06:07Z[UTC][u-ca=gregory]",
-			formattedWithNyExt:              "2025-03-04T05:06:07Z[America/New_York][u-ca=gregory]",
-			nyFormattedHasErrorInStrictMode: true,
+			name:                                     "timezone with offset - Tokyo",
+			input:                                    "2025-02-03T04:05:06+09:00[Asia/Tokyo]",
+			inputHasErrorInNonStrictMode:             false,
+			inputHasErrorInStrictMode:                false,
+			overrideWithNyExt:                        "2025-02-03T04:05:06+09:00[America/New_York]",
+			overrideWithNyExtHasErrorInNonStrictMode: false,
+			overrideWithNyExtHasErrorInStrictMode:    true,
 		},
 		{
-			name:                            "with critical tags",
-			input:                           "2025-02-03T04:05:06+09:00[Asia/Tokyo][!u-ca=gregory]",
-			formattedWithNyExt:              "2025-02-03T04:05:06+09:00[America/New_York][!u-ca=gregory]",
-			nyFormattedHasErrorInStrictMode: true,
+			name:                                     "with tags",
+			input:                                    "2025-03-04T05:06:07Z[UTC][u-ca=gregory]",
+			inputHasErrorInNonStrictMode:             false,
+			inputHasErrorInStrictMode:                false,
+			overrideWithNyExt:                        "2025-03-04T05:06:07Z[America/New_York][u-ca=gregory]",
+			overrideWithNyExtHasErrorInNonStrictMode: false,
+			overrideWithNyExtHasErrorInStrictMode:    true,
+		},
+		{
+			name:                                     "with critical tags",
+			input:                                    "2025-02-03T04:05:06+09:00[Asia/Tokyo][!u-ca=gregory]",
+			inputHasErrorInNonStrictMode:             false,
+			inputHasErrorInStrictMode:                false,
+			overrideWithNyExt:                        "2025-02-03T04:05:06+09:00[America/New_York][!u-ca=gregory]",
+			overrideWithNyExtHasErrorInNonStrictMode: false,
+			overrideWithNyExtHasErrorInStrictMode:    true,
 		},
 	}
 
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
-			if err := ixdtf.Validate(tc.input, false); err != nil {
-				if !tc.hasErrorInNonStrictMode {
-					t.Fatalf("validation failed for %q: %v in non-strict mode", tc.input, err)
-				}
-				return
+			// Validate input in both modes
+			validateInput(t, tc)
+
+			if tc.inputHasErrorInNonStrictMode {
+				return // Skip further tests if input is expected to fail
 			}
 
-			if err := ixdtf.Validate(tc.input, true); err != nil {
-				t.Fatalf("validation failed for %q: %v in strict mode", tc.input, err)
-			}
-
-			parsedTime, ext, err := ixdtf.Parse(tc.input, true)
-			if err != nil {
-				t.Fatalf("failed to parse %q: %v", tc.input, err)
-			}
-
-			formatted, err := ixdtf.Format(parsedTime, ext)
-			if err != nil {
-				t.Fatalf("failed to format: %v", err)
-			}
-
-			if formatted != tc.input {
-				t.Fatalf("round trip failed: input %q, formatted %q", tc.input, formatted)
-			}
-
-			// Convert to New York timezone and format
-			nyLoc, err := time.LoadLocation("America/New_York")
-			if err != nil {
-				t.Fatalf("failed to load New York location: %v", err)
-			}
-			nyExt := ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
-				Location: nyLoc,
-				Tags:     ext.Tags,
-				Critical: ext.Critical,
-			})
-
-			nyFormatted, err := ixdtf.Format(parsedTime, nyExt)
-			if err != nil {
-				t.Fatalf("failed to format in New York timezone: %v", err)
-			}
-			if nyFormatted != tc.formattedWithNyExt {
-				t.Fatalf("New York format mismatch: got %q, want %q", nyFormatted, tc.formattedWithNyExt)
-			}
-
-			// Validate the New York formatted string in non-strict mode
-			// This should pass as the format is correct
-			if err = ixdtf.Validate(nyFormatted, false); err != nil {
-				t.Fatalf("validation failed for New York format %q: %v in non-strict mode", nyFormatted, err)
-			}
-
-			// Validate the New York formatted string in strict mode
-			// This should error if there was an offset mismatch
-			err = ixdtf.Validate(nyFormatted, true)
-
-			if !tc.nyFormattedHasErrorInStrictMode {
-				if err != nil {
-					t.Fatalf("unexpected validation error in strict mode for %q: %v", nyFormatted, err)
-				}
-				return
-			}
-
-			if err == nil {
-				t.Fatalf("expected validation error in strict mode for %q, but got none", nyFormatted)
-			}
-
-			// Expected pass, with located time
-			nyTime := parsedTime.In(nyLoc)
-			nyFormattedWithLocatedTime, err := ixdtf.Format(nyTime, nyExt)
-			if err != nil {
-				t.Fatalf("failed to format with located time: %v", err)
-			}
-			if err = ixdtf.Validate(nyFormattedWithLocatedTime, true); err != nil {
-				t.Fatalf("failed to validate New York format with located time: %v", err)
-			}
+			parsedTime, ext := parseAndValidateRoundTrip(t, tc)
+			testNewYorkConversion(t, tc, parsedTime, ext)
 		})
 	}
 }
@@ -189,5 +142,114 @@ func TestE2E_TimezoneInconsistency(t *testing.T) {
 	_, _, err = ixdtf.Parse(input, true)
 	if err == nil {
 		t.Fatalf("strict mode should return error for timezone offset mismatch")
+	}
+}
+
+type testRoundTripArgs struct {
+	name                                     string
+	input                                    string
+	inputHasErrorInNonStrictMode             bool
+	inputHasErrorInStrictMode                bool
+	overrideWithNyExt                        string
+	overrideWithNyExtHasErrorInNonStrictMode bool
+	overrideWithNyExtHasErrorInStrictMode    bool
+}
+
+// validateInput validates the input string in both strict and non-strict modes.
+func validateInput(t *testing.T, tc testRoundTripArgs) {
+	t.Helper()
+
+	// Test non-strict mode
+	err := ixdtf.Validate(tc.input, false)
+	if err != nil && !tc.inputHasErrorInNonStrictMode {
+		t.Fatalf("validation failed for %q: %v in non-strict mode", tc.input, err)
+	}
+	if err == nil && tc.inputHasErrorInNonStrictMode {
+		t.Fatalf("expected validation error for %q in non-strict mode, but got none", tc.input)
+	}
+
+	// Test strict mode
+	err = ixdtf.Validate(tc.input, true)
+	if err != nil && !tc.inputHasErrorInStrictMode {
+		t.Fatalf("validation failed for %q: %v in strict mode", tc.input, err)
+	}
+	if err == nil && tc.inputHasErrorInStrictMode {
+		t.Fatalf("expected validation error for %q in strict mode, but got none", tc.input)
+	}
+}
+
+// parseAndValidateRoundTrip parses input and validates round-trip formatting.
+func parseAndValidateRoundTrip(t *testing.T, tc testRoundTripArgs) (time.Time, *ixdtf.IXDTFExtensions) {
+	t.Helper()
+
+	parsedTime, ext, err := ixdtf.Parse(tc.input, false)
+	if err != nil {
+		t.Fatalf("failed to parse %q: %v", tc.input, err)
+	}
+
+	formatted, err := ixdtf.Format(parsedTime, ext)
+	if err != nil {
+		t.Fatalf("failed to format: %v", err)
+	}
+
+	if formatted != tc.input {
+		t.Fatalf("round trip failed: input %q, formatted %q", tc.input, formatted)
+	}
+
+	return parsedTime, ext
+}
+
+// testNewYorkConversion tests timezone conversion to New York and validates the result.
+func testNewYorkConversion(t *testing.T, tc testRoundTripArgs, parsedTime time.Time, ext *ixdtf.IXDTFExtensions) {
+	t.Helper()
+
+	// Convert to New York timezone and format
+	nyLoc, err := time.LoadLocation("America/New_York")
+	if err != nil {
+		t.Fatalf("failed to load New York location: %v", err)
+	}
+	nyExt := ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
+		Location: nyLoc,
+		Tags:     ext.Tags,
+		Critical: ext.Critical,
+	})
+
+	overrideWithNyExt, err := ixdtf.Format(parsedTime, nyExt)
+	if err != nil {
+		t.Fatalf("failed to format in New York timezone: %v", err)
+	}
+	if overrideWithNyExt != tc.overrideWithNyExt {
+		t.Fatalf("New York format mismatch: got %q, want %q", overrideWithNyExt, tc.overrideWithNyExt)
+	}
+
+	// Validate the New York formatted string in non-strict mode
+	err = ixdtf.Validate(overrideWithNyExt, false)
+	if err != nil && !tc.overrideWithNyExtHasErrorInNonStrictMode {
+		t.Fatalf("validation failed for New York format %q: %v in non-strict mode", overrideWithNyExt, err)
+	}
+	if err == nil && tc.overrideWithNyExtHasErrorInNonStrictMode {
+		t.Fatalf(
+			"expected validation error for New York format %q in non-strict mode, but got none",
+			overrideWithNyExt,
+		)
+	}
+
+	// Validate the New York formatted string in strict mode
+	err = ixdtf.Validate(overrideWithNyExt, true)
+	if err != nil && !tc.overrideWithNyExtHasErrorInStrictMode {
+		t.Fatalf("unexpected validation error in strict mode for %q: %v", overrideWithNyExt, err)
+	}
+	if err == nil && tc.overrideWithNyExtHasErrorInStrictMode {
+		t.Fatalf("expected validation error in strict mode for %q, but got none", overrideWithNyExt)
+	}
+
+	// Expected pass, with located time
+	nyTime := parsedTime.In(nyLoc)
+	overrideWithNyExtWithLocatedTime, err := ixdtf.Format(nyTime, nyExt)
+	if err != nil {
+		t.Fatalf("failed to format with located time: %v", err)
+	}
+	if err = ixdtf.Validate(overrideWithNyExtWithLocatedTime, true); err != nil {
+		t.Fatalf("failed to validate New York format with located time: %v", err)
 	}
 }
