@@ -27,7 +27,7 @@ func TestAppendSuffix(t *testing.T) {
 	})
 }
 
-func TestCheckTimeZoneConsistency(t *testing.T) {
+func TestCheckTimezoneConsistency(t *testing.T) {
 	t.Parallel()
 	now := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
 
@@ -35,7 +35,7 @@ func TestCheckTimeZoneConsistency(t *testing.T) {
 		t.Parallel()
 		timezoneCache.Delete("Asia/Tokyo")
 		placeholder := time.FixedZone("Asia/Tokyo", 9*3600)
-		res, err := checkTimeZoneConsistency(now, placeholder, false)
+		res, err := checkTimezoneConsistency(now, placeholder, false)
 		if err != nil {
 			t.Fatalf("expected fallback load to succeed, got %v", err)
 		}
@@ -46,14 +46,14 @@ func TestCheckTimeZoneConsistency(t *testing.T) {
 
 	t.Run("nil location", func(t *testing.T) {
 		t.Parallel()
-		if res, err := checkTimeZoneConsistency(now, nil, false); err != nil || !res.IsConsistent {
+		if res, err := checkTimezoneConsistency(now, nil, false); err != nil || !res.IsConsistent {
 			t.Fatalf("expected nil location to be consistent, got res=%+v err=%v", res, err)
 		}
 	})
 
 	t.Run("strict mode with unknown fixed zone", func(t *testing.T) {
 		t.Parallel()
-		if _, err := checkTimeZoneConsistency(now, time.FixedZone("+0900", 9*3600), true); err == nil {
+		if _, err := checkTimezoneConsistency(now, time.FixedZone("+0900", 9*3600), true); err == nil {
 			t.Fatalf("expected strict mode to fail for unknown fixed zone")
 		}
 	})
@@ -146,8 +146,8 @@ func TestParseSuffix(t *testing.T) {
 	t.Run("critical timezone", func(t *testing.T) {
 		t.Parallel()
 		ext := NewIXDTFExtensions(nil)
-		if err := parseSuffixElement("!Asia/Tokyo", ext, false); !errors.Is(err, ErrInvalidTimeZone) {
-			t.Fatalf("expected ErrInvalidTimeZone for critical timezone, got %v", err)
+		if err := parseSuffixElement("!Asia/Tokyo", ext, false); !errors.Is(err, ErrInvalidTimezone) {
+			t.Fatalf("expected ErrInvalidTimezone for critical timezone, got %v", err)
 		}
 	})
 
@@ -208,7 +208,7 @@ func TestValidateInternal(t *testing.T) {
 
 	t.Run("strict location validation", func(t *testing.T) {
 		t.Parallel()
-		if err := validateLocationStrict(time.FixedZone("No/SuchZone", 0), true); !errors.Is(err, ErrInvalidTimeZone) {
+		if err := validateLocationStrict(time.FixedZone("No/SuchZone", 0), true); !errors.Is(err, ErrInvalidTimezone) {
 			t.Fatalf("expected strict validation to fail, got %v", err)
 		}
 	})

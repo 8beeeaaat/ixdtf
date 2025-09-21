@@ -175,7 +175,7 @@ The second argument `strict` in `Parse` / `Validate` controls how strictly the l
 
 | Mode | Behavior | Example |
 |------|----------|---------|
-| `true` | If the zone-derived offset for that instant differs from the RFC 3339 numeric offset, an **error (ErrTimeZoneOffsetMismatch)** is returned. | `2025-01-01T12:00:00+09:00[America/New_York]` → New York at that instant is `-05:00`, so mismatch → error |
+| `true` | If the zone-derived offset for that instant differs from the RFC 3339 numeric offset, an **error (ErrTimezoneOffsetMismatch)** is returned. | `2025-01-01T12:00:00+09:00[America/New_York]` → New York at that instant is `-05:00`, so mismatch → error |
 | `false` | Mismatches do NOT produce an error. The original timestamp (its instant + numeric offset) is kept; the location is only applied if offsets match. | Same example above: no error; the provided time value is kept as-is (location not applied) |
 
 Notes:
@@ -190,7 +190,7 @@ Notes:
 
 - `IXDTFExtensions` - Container for extension data
 - `ParseError` - Detailed parsing error with position information
-- `TimeZoneConsistencyResult` - TimeZone validation results
+- `TimezoneConsistencyResult` - Timezone validation results
 
 ## Error Handling
 

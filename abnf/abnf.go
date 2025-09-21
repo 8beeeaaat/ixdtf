@@ -42,8 +42,8 @@ var (
 	errUnknownDateTimeExt     = errors.New("unknown ABNF for date-time extension")
 	errUnknownSuffixKey       = errors.New("unknown ABNF for suffix key")
 	errUnknownSuffixValues    = errors.New("unknown ABNF for suffix values")
-	errUnknownTimeZone        = errors.New("unknown ABNF for timezone name")
-	errUnknownTimeZoneTag     = errors.New("unknown ABNF for timezone tag")
+	errUnknownTimezone        = errors.New("unknown ABNF for timezone name")
+	errUnknownTimezoneTag     = errors.New("unknown ABNF for timezone tag")
 )
 
 func (a *Abnf) ensure(expected *Abnf, err error) error {
@@ -66,8 +66,8 @@ func (a *Abnf) ensurePattern(input string) error {
 //
 //nolint:gochecknoglobals // ABNF patterns are constants used for validation
 var (
-	AbnfTimeZone    = newAbnf(`^[A-Za-z_][A-Za-z._0-9+-]*(/[A-Za-z_][A-Za-z._0-9+-]*)*$`)
-	AbnfTimeZoneTag = newAbnf(
+	AbnfTimezone    = newAbnf(`^[A-Za-z_][A-Za-z._0-9+-]*(/[A-Za-z_][A-Za-z._0-9+-]*)*$`)
+	AbnfTimezoneTag = newAbnf(
 		`^\[!?[A-Za-z_][A-Za-z._0-9+-]*(/[A-Za-z_][A-Za-z._0-9+-]*)*\]$|^\[!?[+-][0-9]{2}:[0-9]{2}\]$`,
 	)
 
@@ -79,10 +79,10 @@ var (
 	)
 )
 
-// IsTimeZoneSyntax returns true if the input matches the lexical pattern of a timezone name.
+// IsTimezoneSyntax returns true if the input matches the lexical pattern of a timezone name.
 // (ABNF for tz name) without performing existence (time.LoadLocation) validation.
-func IsTimeZoneSyntax(input string) bool {
-	return AbnfTimeZone.regexp.MatchString(input)
+func IsTimezoneSyntax(input string) bool {
+	return AbnfTimezone.regexp.MatchString(input)
 }
 
 // ValidateDateTimeExt validates a date-time string with extensions according to the ABNF and additional rules.
@@ -112,27 +112,27 @@ func (a *Abnf) ValidateSuffixValues(input string) error {
 	return a.ensurePattern(input)
 }
 
-func (a *Abnf) ValidateTimeZone(input string, strict bool) error {
-	if err := a.ensure(AbnfTimeZone, errUnknownTimeZone); err != nil {
+func (a *Abnf) ValidateTimezone(input string, strict bool) error {
+	if err := a.ensure(AbnfTimezone, errUnknownTimezone); err != nil {
 		return err
 	}
 	if err := a.ensurePattern(input); err != nil {
 		return err
 	}
-	return validateTimeZone(input, strict)
+	return validateTimezone(input, strict)
 }
 
-func (a *Abnf) ValidateTimeZoneTag(input string, strict bool) error {
-	if err := a.ensure(AbnfTimeZoneTag, errUnknownTimeZoneTag); err != nil {
+func (a *Abnf) ValidateTimezoneTag(input string, strict bool) error {
+	if err := a.ensure(AbnfTimezoneTag, errUnknownTimezoneTag); err != nil {
 		return err
 	}
 	if err := a.ensurePattern(input); err != nil {
 		return err
 	}
-	return validateTimeZoneTag(input, strict)
+	return validateTimezoneTag(input, strict)
 }
 
-func validateTimeZone(name string, strict bool) error {
+func validateTimezone(name string, strict bool) error {
 	if !strict {
 		// In non-strict mode, skip time.LoadLocation validation
 		return nil
@@ -141,7 +141,7 @@ func validateTimeZone(name string, strict bool) error {
 	return err
 }
 
-func validateTimeZoneTag(name string, strict bool) error {
+func validateTimezoneTag(name string, strict bool) error {
 	if !strict {
 		// In non-strict mode, skip time.LoadLocation validation
 		return nil

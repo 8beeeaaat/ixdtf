@@ -44,8 +44,8 @@ var (
 	ErrCriticalExtension      = errors.New("critical extension cannot be processed")
 	ErrInvalidExtension       = errors.New("invalid extension format")
 	ErrInvalidSuffix          = errors.New("invalid IXDTF suffix format")
-	ErrInvalidTimeZone        = errors.New("invalid timezone name")
-	ErrTimeZoneOffsetMismatch = errors.New("timezone offset does not match the specified timezone")
+	ErrInvalidTimezone        = errors.New("invalid timezone name")
+	ErrTimezoneOffsetMismatch = errors.New("timezone offset does not match the specified timezone")
 	ErrPrivateExtension       = abnf.ErrPrivateExtension
 	ErrExperimentalExtension  = abnf.ErrExperimentalExtension
 )
@@ -79,8 +79,8 @@ func (e *ParseError) Error() string {
 	return "IXDTFE parsing time \"" + e.Value + "\" as \"" + string(e.Layout) + "\": " + e.Err.Error()
 }
 
-// TimeZoneConsistencyResult holds information about timezone offset consistency.
-type TimeZoneConsistencyResult struct {
+// TimezoneConsistencyResult holds information about timezone offset consistency.
+type TimezoneConsistencyResult struct {
 	// Location is the loaded timezone location.
 	Location *time.Location
 	// IsConsistent indicates whether the offset matches the timezone.
@@ -89,8 +89,8 @@ type TimeZoneConsistencyResult struct {
 	OriginalOffset int
 	// ExpectedOffset is the expected offset for the timezone.
 	ExpectedOffset int
-	// TimeZone is the timezone identifier that was checked.
-	TimeZone string
+	// Timezone is the timezone identifier that was checked.
+	Timezone string
 	// Skipped indicates if the consistency check was skipped (e.g., for Etc/GMT).
 	Skipped bool
 }
@@ -167,7 +167,7 @@ func Parse(s string, strict bool) (time.Time, *IXDTFExtensions, error) {
 
 	// Check timezone consistency if timezone is provided
 	if ext.Location != nil {
-		result, checkErr := checkTimeZoneConsistency(t, ext.Location, strict)
+		result, checkErr := checkTimezoneConsistency(t, ext.Location, strict)
 		if checkErr != nil {
 			return time.Time{}, nil, newParseError(
 				LayoutRFC3339NanoExtended,
@@ -212,7 +212,7 @@ func Validate(s string, strict bool) error {
 
 	// Check timezone consistency if timezone is provided
 	if ext != nil && ext.Location != nil {
-		_, tzErr := checkTimeZoneConsistency(t, ext.Location, strict)
+		_, tzErr := checkTimezoneConsistency(t, ext.Location, strict)
 		if tzErr != nil {
 			return newParseError(LayoutRFC3339NanoExtended, s, tzErr)
 		}
@@ -285,15 +285,15 @@ func appendSuffix(t time.Time, ext *IXDTFExtensions, format string) []byte {
 	return b
 }
 
-// checkTimeZoneConsistency checks if the timezone offset matches the IANA timezone.
+// checkTimezoneConsistency checks if the timezone offset matches the IANA timezone.
 // If strict is true, returns an error when offsets don't match (except for Etc/GMT patterns).
 // Returns consistency information and an error for timezone loading failures or strict mode mismatches.
-func checkTimeZoneConsistency(
+func checkTimezoneConsistency(
 	timestamp time.Time,
 	location *time.Location,
 	strict bool,
-) (*TimeZoneConsistencyResult, error) {
-	result := &TimeZoneConsistencyResult{
+) (*TimezoneConsistencyResult, error) {
+	result := &TimezoneConsistencyResult{
 		Location: location,
 	}
 
@@ -337,7 +337,7 @@ func checkTimeZoneConsistency(
 
 	// In strict mode, return an error for inconsistencies
 	if strict && !result.IsConsistent {
-		return nil, ErrTimeZoneOffsetMismatch
+		return nil, ErrTimezoneOffsetMismatch
 	}
 
 	// Per RFC 9557, inconsistencies should be detectable but not cause failures.
@@ -470,23 +470,23 @@ func parseSuffixElement(content string, ext *IXDTFExtensions, strict bool) error
 		return handleExtensionTag(content, critical, startIdx, ext)
 	}
 
-	// TimeZone name handling.
+	// Timezone name handling.
 	if critical {
-		return ErrInvalidTimeZone // TimeZone cannot be critical
+		return ErrInvalidTimezone // Timezone cannot be critical
 	}
 	tzContent := content[startIdx:]
 	if tzContent == "" {
 		return nil
 	}
 
-	if loc, ok := tryLoadTimeZone(tzContent); ok {
+	if loc, ok := tryLoadTimezone(tzContent); ok {
 		ext.Location = loc
 		return nil
 	}
 
 	// Check if it's a numeric offset pattern (+HH:MM / -HH:MM)
 	offsetPattern := "[" + tzContent + "]"
-	if offsetErr := abnf.AbnfTimeZoneTag.ValidateTimeZoneTag(offsetPattern, false); offsetErr == nil {
+	if offsetErr := abnf.AbnfTimezoneTag.ValidateTimezoneTag(offsetPattern, false); offsetErr == nil {
 		// Parse numeric offset
 		if offset, err := parseNumericOffset(tzContent); err == nil {
 			// Convert "+09:00" to "+0900" format for timezone name
@@ -497,12 +497,12 @@ func parseSuffixElement(content string, ext *IXDTFExtensions, strict bool) error
 	}
 
 	// Try to validate timezone existence
-	if err := abnf.AbnfTimeZone.ValidateTimeZone(tzContent, strict); err != nil {
+	if err := abnf.AbnfTimezone.ValidateTimezone(tzContent, strict); err != nil {
 		// In non-strict mode, ignore unknown timezone names per RFC 9557
 		if !strict {
 			return nil
 		}
-		return ErrInvalidTimeZone
+		return ErrInvalidTimezone
 	}
 
 	// Additional check: try to load the timezone to see if it actually exists
@@ -511,7 +511,7 @@ func parseSuffixElement(content string, ext *IXDTFExtensions, strict bool) error
 		if !strict {
 			return nil
 		}
-		return ErrInvalidTimeZone
+		return ErrInvalidTimezone
 	}
 
 	// Timezone exists - set the location
@@ -582,7 +582,7 @@ func validateLocationStrict(location *time.Location, strict bool) error {
 			if !strict {
 				return nil
 			}
-			return ErrInvalidTimeZone
+			return ErrInvalidTimezone
 		}
 	}
 	return nil
@@ -637,10 +637,10 @@ func loadLocationCached(name string) (*time.Location, error) {
 	return loc, nil
 }
 
-// tryLoadTimeZone attempts to treat s as a timezone name (not numeric offset) and load it.
+// tryLoadTimezone attempts to treat s as a timezone name (not numeric offset) and load it.
 // Returns (location, true) if loaded, (nil, false) otherwise. Errors are treated as non-match.
-func tryLoadTimeZone(s string) (*time.Location, bool) {
-	if s == "" || !abnf.IsTimeZoneSyntax(s) {
+func tryLoadTimezone(s string) (*time.Location, bool) {
+	if s == "" || !abnf.IsTimezoneSyntax(s) {
 		return nil, false
 	}
 	loc, err := loadLocationCached(s)

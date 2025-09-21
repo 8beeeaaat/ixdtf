@@ -12,7 +12,7 @@ import (
 
 func TestFormat(t *testing.T) {
 	t.Parallel()
-	tokyo, paris, cet := getTestTimeZones()
+	tokyo, paris, cet := getTestTimezones()
 
 	tests := []struct {
 		name    string
@@ -85,7 +85,7 @@ func TestFormat(t *testing.T) {
 			ext: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
 				Location: time.FixedZone("No/SuchZone", 1*3600),
 			}),
-			wantErr: ixdtf.ErrInvalidTimeZone,
+			wantErr: ixdtf.ErrInvalidTimezone,
 		},
 		{
 			name: "missing critical tag",
@@ -132,7 +132,7 @@ func TestFormat(t *testing.T) {
 
 func TestFormatNano(t *testing.T) {
 	t.Parallel()
-	tokyo, paris, cet := getTestTimeZones()
+	tokyo, paris, cet := getTestTimezones()
 
 	tests := []struct {
 		name    string
@@ -258,7 +258,7 @@ func TestFormatNano(t *testing.T) {
 
 func TestParse(t *testing.T) {
 	t.Parallel()
-	tokyo, paris, cet := getTestTimeZones()
+	tokyo, paris, cet := getTestTimezones()
 
 	tests := []struct {
 		name     string
@@ -840,7 +840,7 @@ func extensionsEqual(a, b *ixdtf.IXDTFExtensions) bool {
 	return true
 }
 
-func getTestTimeZones() (*time.Location, *time.Location, *time.Location) {
+func getTestTimezones() (*time.Location, *time.Location, *time.Location) {
 	return time.FixedZone("Asia/Tokyo", 9*3600),
 		time.FixedZone("Europe/Paris", 1*3600),
 		time.FixedZone("CET", 1*3600)

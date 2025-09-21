@@ -102,7 +102,7 @@ func TestE2E_RoundTrip(t *testing.T) {
 	}
 }
 
-func TestE2E_TimeZoneConversion(t *testing.T) {
+func TestE2E_TimezoneConversion(t *testing.T) {
 	// Test that times in different timezones represent the same instant
 	utcTime := "2025-01-01T12:00:00Z[UTC]"
 	tokyoTime := "2025-01-01T21:00:00+09:00[Asia/Tokyo]"
@@ -122,7 +122,7 @@ func TestE2E_TimeZoneConversion(t *testing.T) {
 	}
 }
 
-func TestE2E_TimeZoneInconsistency(t *testing.T) {
+func TestE2E_TimezoneInconsistency(t *testing.T) {
 	// Test RFC 9557 compliant handling of timezone offset mismatches
 	// Input has +09:00 offset but [America/New_York] timezone (which should be -4/-5 hours)
 	input := "2025-06-01T12:00:00+09:00[America/New_York]"

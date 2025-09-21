@@ -7,7 +7,7 @@ import (
 	"github.com/8beeeaaat/ixdtf/abnf"
 )
 
-func TestAbnf_IsTimeZoneSyntax(t *testing.T) {
+func TestAbnf_IsTimezoneSyntax(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name  string
@@ -44,8 +44,8 @@ func TestAbnf_IsTimeZoneSyntax(t *testing.T) {
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
-			if got := abnf.IsTimeZoneSyntax(tc.input); got != tc.want {
-				t.Errorf("IsTimeZoneSyntax(%q) = %v, want %v", tc.input, got, tc.want)
+			if got := abnf.IsTimezoneSyntax(tc.input); got != tc.want {
+				t.Errorf("IsTimezoneSyntax(%q) = %v, want %v", tc.input, got, tc.want)
 			}
 		})
 	}
@@ -192,7 +192,7 @@ func TestAbnf_ValidateSuffixValues(t *testing.T) {
 	}
 }
 
-func TestAbnf_ValidateTimeZone(t *testing.T) {
+func TestAbnf_ValidateTimezone(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name     string
@@ -203,7 +203,7 @@ func TestAbnf_ValidateTimeZone(t *testing.T) {
 	}{
 		{
 			name:   "non-strict mode",
-			pat:    abnf.AbnfTimeZone,
+			pat:    abnf.AbnfTimezone,
 			strict: false,
 			valids: []string{
 				"A/B",
@@ -223,7 +223,7 @@ func TestAbnf_ValidateTimeZone(t *testing.T) {
 		},
 		{
 			name:   "strict mode",
-			pat:    abnf.AbnfTimeZone,
+			pat:    abnf.AbnfTimezone,
 			strict: true,
 			valids: []string{
 				"America/New_York",
@@ -257,24 +257,24 @@ func TestAbnf_ValidateTimeZone(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			for _, v := range tc.valids {
-				if err := tc.pat.ValidateTimeZone(v, tc.strict); err != nil {
+				if err := tc.pat.ValidateTimezone(v, tc.strict); err != nil {
 					t.Errorf("expected valid %q for %s: %v", v, tc.name, err)
 				}
 			}
 			for _, iv := range tc.invalids {
-				if err := tc.pat.ValidateTimeZone(iv, tc.strict); err == nil {
+				if err := tc.pat.ValidateTimezone(iv, tc.strict); err == nil {
 					t.Errorf("expected invalid %q for %s", iv, tc.name)
 				}
 			}
 
-			if err := abnf.AbnfSuffixKey.ValidateTimeZone("Asia/Tokyo", tc.strict); err == nil {
-				t.Error("expected error for mismatched ABNF type in ValidateTimeZone")
+			if err := abnf.AbnfSuffixKey.ValidateTimezone("Asia/Tokyo", tc.strict); err == nil {
+				t.Error("expected error for mismatched ABNF type in ValidateTimezone")
 			}
 		})
 	}
 }
 
-func TestAbnf_ValidateTimeZoneTag(t *testing.T) {
+func TestAbnf_ValidateTimezoneTag(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name     string
@@ -284,15 +284,15 @@ func TestAbnf_ValidateTimeZoneTag(t *testing.T) {
 		invalids []string
 	}{
 		{
-			name:     "TimeZoneTag non-strict",
-			pat:      abnf.AbnfTimeZoneTag,
+			name:     "TimezoneTag non-strict",
+			pat:      abnf.AbnfTimezoneTag,
 			strict:   false,
 			valids:   []string{"[!America/New_York]", "[-05:00]", "[+09:00]", "[Asia/Tokyo]", "[UTC]"},
 			invalids: []string{"", "[=value]", "[TAG=VALUE]", "invalid", "[tag@value]", "[tag=]", "u-ca=gregorian"},
 		},
 		{
-			name:   "TimeZoneTag strict",
-			pat:    abnf.AbnfTimeZoneTag,
+			name:   "TimezoneTag strict",
+			pat:    abnf.AbnfTimezoneTag,
 			strict: true,
 			valids: []string{"[!America/New_York]", "[-05:00]", "[+09:00]", "[Asia/Tokyo]", "[UTC]"},
 			invalids: []string{
@@ -314,18 +314,18 @@ func TestAbnf_ValidateTimeZoneTag(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			t.Parallel()
 			for _, v := range tc.valids {
-				if err := tc.pat.ValidateTimeZoneTag(v, tc.strict); err != nil {
+				if err := tc.pat.ValidateTimezoneTag(v, tc.strict); err != nil {
 					t.Errorf("expected valid %q for %s: %v", v, tc.name, err)
 				}
 			}
 			for _, iv := range tc.invalids {
-				if err := tc.pat.ValidateTimeZoneTag(iv, tc.strict); err == nil {
+				if err := tc.pat.ValidateTimezoneTag(iv, tc.strict); err == nil {
 					t.Errorf("expected invalid %q for %s", iv, tc.name)
 				}
 			}
 
-			if err := abnf.AbnfSuffixKey.ValidateTimeZoneTag("[Asia/Tokyo]", tc.strict); err == nil {
-				t.Error("expected error for mismatched ABNF type in ValidateTimeZoneTag")
+			if err := abnf.AbnfSuffixKey.ValidateTimezoneTag("[Asia/Tokyo]", tc.strict); err == nil {
+				t.Error("expected error for mismatched ABNF type in ValidateTimezoneTag")
 			}
 		})
 	}
