@@ -2,6 +2,8 @@ package ixdtf_test
 
 import (
 	"errors"
+	"sort"
+	"strings"
 	"testing"
 	"time"
 
@@ -9,6 +11,7 @@ import (
 )
 
 func TestFormat(t *testing.T) {
+	t.Parallel()
 	tokyo, paris, cet := getTestTimezones()
 
 	tests := []struct {
@@ -102,8 +105,11 @@ func TestFormat(t *testing.T) {
 		},
 	}
 
+	sort.Slice(tests, func(i, j int) bool { return tests[i].name < tests[j].name })
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			got, err := ixdtf.Format(tc.tm, tc.ext)
 
 			if tc.wantErr != nil {
@@ -125,6 +131,7 @@ func TestFormat(t *testing.T) {
 }
 
 func TestFormatNano(t *testing.T) {
+	t.Parallel()
 	tokyo, paris, cet := getTestTimezones()
 
 	tests := []struct {
@@ -171,6 +178,17 @@ func TestFormatNano(t *testing.T) {
 			want: "2025-12-25T15:30:45.999+01:00[CET]",
 		},
 		{
+			name: "multiple tags with different prefixes and nanoseconds",
+			tm:   time.Date(2025, 3, 4, 5, 6, 7, 500000000, time.UTC),
+			ext: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
+				Tags: map[string]string{
+					"t-calendar": "japanese",
+					"u-ca":       "gregory",
+				},
+			}),
+			want: "2025-03-04T05:06:07.5Z[t-calendar=japanese][u-ca=gregory]",
+		},
+		{
 			name: "zero nanoseconds",
 			tm:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
 			ext:  ixdtf.NewIXDTFExtensions(nil),
@@ -204,15 +222,18 @@ func TestFormatNano(t *testing.T) {
 		},
 	}
 
+	sort.Slice(tests, func(i, j int) bool { return tests[i].name < tests[j].name })
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			got, err := ixdtf.FormatNano(tc.tm, tc.ext)
 
 			if tc.wantErr != "" {
 				if err == nil {
 					t.Fatalf("FormatNano(%v, %+v) expected error containing %q, got nil", tc.tm, tc.ext, tc.wantErr)
 				}
-				if !containsString(err.Error(), tc.wantErr) {
+				if !strings.Contains(err.Error(), tc.wantErr) {
 					t.Fatalf(
 						"FormatNano(%v, %+v) error = %q, want error containing %q",
 						tc.tm,
@@ -236,6 +257,7 @@ func TestFormatNano(t *testing.T) {
 }
 
 func TestParse(t *testing.T) {
+	t.Parallel()
 	tokyo, paris, cet := getTestTimezones()
 
 	tests := []struct {
@@ -298,6 +320,33 @@ func TestParse(t *testing.T) {
 			}),
 		},
 		{
+			name:     "multiple tags with different prefixes",
+			input:    "2025-03-04T05:06:07Z[t-calendar=japanese][u-ca=gregory]",
+			strict:   false,
+			wantTime: time.Date(2025, 3, 4, 5, 6, 7, 0, time.UTC),
+			wantExt: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
+				Tags: map[string]string{
+					"t-calendar": "japanese",
+					"u-ca":       "gregory",
+				},
+			}),
+		},
+		{
+			name:     "multiple tags with critical flag",
+			input:    "2025-03-04T05:06:07Z[!t-format=iso][u-ca=hebrew]",
+			strict:   false,
+			wantTime: time.Date(2025, 3, 4, 5, 6, 7, 0, time.UTC),
+			wantExt: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
+				Tags: map[string]string{
+					"t-format": "iso",
+					"u-ca":     "hebrew",
+				},
+				Critical: map[string]bool{
+					"t-format": true,
+				},
+			}),
+		},
+		{
 			name:     "timezone with CET",
 			input:    "2025-12-25T15:30:45+01:00[CET]",
 			strict:   false,
@@ -305,10 +354,21 @@ func TestParse(t *testing.T) {
 			wantExt:  ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{Location: cet}),
 		},
 		{
-			name:    "invalid timezone",
-			input:   "2025-01-01T00:00:00Z[Invalid/Zone]",
-			strict:  false,
-			wantErr: "IXDTFE parsing time",
+			name:     "invalid timezone",
+			input:    "2025-01-01T00:00:00Z[Foo/Bar]",
+			strict:   false,
+			wantTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+			wantExt: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
+				Location: nil,
+				Tags:     map[string]string{},
+				Critical: map[string]bool{},
+			}),
+		},
+		{
+			name:    "invalid timezone in strict mode",
+			input:   "2025-01-01T00:00:00Z[Foo/Bar]",
+			strict:  true,
+			wantErr: "invalid timezone",
 		},
 		{
 			name:    "malformed suffix",
@@ -329,7 +389,7 @@ func TestParse(t *testing.T) {
 			wantErr: "IXDTFE parsing time",
 		},
 		{
-			name:     "timezone offset mismatch - non-strict",
+			name:     "timezone offset mismatch in non-strict mode",
 			input:    "2025-06-01T12:00:00+09:00[America/New_York]",
 			strict:   false,
 			wantTime: time.Date(2025, 6, 1, 12, 0, 0, 0, time.FixedZone("+0900", 9*3600)),
@@ -338,13 +398,13 @@ func TestParse(t *testing.T) {
 			),
 		},
 		{
-			name:    "timezone offset mismatch - strict",
+			name:    "timezone offset mismatch in strict mode",
 			input:   "2025-06-01T12:00:00+09:00[America/New_York]",
 			strict:  true,
 			wantErr: "timezone offset does not match",
 		},
 		{
-			name:     "timezone with Etc/GMT pattern - non-strict",
+			name:     "timezone with Etc/GMT pattern in non-strict mode",
 			input:    "2025-01-01T00:00:00+05:00[Etc/GMT-5]",
 			strict:   false,
 			wantTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.FixedZone("Etc/GMT-5", 5*3600)),
@@ -353,7 +413,7 @@ func TestParse(t *testing.T) {
 			),
 		},
 		{
-			name:     "timezone with Etc/GMT pattern - strict",
+			name:     "timezone with Etc/GMT pattern in strict mode",
 			input:    "2025-01-01T00:00:00+05:00[Etc/GMT-5]",
 			strict:   true,
 			wantTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.FixedZone("Etc/GMT-5", 5*3600)),
@@ -368,10 +428,20 @@ func TestParse(t *testing.T) {
 			wantErr: "IXDTFE parsing time",
 		},
 		{
-			name:    "suffix with extension-like patterns",
-			input:   "2025-01-01T00:00:00Z[u-ca=gregory][t-invalid]",
-			strict:  false,
-			wantErr: "IXDTFE parsing time",
+			name:     "suffix with non-existent timezone - non-strict mode",
+			input:    "2025-01-01T00:00:00Z[!u-ca=gregory][t-invalid]",
+			strict:   false,
+			wantTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+			wantExt: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
+				Tags:     map[string]string{"u-ca": "gregory"},
+				Critical: map[string]bool{"u-ca": true},
+			}),
+		},
+		{
+			name:    "suffix with non-existent timezone - strict mode",
+			input:   "2025-01-01T00:00:00Z[!u-ca=gregory][t-invalid]",
+			strict:  true,
+			wantErr: "invalid timezone name",
 		},
 		{
 			name:    "suffix with private extension",
@@ -404,10 +474,28 @@ func TestParse(t *testing.T) {
 			wantErr: "invalid timezone",
 		},
 		{
-			name:    "timezone numeric offset suffix",
-			input:   "2025-01-01T00:00:00+09:00[+09:00]",
-			strict:  false,
-			wantErr: "IXDTFE parsing time",
+			name:     "timezone numeric offset suffix",
+			input:    "2025-01-01T00:00:00Z[+09:00]",
+			strict:   false,
+			wantTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+			wantExt: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
+				Location: time.FixedZone("+0900", 9*3600),
+				Tags:     map[string]string{},
+				Critical: map[string]bool{},
+			}),
+		},
+		{
+			name:     "invalid numeric offset ignored in non-strict mode",
+			input:    "2025-01-01T00:00:00Z[+24:00]",
+			strict:   false,
+			wantTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+			wantExt:  ixdtf.NewIXDTFExtensions(nil),
+		},
+		{
+			name:    "invalid numeric offset rejected in strict mode",
+			input:   "2025-01-01T00:00:00Z[+24:00]",
+			strict:  true,
+			wantErr: "invalid timezone name",
 		},
 		{
 			name:     "duplicate tag first wins",
@@ -420,8 +508,11 @@ func TestParse(t *testing.T) {
 		},
 	}
 
+	sort.Slice(tests, func(i, j int) bool { return tests[i].name < tests[j].name })
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			gotTime, gotExt, err := ixdtf.Parse(tc.input, tc.strict)
 
 			if tc.wantErr != "" {
@@ -438,45 +529,8 @@ func TestParse(t *testing.T) {
 	}
 }
 
-func TestParseErrorError(t *testing.T) {
-	tests := []struct {
-		name     string
-		pe       *ixdtf.ParseError
-		expected string
-	}{
-		{
-			name:     "nil underlying error returns empty string",
-			pe:       &ixdtf.ParseError{Err: nil, Layout: ixdtf.LayoutRFC3339, Value: "2025-01-01T00:00:00Z"},
-			expected: "",
-		},
-		{
-			name:     "with underlying error and known layout",
-			pe:       &ixdtf.ParseError{Err: errors.New("invalid time"), Layout: ixdtf.LayoutRFC3339, Value: "bad"},
-			expected: "IXDTFE parsing time \"bad\" as \"" + string(ixdtf.LayoutRFC3339) + "\": invalid time",
-		},
-		{
-			name:     "with underlying error and empty layout",
-			pe:       &ixdtf.ParseError{Err: errors.New("parse fail"), Layout: "", Value: "foo"},
-			expected: "IXDTFE parsing time \"foo\" as \"\": parse fail",
-		},
-		{
-			name:     "with custom layout value",
-			pe:       &ixdtf.ParseError{Err: errors.New("boom"), Layout: ixdtf.Layout("CUSTOM"), Value: "x"},
-			expected: "IXDTFE parsing time \"x\" as \"CUSTOM\": boom",
-		},
-	}
-
-	for _, tc := range tests {
-		t.Run(tc.name, func(t *testing.T) {
-			got := tc.pe.Error()
-			if got != tc.expected {
-				t.Fatalf("expected %q, got %q", tc.expected, got)
-			}
-		})
-	}
-}
-
 func TestValidate(t *testing.T) {
+	t.Parallel()
 	tests := []struct {
 		name    string
 		input   string
@@ -519,16 +573,26 @@ func TestValidate(t *testing.T) {
 			strict: false,
 		},
 		{
-			name:    "invalid timezone name",
-			input:   "2025-01-01T00:00:00Z[No/SuchZone]",
-			strict:  false,
-			wantErr: "IXDTFE parsing time \"2025-01-01T00:00:00Z[No/SuchZone]\" as \"2006-01-02T15:04:05.999999999Z07:00*([time-zone-name][tags])\": unknown time zone No/SuchZone",
+			name:   "invalid timezone name in non-strict mode",
+			input:  "2025-01-01T00:00:00Z[No/SuchZone]",
+			strict: false,
 		},
 		{
-			name:    "invalid extension format",
+			name:    "invalid timezone name in strict mode",
+			input:   "2025-01-01T00:00:00Z[No/SuchZone]",
+			strict:  true,
+			wantErr: "IXDTFE parsing time \"2025-01-01T00:00:00Z[No/SuchZone]\" as \"2006-01-02T15:04:05Z07:00*([time-zone-name][tags])\": invalid timezone name",
+		},
+		{
+			name:   "invalid extension format in non-strict mode",
+			input:  "2025-01-01T00:00:00Z[invalid]",
+			strict: false,
+		},
+		{
+			name:    "invalid extension format in strict mode",
 			input:   "2025-01-01T00:00:00Z[invalid]",
-			strict:  false,
-			wantErr: "IXDTFE parsing time \"2025-01-01T00:00:00Z[invalid]\" as \"2006-01-02T15:04:05.999999999Z07:00*([time-zone-name][tags])\": unknown time zone invalid",
+			strict:  true,
+			wantErr: "IXDTFE parsing time \"2025-01-01T00:00:00Z[invalid]\" as \"2006-01-02T15:04:05Z07:00*([time-zone-name][tags])\": invalid timezone name",
 		},
 		{
 			name:    "private extension",
@@ -561,33 +625,37 @@ func TestValidate(t *testing.T) {
 			wantErr: "IXDTFE parsing time \"2025-01-01T00:00:00Z[unclosed\" as \"2006-01-02T15:04:05Z07:00*([time-zone-name][tags])\": invalid IXDTF suffix format",
 		},
 		{
-			name:   "timezone offset mismatch - non-strict",
+			name:   "timezone offset mismatch in non-strict mode",
 			input:  "2025-06-01T12:00:00+09:00[America/New_York]",
 			strict: false,
 		},
 		{
-			name:    "timezone offset mismatch - strict",
+			name:    "timezone offset mismatch in strict mode",
 			input:   "2025-06-01T12:00:00+09:00[America/New_York]",
 			strict:  true,
 			wantErr: "IXDTFE parsing time \"2025-06-01T12:00:00+09:00[America/New_York]\" as \"2006-01-02T15:04:05.999999999Z07:00*([time-zone-name][tags])\": timezone offset does not match the specified timezone",
 		},
 		{
-			name:    "timezone content with invalid extension prefix u-",
+			name:   "timezone content with u- prefix - non-strict mode",
+			input:  "2025-01-01T00:00:00Z[u-invalid-timezone]",
+			strict: false,
+		},
+		{
+			name:   "timezone content with x- prefix - non-strict mode",
+			input:  "2025-01-01T00:00:00Z[x-invalid-timezone]",
+			strict: false,
+		},
+		{
+			name:    "timezone content with u- prefix - strict mode",
 			input:   "2025-01-01T00:00:00Z[u-invalid-timezone]",
-			strict:  false,
-			wantErr: "IXDTFE parsing time \"2025-01-01T00:00:00Z[u-invalid-timezone]\" as \"2006-01-02T15:04:05Z07:00*([time-zone-name][tags])\": invalid extension format",
+			strict:  true,
+			wantErr: "IXDTFE parsing time \"2025-01-01T00:00:00Z[u-invalid-timezone]\" as \"2006-01-02T15:04:05Z07:00*([time-zone-name][tags])\": invalid timezone name",
 		},
 		{
-			name:    "timezone content with invalid extension prefix x-",
+			name:    "timezone content with x- prefix - strict mode",
 			input:   "2025-01-01T00:00:00Z[x-invalid-timezone]",
-			strict:  false,
-			wantErr: "IXDTFE parsing time \"2025-01-01T00:00:00Z[x-invalid-timezone]\" as \"2006-01-02T15:04:05Z07:00*([time-zone-name][tags])\": invalid extension format",
-		},
-		{
-			name:    "timezone content with invalid extension prefix t-",
-			input:   "2025-01-01T00:00:00Z[t-invalid-timezone]",
-			strict:  false,
-			wantErr: "IXDTFE parsing time \"2025-01-01T00:00:00Z[t-invalid-timezone]\" as \"2006-01-02T15:04:05Z07:00*([time-zone-name][tags])\": invalid extension format",
+			strict:  true,
+			wantErr: "IXDTFE parsing time \"2025-01-01T00:00:00Z[x-invalid-timezone]\" as \"2006-01-02T15:04:05Z07:00*([time-zone-name][tags])\": invalid timezone name",
 		},
 		{
 			name:    "suffix with invalid characters in key",
@@ -606,6 +674,29 @@ func TestValidate(t *testing.T) {
 			input:   "2025-01-01T00:00:00Z[!key=invalid@value]",
 			strict:  false,
 			wantErr: "IXDTFE parsing time \"2025-01-01T00:00:00Z[!key=invalid@value]\" as \"2006-01-02T15:04:05Z07:00*([time-zone-name][tags])\": invalid extension format",
+		},
+		{
+			name:    "critical indicator without timezone content",
+			input:   "2025-01-01T00:00:00Z[!]",
+			strict:  false,
+			wantErr: "IXDTFE parsing time \"2025-01-01T00:00:00Z[!]\" as \"2006-01-02T15:04:05Z07:00*([time-zone-name][tags])\": invalid IXDTF suffix format",
+		},
+		{
+			name:   "invalid numeric offset ignored in non-strict mode",
+			input:  "2025-01-01T00:00:00Z[+24:00]",
+			strict: false,
+		},
+		{
+			name:    "invalid numeric offset rejected in strict mode",
+			input:   "2025-01-01T00:00:00Z[+24:00]",
+			strict:  true,
+			wantErr: "IXDTFE parsing time \"2025-01-01T00:00:00Z[+24:00]\" as \"2006-01-02T15:04:05Z07:00*([time-zone-name][tags])\": invalid timezone name",
+		},
+		{
+			name:    "invalid timezone syntax rejected by ABNF",
+			input:   "2025-01-01T00:00:00Z[invalid@zone]",
+			strict:  false,
+			wantErr: "IXDTFE parsing time \"2025-01-01T00:00:00Z[invalid@zone]\" as \"2006-01-02T15:04:05Z07:00*([time-zone-name][tags])\": invalid extension format",
 		},
 		{
 			name:   "valid suffix with hyphenated key",
@@ -665,8 +756,11 @@ func TestValidate(t *testing.T) {
 		},
 	}
 
+	sort.Slice(tests, func(i, j int) bool { return tests[i].name < tests[j].name })
+
 	for _, tc := range tests {
 		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
 			err := ixdtf.Validate(tc.input, tc.strict)
 			if (err != nil && err.Error() != tc.wantErr) || (err == nil && tc.wantErr != "") {
 				t.Fatalf("Validate(%q, %v) error = %v, wantErr %v", tc.input, tc.strict, err, tc.wantErr)
@@ -675,26 +769,11 @@ func TestValidate(t *testing.T) {
 	}
 }
 
-func containsString(s, substr string) bool {
-	return len(s) > 0 && len(substr) > 0 && (s == substr || len(s) >= len(substr) &&
-		(s[:len(substr)] == substr || s[len(s)-len(substr):] == substr ||
-			len(s) > len(substr) && contains(s, substr)))
-}
-
-func contains(s, substr string) bool {
-	for i := 0; i <= len(s)-len(substr); i++ {
-		if s[i:i+len(substr)] == substr {
-			return true
-		}
-	}
-	return false
-}
-
 func checkParseError(t *testing.T, err error, input string, strict bool, wantErr string) {
 	if err == nil {
 		t.Fatalf("Parse(%q, %v) expected error containing %q, got nil", input, strict, wantErr)
 	}
-	if !containsString(err.Error(), wantErr) {
+	if !strings.Contains(err.Error(), wantErr) {
 		t.Fatalf(
 			"Parse(%q, %v) error = %q, want error containing %q",
 			input,

@@ -130,7 +130,6 @@ Extension tags undergo multi-layer validation:
 2. **Extension Type Validation**:
    - **Private extensions** (`x-*`, `X-*`): Rejected per [BCP 178](https://www.rfc-editor.org/info/bcp178)
    - **Experimental extensions** (`_*`): Rejected unless specifically configured
-   - **Standard extensions** (`u-*`, `t-*`): Subject to format validation
 3. **Critical Extension Processing**: Extensions marked with `!` must be processable or rejected
 
 ref: <https://www.rfc-editor.org/rfc/rfc9557.html#section-3.2>

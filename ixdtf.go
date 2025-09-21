@@ -7,6 +7,8 @@ package ixdtf
 
 import (
 	"errors"
+	"sort"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -158,7 +160,7 @@ func Parse(s string, strict bool) (time.Time, *IXDTFExtensions, error) {
 	ext := NewIXDTFExtensions(nil)
 	if rfc3339End < len(s) {
 		suffixPortion := s[rfc3339End:]
-		if ext, err = parseSuffix(suffixPortion); err != nil {
+		if ext, err = parseSuffix(suffixPortion, strict); err != nil {
 			return time.Time{}, nil, newParseError(LayoutRFC3339Extended, s, err)
 		}
 	}
@@ -203,7 +205,7 @@ func Validate(s string, strict bool) error {
 	var ext *IXDTFExtensions
 	if rfc3339End < len(s) {
 		suffixPortion := s[rfc3339End:]
-		if ext, err = parseSuffix(suffixPortion); err != nil {
+		if ext, err = parseSuffix(suffixPortion, strict); err != nil {
 			return newParseError(LayoutRFC3339Extended, s, err)
 		}
 	}
@@ -222,7 +224,7 @@ func Validate(s string, strict bool) error {
 	// This serves as an additional validation layer, but only for well-formed strings.
 	// Skip for empty strings and malformed inputs to avoid double error reporting.
 	if rfc3339Portion != "" && (rfc3339End >= len(s) || s[rfc3339End:] != "") {
-		if abnfErr := abnf.AbnfDateTimeExt.Validate(s); abnfErr != nil {
+		if abnfErr := abnf.AbnfDateTimeExt.ValidateDateTimeExt(s); abnfErr != nil {
 			// Only report ABNF mismatch if basic validation passes.
 			// This prevents confusing error messages for clearly invalid input.
 			return newParseError(LayoutRFC3339Extended, s, abnfErr)
@@ -262,18 +264,13 @@ func appendSuffix(t time.Time, ext *IXDTFExtensions, format string) []byte {
 		keys = append(keys, key)
 	}
 
-	for i := 1; i < len(keys); i++ {
-		key := keys[i]
-		j := i - 1
-		for j >= 0 && keys[j] > key {
-			keys[j+1] = keys[j]
-			j--
-		}
-		keys[j+1] = key
-	}
+	sort.Strings(keys)
 
 	// Append tags in sorted order for consistency
 	for _, key := range keys {
+		if err := abnf.AbnfSuffixKey.ValidateSuffixKey(key); err != nil {
+			continue
+		}
 		value := ext.Tags[key]
 		b = append(b, '[')
 		if ext.Critical[key] {
@@ -308,6 +305,11 @@ func checkTimezoneConsistency(
 	if loc == nil {
 		loaded, err := loadLocationCached(location.String())
 		if err != nil {
+			// In non-strict mode, ignore unknown timezone errors per RFC 9557
+			if !strict {
+				result.IsConsistent = true // Can't check consistency for unknown timezone
+				return result, nil
+			}
 			return result, err
 		}
 		loc = loaded
@@ -356,7 +358,7 @@ func isValidSuffixKeyRange(s string, start, end int) error {
 	if start >= end {
 		return ErrInvalidExtension
 	}
-	return abnf.AbnfSuffixKey.Validate(s[start:end])
+	return abnf.AbnfSuffixKey.ValidateSuffixKey(s[start:end])
 }
 
 func isValidSuffixValue(value string) error {
@@ -364,7 +366,7 @@ func isValidSuffixValue(value string) error {
 		return nil
 	}
 	// Use ABNF pattern for basic validation, then check additional constraints
-	if err := abnf.AbnfSuffixValues.Validate(value); err != nil {
+	if err := abnf.AbnfSuffixValues.ValidateSuffixValues(value); err != nil {
 		return err
 	}
 	// Additional validation: no leading/trailing hyphens, no consecutive hyphens
@@ -395,26 +397,6 @@ func validateCriticalExtension(_, value string) error {
 	return nil
 }
 
-func isValidTimezoneContent(s string) bool {
-	if s == "" {
-		return false
-	}
-
-	// Check if this looks like an incomplete extension tag
-	// Extension tags typically contain hyphens with specific patterns
-	if strings.IndexByte(s, '-') >= 0 {
-		// If has hyphen and looks like extension prefix, it's invalid
-		if len(s) >= 2 && s[1] == '-' {
-			prefix := s[0]
-			if prefix == 'u' || prefix == 'x' || prefix == 't' {
-				return false // Likely an extension tag prefix.
-			}
-		}
-	}
-
-	return true
-}
-
 func newParseError(layout Layout, value string, err error) error {
 	return &ParseError{
 		Layout: layout,
@@ -438,7 +420,7 @@ func parseRFC3339Portion(rfc3339Portion string) (time.Time, error) {
 	return time.Time{}, lastErr
 }
 
-func parseSuffix(s string) (*IXDTFExtensions, error) {
+func parseSuffix(s string, strict bool) (*IXDTFExtensions, error) {
 	ext := NewIXDTFExtensions(nil)
 
 	i := 0
@@ -458,7 +440,7 @@ func parseSuffix(s string) (*IXDTFExtensions, error) {
 
 		// Parse the content between '[' and ']'
 		content := s[i+1 : j]
-		if err := parseSuffixElement(content, ext); err != nil {
+		if err := parseSuffixElement(content, ext, strict); err != nil {
 			return ext, err
 		}
 
@@ -468,7 +450,7 @@ func parseSuffix(s string) (*IXDTFExtensions, error) {
 	return ext, nil
 }
 
-func parseSuffixElement(content string, ext *IXDTFExtensions) error {
+func parseSuffixElement(content string, ext *IXDTFExtensions, strict bool) error {
 	if content == "" {
 		return ErrInvalidSuffix
 	}
@@ -493,21 +475,47 @@ func parseSuffixElement(content string, ext *IXDTFExtensions) error {
 		return ErrInvalidTimezone // Timezone cannot be critical
 	}
 	tzContent := content[startIdx:]
-	if tzContent != "" {
-		if loc, ok := tryLoadTimezoneName(tzContent); ok {
-			ext.Location = loc
+	if tzContent == "" {
+		return nil
+	}
+
+	if loc, ok := tryLoadTimezone(tzContent); ok {
+		ext.Location = loc
+		return nil
+	}
+
+	// Check if it's a numeric offset pattern (+HH:MM / -HH:MM)
+	offsetPattern := "[" + tzContent + "]"
+	if offsetErr := abnf.AbnfTimezoneTag.ValidateTimezoneTag(offsetPattern, false); offsetErr == nil {
+		// Parse numeric offset
+		if offset, err := parseNumericOffset(tzContent); err == nil {
+			// Convert "+09:00" to "+0900" format for timezone name
+			zoneName := formatOffsetName(tzContent)
+			ext.Location = time.FixedZone(zoneName, offset)
 			return nil
 		}
-		// If not a valid timezone name, check offset pattern (+HH:MM / -HH:MM)
-		offsetPattern := "[" + tzContent + "]"
-		if offsetErr := abnf.AbnfTimezone.Validate(offsetPattern); offsetErr != nil {
-			return ErrInvalidExtension
-		}
-		if !isValidTimezoneContent(tzContent) {
-			return ErrInvalidExtension
-		}
-		ext.Location = time.FixedZone(tzContent, 0)
 	}
+
+	// Try to validate timezone existence
+	if err := abnf.AbnfTimezone.ValidateTimezone(tzContent, strict); err != nil {
+		// In non-strict mode, ignore unknown timezone names per RFC 9557
+		if !strict {
+			return nil
+		}
+		return ErrInvalidTimezone
+	}
+
+	// Additional check: try to load the timezone to see if it actually exists
+	if _, err := time.LoadLocation(tzContent); err != nil {
+		// In non-strict mode, ignore unknown timezone names per RFC 9557
+		if !strict {
+			return nil
+		}
+		return ErrInvalidTimezone
+	}
+
+	// Timezone exists - set the location
+	ext.Location = time.FixedZone(tzContent, 0)
 	return nil
 }
 
@@ -545,32 +553,60 @@ func handleExtensionTag(content string, critical bool, startIdx int, ext *IXDTFE
 // validateExtensions validates IXDTF extensions for correctness and processes critical extensions.
 // This function checks if all critical extensions can be handled and returns an error if not.
 func validateExtensions(ext *IXDTFExtensions) error {
+	return validateExtensionsStrict(ext, true)
+}
+
+func validateExtensionsStrict(ext *IXDTFExtensions, strict bool) error {
 	if ext == nil {
 		return nil
 	}
-	if ext.Location != nil {
-		if ensureRealLocation(ext.Location) == nil {
-			if _, err := loadLocationCached(ext.Location.String()); err != nil {
-				return ErrInvalidTimezone
-			}
-		}
+
+	if err := validateLocationStrict(ext.Location, strict); err != nil {
+		return err
 	}
 
+	if err := validateTagKeys(ext.Tags); err != nil {
+		return err
+	}
+
+	return validateCriticalTags(ext.Tags, ext.Critical)
+}
+
+func validateLocationStrict(location *time.Location, strict bool) error {
+	if location == nil {
+		return nil
+	}
+	if ensureRealLocation(location) == nil {
+		if _, err := loadLocationCached(location.String()); err != nil {
+			// In non-strict mode, ignore unknown timezone errors per RFC 9557
+			if !strict {
+				return nil
+			}
+			return ErrInvalidTimezone
+		}
+	}
+	return nil
+}
+
+func validateTagKeys(tags map[string]string) error {
 	// Basic tag key validation (syntactic). Value validation is already handled when creating tags.
-	for key := range ext.Tags {
-		if err := abnf.AbnfSuffixKey.Validate(key); err != nil {
+	for key := range tags {
+		if err := abnf.AbnfSuffixKey.ValidateSuffixKey(key); err != nil {
 			return err
 		}
 	}
+	return nil
+}
 
+func validateCriticalTags(tags map[string]string, critical map[string]bool) error {
 	// Critical tag processing:
 	// * If a key is marked critical but missing in Tags -> error.
 	// * If present but value is empty -> error.
-	for key, isCritical := range ext.Critical {
+	for key, isCritical := range critical {
 		if !isCritical {
 			continue
 		}
-		value, exists := ext.Tags[key]
+		value, exists := tags[key]
 		if !exists { // missing critical tag
 			return ErrCriticalExtension
 		}
@@ -578,7 +614,6 @@ func validateExtensions(ext *IXDTFExtensions) error {
 			return err
 		}
 	}
-
 	return nil
 }
 
@@ -602,10 +637,10 @@ func loadLocationCached(name string) (*time.Location, error) {
 	return loc, nil
 }
 
-// tryLoadTimezoneName attempts to treat s as a timezone name (not numeric offset) and load it.
+// tryLoadTimezone attempts to treat s as a timezone name (not numeric offset) and load it.
 // Returns (location, true) if loaded, (nil, false) otherwise. Errors are treated as non-match.
-func tryLoadTimezoneName(s string) (*time.Location, bool) {
-	if s == "" || !abnf.IsTimezoneNameSyntax(s) {
+func tryLoadTimezone(s string) (*time.Location, bool) {
+	if s == "" || !abnf.IsTimezoneSyntax(s) {
 		return nil, false
 	}
 	loc, err := loadLocationCached(s)
@@ -613,6 +648,48 @@ func tryLoadTimezoneName(s string) (*time.Location, bool) {
 		return nil, false
 	}
 	return loc, true
+}
+
+// parseNumericOffset parses a numeric timezone offset string (e.g., "+09:00", "-05:00")
+// and returns the offset in seconds.
+func parseNumericOffset(s string) (int, error) {
+	const expectedOffsetLength = 6
+	if len(s) != expectedOffsetLength {
+		return 0, errors.New("invalid offset format")
+	}
+
+	sign := 1
+	if s[0] == '-' {
+		sign = -1
+	} else if s[0] != '+' {
+		return 0, errors.New("invalid offset sign")
+	}
+
+	if s[3] != ':' {
+		return 0, errors.New("invalid offset format")
+	}
+
+	var err error
+
+	hours, err := strconv.Atoi(s[1:3])
+	if err != nil || hours < 0 || hours > 23 {
+		return 0, errors.New("invalid hours")
+	}
+
+	minutes, err := strconv.Atoi(s[4:6])
+	if err != nil || minutes < 0 || minutes > 59 {
+		return 0, errors.New("invalid minutes")
+	}
+
+	return sign * (hours*3600 + minutes*60), nil
+}
+
+// formatOffsetName converts "+09:00" format to "+0900" format for timezone names.
+func formatOffsetName(offset string) string {
+	if len(offset) == 6 && offset[3] == ':' {
+		return offset[:3] + offset[4:]
+	}
+	return offset
 }
 
 // ensureRealLocation returns nil if the given location appears to be a placeholder FixedZone
