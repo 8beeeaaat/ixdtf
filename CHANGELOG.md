@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2026-01-18
+
+### Added
+
+- Added validation and support for Unicode calendar identifiers in `u-ca` tags using known CLDR identifiers
+
+### Changed
+
+- Enforced critical `u-ca` tag validation with clearer errors for invalid calendar identifiers
+- Updated README examples and parse error usage for clarity (PR #12)
+
+### Technical
+
+- Bumped GitHub Actions dependencies: actions/checkout v6, actions/cache v5, golangci-lint-action v9 (PR #13, #14, #15)
+
 ## [0.2.0] - 2025-09-21
 
 ### Changed
