@@ -150,6 +150,15 @@ The following extension patterns are automatically rejected:
 "2023-08-07T14:30:00Z[!_experimental=value]" // Error: experimental extension cannot be processed
 ```
 
+#### Unicode Calendar Identifier Validation
+
+The `u-ca` extension is validated against known Unicode calendar identifiers:
+
+```go
+"2023-08-07T14:30:00Z[!u-ca=gregorian]" // OK
+"2023-08-07T14:30:00Z[!u-ca=unknown]"   // Error: invalid calendar tag identifier
+```
+
 ## API Reference
 
 ### Core Functions

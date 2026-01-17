@@ -96,6 +96,15 @@ func TestFormat(t *testing.T) {
 			wantErr: ixdtf.ErrCriticalExtension,
 		},
 		{
+			name: "invalid critical calendar value",
+			tm:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+			ext: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
+				Tags:     map[string]string{"u-ca": "hoge"},
+				Critical: map[string]bool{"u-ca": true},
+			}),
+			wantErr: ixdtf.ErrInvalidTagCalendarIdentifier,
+		},
+		{
 			name: "empty timezone name should not add brackets",
 			tm:   time.Date(2025, 1, 1, 12, 0, 0, 0, time.UTC),
 			ext: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
@@ -204,6 +213,15 @@ func TestFormatNano(t *testing.T) {
 			wantErr: "critical extension cannot be processed",
 		},
 		{
+			name: "invalid critical calendar value",
+			tm:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+			ext: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
+				Tags:     map[string]string{"u-ca": "hoge"},
+				Critical: map[string]bool{"u-ca": true},
+			}),
+			wantErr: "invalid calendar tag identifier",
+		},
+		{
 			name: "missing critical extension",
 			tm:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
 			ext: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
@@ -307,6 +325,21 @@ func TestParse(t *testing.T) {
 				Tags:     map[string]string{"u-ca": "gregory"},
 				Critical: map[string]bool{"u-ca": true},
 			}),
+		},
+		{
+			name:     "with invalid calendar tag (non-critical)",
+			input:    "2025-03-04T05:06:07Z[u-ca=hoge]",
+			strict:   false,
+			wantTime: time.Date(2025, 3, 4, 5, 6, 7, 0, time.UTC),
+			wantExt: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
+				Tags: map[string]string{"u-ca": "hoge"},
+			}),
+		},
+		{
+			name:    "with invalid calendar tag (critical)",
+			input:   "2025-03-04T05:06:07Z[!u-ca=hoge]",
+			strict:  false,
+			wantErr: "invalid calendar tag identifier",
 		},
 		{
 			name:     "with timezone and tags",
@@ -529,6 +562,44 @@ func TestParse(t *testing.T) {
 	}
 }
 
+func TestValidateUnicodeCalendarIdentifiers(t *testing.T) {
+	t.Parallel()
+
+	validIdentifiers := []string{
+		"buddhist",
+		"chinese",
+		"coptic",
+		"dangi",
+		"ethioaa",
+		"ethiopic-amete-alem",
+		"ethiopic",
+		"gregory",
+		"gregorian",
+		"hebrew",
+		"indian",
+		"islamic",
+		"islamic-umalqura",
+		"islamic-tbla",
+		"islamic-civil",
+		"islamic-rgsa",
+		"iso8601",
+		"japanese",
+		"persian",
+		"roc",
+		"islamicc",
+	}
+
+	for _, identifier := range validIdentifiers {
+		t.Run(identifier, func(t *testing.T) {
+			t.Parallel()
+			input := "2025-03-04T05:06:07Z[!u-ca=" + identifier + "]"
+			if err := ixdtf.Validate(input, false); err != nil {
+				t.Fatalf("Validate(%q) unexpected error: %v", input, err)
+			}
+		})
+	}
+}
+
 func TestValidate(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -566,6 +637,17 @@ func TestValidate(t *testing.T) {
 			name:   "valid with critical tag",
 			input:  "2025-03-04T05:06:07Z[!u-ca=gregory]",
 			strict: false,
+		},
+		{
+			name:   "valid with invalid calendar tag (non-critical)",
+			input:  "2025-03-04T05:06:07Z[u-ca=hoge]",
+			strict: false,
+		},
+		{
+			name:    "invalid calendar tag (critical)",
+			input:   "2025-03-04T05:06:07Z[!u-ca=hoge]",
+			strict:  false,
+			wantErr: "IXDTFE parsing time \"2025-03-04T05:06:07Z[!u-ca=hoge]\" as \"2006-01-02T15:04:05Z07:00*([time-zone-name][tags])\": invalid calendar tag identifier",
 		},
 		{
 			name:   "valid with timezone and tags",
