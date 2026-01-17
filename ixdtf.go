@@ -41,13 +41,14 @@ const (
 
 // Common parsing errors.
 var (
-	ErrCriticalExtension      = errors.New("critical extension cannot be processed")
-	ErrInvalidExtension       = errors.New("invalid extension format")
-	ErrInvalidSuffix          = errors.New("invalid IXDTF suffix format")
-	ErrInvalidTimezone        = errors.New("invalid timezone name")
-	ErrTimezoneOffsetMismatch = errors.New("timezone offset does not match the specified timezone")
-	ErrPrivateExtension       = abnf.ErrPrivateExtension
-	ErrExperimentalExtension  = abnf.ErrExperimentalExtension
+	ErrCriticalExtension            = errors.New("critical extension cannot be processed")
+	ErrExperimentalExtension        = abnf.ErrExperimentalExtension
+	ErrInvalidExtension             = errors.New("invalid extension format")
+	ErrInvalidSuffix                = errors.New("invalid IXDTF suffix format")
+	ErrInvalidTagCalendarIdentifier = errors.New("invalid calendar tag identifier")
+	ErrInvalidTimezone              = errors.New("invalid timezone name")
+	ErrPrivateExtension             = abnf.ErrPrivateExtension
+	ErrTimezoneOffsetMismatch       = errors.New("timezone offset does not match the specified timezone")
 )
 
 // IXDTFExtensions holds IXDTF suffix information that extends RFC 3339.
@@ -389,12 +390,46 @@ func isValidSuffixValueRange(s string, start, end int) error {
 }
 
 // validateCriticalExtension enforces critical extension processing rules.
-func validateCriticalExtension(_, value string) error {
+func validateCriticalExtension(key, value string) error {
 	if value == "" { // empty value not allowed for critical
 		return ErrCriticalExtension
 	}
-	// Known-key specific validation hooks could be added here in future.
+	if key == ExtensionUnicodeCalendar && !isUnicodeCalendarIdentifier(value) {
+		return ErrInvalidTagCalendarIdentifier
+	}
 	return nil
+}
+
+func isUnicodeCalendarIdentifier(value string) bool {
+	if value == "" {
+		return false
+	}
+	switch strings.ToLower(value) {
+	case "buddhist",
+		"chinese",
+		"coptic",
+		"dangi",
+		"ethioaa",
+		"ethiopic-amete-alem",
+		"ethiopic",
+		"gregory",
+		"gregorian",
+		"hebrew",
+		"indian",
+		"islamic",
+		"islamic-umalqura",
+		"islamic-tbla",
+		"islamic-civil",
+		"islamic-rgsa",
+		"iso8601",
+		"japanese",
+		"persian",
+		"roc",
+		"islamicc":
+		return true
+	default:
+		return false
+	}
 }
 
 func newParseError(layout Layout, value string, err error) error {
@@ -543,6 +578,11 @@ func handleExtensionTag(content string, critical bool, startIdx int, ext *IXDTFE
 		return nil
 	}
 	value := content[equalIndex+1:]
+	if critical {
+		if err := validateCriticalExtension(key, value); err != nil {
+			return err
+		}
+	}
 	ext.Tags[key] = value
 	if critical {
 		ext.Critical[key] = true
