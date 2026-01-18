@@ -152,11 +152,14 @@ The following extension patterns are automatically rejected:
 
 #### Unicode Calendar Identifier Validation
 
-The `u-ca` extension is validated against known Unicode calendar identifiers:
+The `u-ca` extension is validated against known Unicode calendar identifiers.
+Invalid values always error when the tag is critical (`!u-ca`), and also error in
+strict mode even when non-critical:
 
 ```go
 "2023-08-07T14:30:00Z[!u-ca=gregorian]" // OK
 "2023-08-07T14:30:00Z[!u-ca=unknown]"   // Error: invalid calendar tag identifier
+"2023-08-07T14:30:00Z[u-ca=unknown]"    // Error in strict mode
 ```
 
 ## API Reference
@@ -185,7 +188,8 @@ Notes:
 - An invalid or unresolvable time zone name always yields an error (regardless of mode).
 - Time zones with `Etc/GMT±X` naming are skipped for consistency checking (POSIX inverted offset semantics would cause false positives).
 - `Validate` follows the same policy: with `strict=false` an offset mismatch is considered acceptable.
-- Extension tag syntax and critical tag handling are independent of `strict`.
+- Extension tag syntax and critical tag handling are independent of `strict`, except for
+  `u-ca` validation which is enforced in strict mode even for non-critical tags.
 - Recommended usage: accept loosely formed inputs with `strict=false` at system boundaries (ingest phase), then re-normalize if needed; enforce `strict=true` where data integrity or audit requirements apply.
 
 ### Types
