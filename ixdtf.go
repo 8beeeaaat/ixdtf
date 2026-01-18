@@ -166,6 +166,10 @@ func Parse(s string, strict bool) (time.Time, *IXDTFExtensions, error) {
 		}
 	}
 
+	if err = validateExtensionsStrict(ext, strict); err != nil {
+		return time.Time{}, nil, newParseError(LayoutRFC3339Extended, s, err)
+	}
+
 	// Check timezone consistency if timezone is provided
 	if ext.Location != nil {
 		result, checkErr := checkTimezoneConsistency(t, ext.Location, strict)
@@ -209,6 +213,10 @@ func Validate(s string, strict bool) error {
 		if ext, err = parseSuffix(suffixPortion, strict); err != nil {
 			return newParseError(LayoutRFC3339Extended, s, err)
 		}
+	}
+
+	if err = validateExtensionsStrict(ext, strict); err != nil {
+		return newParseError(LayoutRFC3339Extended, s, err)
 	}
 
 	// Check timezone consistency if timezone is provided
@@ -609,7 +617,17 @@ func validateExtensionsStrict(ext *IXDTFExtensions, strict bool) error {
 		return err
 	}
 
-	return validateCriticalTags(ext.Tags, ext.Critical)
+	if err := validateCriticalTags(ext.Tags, ext.Critical); err != nil {
+		return err
+	}
+
+	if strict {
+		if err := validateTagValuesStrict(ext.Tags); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func validateLocationStrict(location *time.Location, strict bool) error {
@@ -652,6 +670,15 @@ func validateCriticalTags(tags map[string]string, critical map[string]bool) erro
 		}
 		if err := validateCriticalExtension(key, value); err != nil {
 			return err
+		}
+	}
+	return nil
+}
+
+func validateTagValuesStrict(tags map[string]string) error {
+	for key, value := range tags {
+		if key == ExtensionUnicodeCalendar && !isUnicodeCalendarIdentifier(value) {
+			return ErrInvalidTagCalendarIdentifier
 		}
 	}
 	return nil

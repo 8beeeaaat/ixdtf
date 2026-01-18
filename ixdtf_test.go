@@ -336,6 +336,12 @@ func TestParse(t *testing.T) {
 			}),
 		},
 		{
+			name:    "with invalid calendar tag (non-critical, strict)",
+			input:   "2025-03-04T05:06:07Z[u-ca=hoge]",
+			strict:  true,
+			wantErr: "invalid calendar tag identifier",
+		},
+		{
 			name:    "with invalid calendar tag (critical)",
 			input:   "2025-03-04T05:06:07Z[!u-ca=hoge]",
 			strict:  false,
@@ -642,6 +648,12 @@ func TestValidate(t *testing.T) {
 			name:   "valid with invalid calendar tag (non-critical)",
 			input:  "2025-03-04T05:06:07Z[u-ca=hoge]",
 			strict: false,
+		},
+		{
+			name:    "invalid calendar tag (non-critical, strict)",
+			input:   "2025-03-04T05:06:07Z[u-ca=hoge]",
+			strict:  true,
+			wantErr: "IXDTFE parsing time \"2025-03-04T05:06:07Z[u-ca=hoge]\" as \"2006-01-02T15:04:05Z07:00*([time-zone-name][tags])\": invalid calendar tag identifier",
 		},
 		{
 			name:    "invalid calendar tag (critical)",
