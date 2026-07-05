@@ -157,6 +157,65 @@ func TestParseNumericOffset(t *testing.T) {
 			t.Fatalf("expected parseNumericOffset to reject missing colon")
 		}
 	})
+
+	t.Run("invalid hours", func(t *testing.T) {
+		t.Parallel()
+		if _, err := parseNumericOffset("+24:00"); err == nil {
+			t.Fatalf("expected parseNumericOffset to reject invalid hours")
+		}
+	})
+}
+
+func TestIsOffsetLocationName(t *testing.T) {
+	t.Parallel()
+	cases := map[string]bool{
+		"+0900":  true,
+		"-0330":  true,
+		"":       false,
+		"+090":   false,
+		"+09:00": false,
+		"09000":  false,
+		"+09a0":  false,
+	}
+	for name, want := range cases {
+		if got := isOffsetLocationName(name); got != want {
+			t.Errorf("isOffsetLocationName(%q) = %v, want %v", name, got, want)
+		}
+	}
+}
+
+// TestCheckTimezoneConsistencyUnloadableZone covers the resolution fallback
+// for a location that is neither cached, offset-derived, nor loadable from
+// the timezone database.
+func TestCheckTimezoneConsistencyUnloadableZone(t *testing.T) {
+	t.Parallel()
+	ts := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
+	unknown := time.FixedZone("Not/AZone", 0)
+
+	t.Run("non-strict treats unloadable zone as consistent", func(t *testing.T) {
+		t.Parallel()
+		result, err := checkTimezoneConsistency(ts, unknown, false, false)
+		if err != nil {
+			t.Fatalf("unexpected error: %v", err)
+		}
+		if !result.IsConsistent {
+			t.Errorf("expected IsConsistent for unloadable zone in non-strict mode")
+		}
+	})
+
+	t.Run("strict errors on unloadable zone", func(t *testing.T) {
+		t.Parallel()
+		if _, err := checkTimezoneConsistency(ts, unknown, true, false); err == nil {
+			t.Fatalf("expected error for unloadable zone in strict mode")
+		}
+	})
+}
+
+func TestEnsureRealLocationNil(t *testing.T) {
+	t.Parallel()
+	if got := ensureRealLocation(nil); got != nil {
+		t.Fatalf("ensureRealLocation(nil) = %v, want nil", got)
+	}
 }
 
 func TestParseSuffix(t *testing.T) {
