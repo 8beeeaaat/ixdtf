@@ -463,6 +463,21 @@ func TestParse(t *testing.T) {
 			),
 		},
 		{
+			// Etc/GMT+3 is UTC-03:00 (POSIX-inverted sign); a concrete +05:00
+			// conflicts with it, and the critical flag forces the error even
+			// in non-strict mode (RFC 9557 Section 3.4).
+			name:    "critical Etc/GMT zone with mismatching offset errors in non-strict",
+			input:   "2022-07-08T00:14:07+05:00[!Etc/GMT+3]",
+			strict:  false,
+			wantErr: "timezone offset does not match",
+		},
+		{
+			name:    "Etc/GMT zone with mismatching offset errors in strict mode",
+			input:   "2022-07-08T00:14:07+05:00[Etc/GMT+3]",
+			strict:  true,
+			wantErr: "timezone offset does not match",
+		},
+		{
 			name:     "timezone with Etc/GMT pattern in strict mode",
 			input:    "2025-01-01T00:00:00+05:00[Etc/GMT-5]",
 			strict:   true,

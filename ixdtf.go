@@ -98,7 +98,10 @@ type TimezoneConsistencyResult struct {
 	ExpectedOffset int
 	// Timezone is the timezone identifier that was checked.
 	Timezone string
-	// Skipped indicates if the consistency check was skipped (e.g., for Etc/GMT).
+	// Skipped indicates if the consistency check was skipped.
+	//
+	// Deprecated: no checks are skipped anymore; the field is retained for
+	// API compatibility and is always false.
 	Skipped bool
 }
 
@@ -313,7 +316,7 @@ func appendSuffix(t time.Time, ext *IXDTFExtensions, format string) []byte {
 }
 
 // checkTimezoneConsistency checks if the timezone offset matches the IANA timezone.
-// If strict is true, returns an error when offsets don't match (except for Etc/GMT patterns).
+// If strict is true, returns an error when offsets don't match.
 // Returns consistency information and an error for timezone loading failures or strict mode mismatches.
 func checkTimezoneConsistency(
 	timestamp time.Time,
@@ -372,15 +375,9 @@ func checkTimezoneConsistency(
 	result.OriginalOffset = originalOffset
 	result.ExpectedOffset = expectedOffset
 
-	// For certain timezone patterns (like Etc/GMT-X), skip consistency checks.
-	// These have POSIX-inverted offset semantics that cause false inconsistency reports.
-	if strings.HasPrefix(loc.String(), "Etc/GMT") {
-		result.Skipped = true
-		result.IsConsistent = true // Assume consistent for Etc/GMT patterns
-		return result, nil
-	}
-
 	// Check if offsets match (allowing for some flexibility with DST transitions).
+	// Etc/GMT zones need no special casing: their POSIX-inverted sign only
+	// affects the name, and Go resolves the actual offset correctly.
 	result.IsConsistent = (originalOffset == expectedOffset)
 
 	// In strict mode, return an error for inconsistencies
