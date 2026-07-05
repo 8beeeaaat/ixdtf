@@ -331,16 +331,22 @@ func checkTimezoneConsistency(
 	}
 	loc := ensureRealLocation(location)
 	if loc == nil {
-		loaded, err := loadLocationCached(location.String())
-		if err != nil {
-			// In non-strict mode, ignore unknown timezone errors per RFC 9557
-			if !strict {
-				result.IsConsistent = true // Can't check consistency for unknown timezone
-				return result, nil
+		if isOffsetLocationName(location.String()) {
+			// A numeric-offset annotation (e.g. "[+09:00]") produced this
+			// FixedZone; its offset is authoritative, so use it directly.
+			loc = location
+		} else {
+			loaded, err := loadLocationCached(location.String())
+			if err != nil {
+				// In non-strict mode, ignore unknown timezone errors per RFC 9557
+				if !strict {
+					result.IsConsistent = true // Can't check consistency for unknown timezone
+					return result, nil
+				}
+				return result, err
 			}
-			return result, err
+			loc = loaded
 		}
-		loc = loaded
 	}
 	result.Location = loc
 
@@ -704,6 +710,11 @@ func validateLocationStrict(location *time.Location, strict bool) error {
 		return nil
 	}
 	if ensureRealLocation(location) == nil {
+		// An offset-derived FixedZone (e.g. from "[+09:00]") is valid as-is
+		// and never resolvable via the timezone database.
+		if isOffsetLocationName(location.String()) {
+			return nil
+		}
 		if _, err := loadLocationCached(location.String()); err != nil {
 			// In non-strict mode, ignore unknown timezone errors per RFC 9557
 			if !strict {
@@ -826,6 +837,22 @@ func formatOffsetName(offset string) string {
 		return offset[:3] + offset[4:]
 	}
 	return offset
+}
+
+// isOffsetLocationName reports whether name is a numeric-offset zone name as
+// produced by formatOffsetName (e.g. "+0900", "-0330"). Such a location's
+// offset is authoritative and has no timezone-database entry, so it must not
+// be resolved via time.LoadLocation (the lookup would always fail).
+func isOffsetLocationName(name string) bool {
+	if len(name) != 5 || (name[0] != '+' && name[0] != '-') {
+		return false
+	}
+	for i := 1; i < len(name); i++ {
+		if name[i] < '0' || name[i] > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 // ensureRealLocation returns nil if the given location appears to be a placeholder FixedZone

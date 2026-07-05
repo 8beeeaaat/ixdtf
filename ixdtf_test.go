@@ -573,6 +573,37 @@ func TestParse(t *testing.T) {
 			}),
 		},
 		{
+			// RFC 9557 Section 4.1 permits a critical numeric-offset
+			// annotation; a matching offset is fully processable
+			// (Section 3.3) and consistent (Section 3.4).
+			name:     "critical matching numeric offset is accepted",
+			input:    "2025-01-01T00:00:00+09:00[!+09:00]",
+			strict:   false,
+			wantTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.FixedZone("+0900", 9*3600)),
+			wantExt: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
+				Location:         time.FixedZone("+0900", 9*3600),
+				CriticalLocation: true,
+			}),
+		},
+		{
+			name:    "critical mismatching numeric offset errors in non-strict",
+			input:   "2025-01-01T00:00:00+09:00[!+05:30]",
+			strict:  false,
+			wantErr: "timezone offset does not match",
+		},
+		{
+			// An offset-derived FixedZone must not be resolved via the
+			// timezone database, so a matching offset annotation is valid in
+			// strict mode too.
+			name:     "matching numeric offset is accepted in strict mode",
+			input:    "2025-01-01T00:00:00+09:00[+09:00]",
+			strict:   true,
+			wantTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.FixedZone("+0900", 9*3600)),
+			wantExt: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
+				Location: time.FixedZone("+0900", 9*3600),
+			}),
+		},
+		{
 			name:     "invalid numeric offset ignored in non-strict mode",
 			input:    "2025-01-01T00:00:00Z[+24:00]",
 			strict:   false,
