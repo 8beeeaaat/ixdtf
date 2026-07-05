@@ -564,6 +564,18 @@ func TestParse(t *testing.T) {
 			wantErr: "timezone offset does not match",
 		},
 		{
+			// "-00:00" is the other unknown-local-offset form (RFC 9557
+			// Section 2.2), so a critical zone pairs with it consistently.
+			name:     "critical timezone with -00:00 is accepted",
+			input:    "2022-07-08T00:14:07-00:00[!Europe/London]",
+			strict:   false,
+			wantTime: time.Date(2022, 7, 8, 0, 14, 7, 0, time.UTC),
+			wantExt: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
+				Location:         time.FixedZone("Europe/London", 1*3600),
+				CriticalLocation: true,
+			}),
+		},
+		{
 			// A critical annotation MUST be processable (Section 3.3), so an
 			// unknown name errors even in non-strict mode.
 			name:    "critical unknown timezone errors in non-strict",
@@ -747,6 +759,18 @@ func TestValidate(t *testing.T) {
 		{
 			name:   "valid with critical tag",
 			input:  "2025-03-04T05:06:07Z[!u-ca=gregory]",
+			strict: false,
+		},
+		{
+			// Validate must accept a critical zone exactly like Parse does
+			// (RFC 9557 Section 3.4, Figure 2: Z carries no local offset).
+			name:   "valid with critical timezone",
+			input:  "2022-07-08T00:14:07Z[!Europe/London]",
+			strict: false,
+		},
+		{
+			name:   "valid with critical numeric offset",
+			input:  "2025-01-01T00:00:00+09:00[!+09:00]",
 			strict: false,
 		},
 		{
@@ -1155,8 +1179,12 @@ func TestParseCriticalTimezone(t *testing.T) {
 		// +00:00 asserts a zero offset that conflicts with London's +01:00 in
 		// July; the critical flag forces the error even in non-strict mode.
 		const input = "2022-07-08T00:14:07+00:00[!Europe/London]"
-		if _, _, err := ixdtf.Parse(input, false); err == nil {
+		_, _, err := ixdtf.Parse(input, false)
+		if err == nil {
 			t.Fatalf("Parse(%q, false) expected inconsistency error, got nil", input)
+		}
+		if !strings.Contains(err.Error(), "timezone offset does not match") {
+			t.Errorf("Parse(%q, false) error = %v, want offset mismatch", input, err)
 		}
 	})
 }
