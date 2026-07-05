@@ -172,7 +172,8 @@ func Parse(s string, strict bool) (time.Time, *IXDTFExtensions, error) {
 
 	// Check timezone consistency if timezone is provided
 	if ext.Location != nil {
-		result, checkErr := checkTimezoneConsistency(t, ext.Location, strict)
+		offsetUnknown := hasUnknownLocalOffset(rfc3339Portion)
+		result, checkErr := checkTimezoneConsistency(t, ext.Location, strict, offsetUnknown)
 		if checkErr != nil {
 			return time.Time{}, nil, newParseError(
 				LayoutRFC3339NanoExtended,
@@ -221,7 +222,8 @@ func Validate(s string, strict bool) error {
 
 	// Check timezone consistency if timezone is provided
 	if ext != nil && ext.Location != nil {
-		_, tzErr := checkTimezoneConsistency(t, ext.Location, strict)
+		offsetUnknown := hasUnknownLocalOffset(rfc3339Portion)
+		_, tzErr := checkTimezoneConsistency(t, ext.Location, strict, offsetUnknown)
 		if tzErr != nil {
 			return newParseError(LayoutRFC3339NanoExtended, s, tzErr)
 		}
@@ -301,6 +303,7 @@ func checkTimezoneConsistency(
 	timestamp time.Time,
 	location *time.Location,
 	strict bool,
+	offsetUnknown bool,
 ) (*TimezoneConsistencyResult, error) {
 	result := &TimezoneConsistencyResult{
 		Location: location,
@@ -324,6 +327,20 @@ func checkTimezoneConsistency(
 		loc = loaded
 	}
 	result.Location = loc
+
+	// Per RFC 3339 Section 4.3 (as updated by RFC 9557 Section 2.2) and
+	// RFC 9557 Section 3.4 (Figure 2): when the RFC 3339 part carries an
+	// unknown local offset ("Z" or "-00:00"), the instant in UTC is known but
+	// no specific local offset is asserted. Pairing it with a time-zone
+	// annotation is therefore never an inconsistency; resolve local time using
+	// the annotation's rules rather than comparing offsets.
+	// See https://www.rfc-editor.org/rfc/rfc9557#section-3.4 (Figure 2).
+	if offsetUnknown {
+		_, result.OriginalOffset = timestamp.Zone()
+		_, result.ExpectedOffset = timestamp.In(loc).Zone()
+		result.IsConsistent = true
+		return result, nil
+	}
 
 	// Get the timezone offset for the given timestamp.
 	expectedTimestamp := timestamp.In(loc)
@@ -361,6 +378,29 @@ func findRFC3339End(s string) int {
 		}
 	}
 	return len(s)
+}
+
+// hasUnknownLocalOffset reports whether the RFC 3339 portion uses the
+// "unknown local offset" designator defined in RFC 3339 Section 4.3 and
+// updated by RFC 9557 Section 2.2: a "Z" or a negative-zero offset "-00:00".
+//
+// In that case the instant in UTC is known but no specific local offset is
+// asserted, so pairing it with a time-zone annotation is never an
+// inconsistency (RFC 9557 Section 3.4, Figure 2); the annotation's rules are
+// applied to resolve local time. This differs from a concrete "+00:00", which
+// asserts a zero offset and can therefore conflict with the annotation.
+//
+// References:
+//   - RFC 3339 Section 4.3: https://www.rfc-editor.org/rfc/rfc3339#section-4.3
+//   - RFC 9557 Section 2.2: https://www.rfc-editor.org/rfc/rfc9557#section-2.2
+//   - RFC 9557 Section 3.4: https://www.rfc-editor.org/rfc/rfc9557#section-3.4
+func hasUnknownLocalOffset(rfc3339Portion string) bool {
+	if n := len(rfc3339Portion); n > 0 {
+		if c := rfc3339Portion[n-1]; c == 'Z' || c == 'z' {
+			return true
+		}
+	}
+	return strings.HasSuffix(rfc3339Portion, "-00:00")
 }
 
 func isValidSuffixKeyRange(s string, start, end int) error {

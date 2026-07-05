@@ -301,6 +301,17 @@ func TestParse(t *testing.T) {
 			wantExt:  ixdtf.NewIXDTFExtensions(nil),
 		},
 		{
+			// RFC 9557 Section 3.4 (Figure 2): Z is an unknown local offset, so
+			// pairing it with a timezone is consistent even in strict mode.
+			name:     "Z with IANA timezone is consistent in strict mode",
+			input:    "2022-07-08T00:14:07Z[Europe/London]",
+			strict:   true,
+			wantTime: time.Date(2022, 7, 8, 0, 14, 7, 0, time.UTC),
+			wantExt: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
+				Location: time.FixedZone("Europe/London", 0),
+			}),
+		},
+		{
 			name:     "with timezone",
 			input:    "2025-02-03T04:05:06+09:00[Asia/Tokyo]",
 			strict:   false,
@@ -938,4 +949,90 @@ func getTestTimezones() (*time.Location, *time.Location, *time.Location) {
 	return time.FixedZone("Asia/Tokyo", 9*3600),
 		time.FixedZone("Europe/Paris", 1*3600),
 		time.FixedZone("CET", 1*3600)
+}
+
+// TestParseUnknownLocalOffsetAppliesTimezone verifies RFC 9557 Section 3.4
+// (Figure 2): when the RFC 3339 part uses an unknown local offset ("Z" or
+// "-00:00"), the time-zone annotation is applied to resolve local time, and
+// this is never treated as an inconsistency — in either strict or non-strict
+// mode. See https://github.com/8beeeaaat/ixdtf/issues/22.
+func TestParseUnknownLocalOffsetAppliesTimezone(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name       string
+		input      string
+		wantOffset int // seconds east of UTC after applying the timezone
+		wantHour   int // local wall-clock hour after applying the timezone
+	}{
+		{
+			name:       "Z with London in summer applies BST (+01:00)",
+			input:      "2022-07-08T00:14:07Z[Europe/London]",
+			wantOffset: 1 * 3600,
+			wantHour:   1,
+		},
+		{
+			name:       "Z with London in winter applies GMT (+00:00)",
+			input:      "2022-01-08T00:14:07Z[Europe/London]",
+			wantOffset: 0,
+			wantHour:   0,
+		},
+		{
+			name:       "negative-zero offset with London applies BST",
+			input:      "2022-07-08T00:14:07-00:00[Europe/London]",
+			wantOffset: 1 * 3600,
+			wantHour:   1,
+		},
+		{
+			name:       "Z with New York in summer applies EDT (-04:00)",
+			input:      "2022-07-08T12:00:00Z[America/New_York]",
+			wantOffset: -4 * 3600,
+			wantHour:   8,
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			for _, strict := range []bool{false, true} {
+				got, ext, err := ixdtf.Parse(tc.input, strict)
+				if err != nil {
+					t.Fatalf("Parse(%q, %v) unexpected error: %v", tc.input, strict, err)
+				}
+				if _, off := got.Zone(); off != tc.wantOffset {
+					t.Errorf("Parse(%q, %v) offset = %d, want %d", tc.input, strict, off, tc.wantOffset)
+				}
+				if got.Hour() != tc.wantHour {
+					t.Errorf("Parse(%q, %v) local hour = %d, want %d", tc.input, strict, got.Hour(), tc.wantHour)
+				}
+				if ext.Location == nil {
+					t.Errorf("Parse(%q, %v) expected location to be set", tc.input, strict)
+				}
+			}
+		})
+	}
+}
+
+// TestParseNumericZeroOffsetStillInconsistent verifies the contrast with Z: a
+// concrete "+00:00" asserts a zero offset, so it conflicts with a timezone
+// whose offset differs at that instant (RFC 9557 Section 3.4, Figure 1). This
+// behavior must remain unchanged by the Z fix.
+func TestParseNumericZeroOffsetStillInconsistent(t *testing.T) {
+	t.Parallel()
+
+	const input = "2022-07-08T00:14:07+00:00[Europe/London]" // London is BST (+01:00) in July
+
+	// strict mode: the inconsistency is reported as an error.
+	if _, _, err := ixdtf.Parse(input, true); err == nil {
+		t.Fatalf("Parse(%q, true) expected inconsistency error, got nil", input)
+	}
+
+	// non-strict mode: the original +00:00 offset is preserved (timezone not applied).
+	got, _, err := ixdtf.Parse(input, false)
+	if err != nil {
+		t.Fatalf("Parse(%q, false) unexpected error: %v", input, err)
+	}
+	if _, off := got.Zone(); off != 0 {
+		t.Errorf("Parse(%q, false) offset = %d, want 0 (original preserved)", input, off)
+	}
 }
