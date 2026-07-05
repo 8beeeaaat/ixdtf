@@ -547,6 +547,21 @@ func TestParse(t *testing.T) {
 			wantErr: "invalid timezone",
 		},
 		{
+			// The grammar allows at most one time-zone annotation (RFC 9557
+			// Section 4.1); a second one would overwrite the zone and its
+			// critical flag, hiding a mandatory Section 3.4 inconsistency error.
+			name:    "second timezone annotation rejected in non-strict",
+			input:   "2022-07-08T00:14:07+00:00[!Europe/London][Asia/Tokyo]",
+			strict:  false,
+			wantErr: "invalid IXDTF suffix format",
+		},
+		{
+			name:    "second timezone annotation rejected in strict mode",
+			input:   "2025-01-01T00:00:00Z[Asia/Tokyo][Europe/Paris]",
+			strict:  true,
+			wantErr: "invalid IXDTF suffix format",
+		},
+		{
 			name:     "timezone numeric offset suffix",
 			input:    "2025-01-01T00:00:00Z[+09:00]",
 			strict:   false,

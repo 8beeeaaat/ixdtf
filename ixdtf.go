@@ -575,6 +575,13 @@ func parseSuffixElement(content string, ext *IXDTFExtensions, strict bool) error
 	// annotation, e.g. "[!Europe/London]" (Figure 1/Figure 2). A critical
 	// annotation MUST be processable (Section 3.3), so an unknown or invalid
 	// name is rejected even in non-strict mode.
+	//
+	// The grammar allows at most one time-zone annotation; a second one would
+	// overwrite the zone and its critical flag, hiding a mandatory Section 3.4
+	// inconsistency error.
+	if ext.Location != nil {
+		return ErrInvalidSuffix
+	}
 	tzContent := content[startIdx:]
 	if tzContent == "" {
 		return nil
