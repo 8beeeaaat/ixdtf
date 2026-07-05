@@ -518,8 +518,31 @@ func TestParse(t *testing.T) {
 			wantErr: "experimental extension cannot be processed",
 		},
 		{
-			name:    "critical timezone is invalid",
-			input:   "2025-01-01T00:00:00Z[!Asia/Tokyo]",
+			// RFC 9557 Section 4.1 permits a critical "!" flag on a time zone;
+			// combined with Z (unknown offset) it is consistent (Figure 2).
+			name:     "critical timezone with Z is accepted",
+			input:    "2025-01-01T00:00:00Z[!Asia/Tokyo]",
+			strict:   false,
+			wantTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+			wantExt: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
+				Location:         time.FixedZone("Asia/Tokyo", 9*3600),
+				CriticalLocation: true,
+			}),
+		},
+		{
+			// Critical + concrete offset that conflicts with the zone: an
+			// application MUST act on the inconsistency even in non-strict
+			// mode (RFC 9557 Section 3.4).
+			name:    "critical timezone inconsistent offset errors in non-strict",
+			input:   "2022-07-08T00:14:07+00:00[!Europe/London]",
+			strict:  false,
+			wantErr: "timezone offset does not match",
+		},
+		{
+			// A critical annotation MUST be processable (Section 3.3), so an
+			// unknown name errors even in non-strict mode.
+			name:    "critical unknown timezone errors in non-strict",
+			input:   "2025-01-01T00:00:00Z[!Foo/Bar]",
 			strict:  false,
 			wantErr: "invalid timezone",
 		},
@@ -924,6 +947,10 @@ func extensionsEqual(a, b *ixdtf.IXDTFExtensions) bool {
 		}
 	}
 
+	if a.CriticalLocation != b.CriticalLocation {
+		return false
+	}
+
 	if len(a.Tags) != len(b.Tags) {
 		return false
 	}
@@ -1011,6 +1038,56 @@ func TestParseUnknownLocalOffsetAppliesTimezone(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestParseCriticalTimezone verifies RFC 9557 handling of a critical "!" flag
+// on a time-zone annotation (Section 4.1 grammar; Section 3.3/3.4 semantics).
+// See the follow-up to https://github.com/8beeeaaat/ixdtf/issues/22.
+func TestParseCriticalTimezone(t *testing.T) {
+	t.Parallel()
+
+	t.Run("Z with critical zone is consistent in both modes", func(t *testing.T) {
+		t.Parallel()
+		const input = "2022-07-08T00:14:07Z[!Europe/London]" // Figure 2: no inconsistency
+		for _, strict := range []bool{false, true} {
+			got, ext, err := ixdtf.Parse(input, strict)
+			if err != nil {
+				t.Fatalf("Parse(%q, %v) unexpected error: %v", input, strict, err)
+			}
+			if !ext.CriticalLocation {
+				t.Errorf("Parse(%q, %v) expected CriticalLocation to be true", input, strict)
+			}
+			if _, off := got.Zone(); off != 1*3600 { // London is BST (+01:00) in July
+				t.Errorf("Parse(%q, %v) offset = %d, want %d", input, strict, off, 1*3600)
+			}
+		}
+	})
+
+	t.Run("critical zone round-trips with the ! flag", func(t *testing.T) {
+		t.Parallel()
+		const input = "2025-01-01T00:00:00+09:00[!Asia/Tokyo]"
+		got, ext, err := ixdtf.Parse(input, true)
+		if err != nil {
+			t.Fatalf("Parse(%q) unexpected error: %v", input, err)
+		}
+		formatted, err := ixdtf.Format(got, ext)
+		if err != nil {
+			t.Fatalf("Format unexpected error: %v", err)
+		}
+		if formatted != input {
+			t.Errorf("round trip failed: got %q, want %q", formatted, input)
+		}
+	})
+
+	t.Run("critical inconsistency errors in non-strict mode", func(t *testing.T) {
+		t.Parallel()
+		// +00:00 asserts a zero offset that conflicts with London's +01:00 in
+		// July; the critical flag forces the error even in non-strict mode.
+		const input = "2022-07-08T00:14:07+00:00[!Europe/London]"
+		if _, _, err := ixdtf.Parse(input, false); err == nil {
+			t.Fatalf("Parse(%q, false) expected inconsistency error, got nil", input)
+		}
+	})
 }
 
 // TestParseNumericZeroOffsetStillInconsistent verifies the contrast with Z: a

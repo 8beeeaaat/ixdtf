@@ -57,6 +57,12 @@ var (
 type IXDTFExtensions struct {
 	Location *time.Location
 
+	// CriticalLocation reports whether the time-zone annotation carried a
+	// critical "!" flag (e.g. "[!Europe/London]"). Per RFC 9557 Section 3.3 a
+	// critical annotation MUST be processable, and per Section 3.4 an
+	// application MUST act on any inconsistency it introduces.
+	CriticalLocation bool
+
 	// Tags contains extension tags as key-value pairs.
 	// Example: map[ExtensionUnicodeCalendar]"japanese".
 	Tags map[string]string
@@ -120,23 +126,26 @@ func FormatNano(t time.Time, ext *IXDTFExtensions) (string, error) {
 
 // NewIXDTFExtensionsArgs contains the arguments for creating IXDTFExtensions.
 type NewIXDTFExtensionsArgs struct {
-	Location *time.Location
-	Tags     map[string]string
-	Critical map[string]bool
+	Location         *time.Location
+	CriticalLocation bool
+	Tags             map[string]string
+	Critical         map[string]bool
 }
 
 // NewIXDTFExtensions creates a new IXDTFExtensions with initialized maps.
 func NewIXDTFExtensions(args *NewIXDTFExtensionsArgs) *IXDTFExtensions {
 	ext := &IXDTFExtensions{
-		Location: nil,
-		Tags:     make(map[string]string),
-		Critical: make(map[string]bool),
+		Location:         nil,
+		CriticalLocation: false,
+		Tags:             make(map[string]string),
+		Critical:         make(map[string]bool),
 	}
 
 	if args != nil {
 		if args.Location != nil {
 			ext.Location = args.Location
 		}
+		ext.CriticalLocation = args.CriticalLocation
 		if args.Tags != nil {
 			ext.Tags = args.Tags
 		}
@@ -173,7 +182,9 @@ func Parse(s string, strict bool) (time.Time, *IXDTFExtensions, error) {
 	// Check timezone consistency if timezone is provided
 	if ext.Location != nil {
 		offsetUnknown := hasUnknownLocalOffset(rfc3339Portion)
-		result, checkErr := checkTimezoneConsistency(t, ext.Location, strict, offsetUnknown)
+		// A critical time zone must be acted upon, so an inconsistency is an
+		// error even in non-strict mode (RFC 9557 Section 3.4).
+		result, checkErr := checkTimezoneConsistency(t, ext.Location, strict || ext.CriticalLocation, offsetUnknown)
 		if checkErr != nil {
 			return time.Time{}, nil, newParseError(
 				LayoutRFC3339NanoExtended,
@@ -223,7 +234,9 @@ func Validate(s string, strict bool) error {
 	// Check timezone consistency if timezone is provided
 	if ext != nil && ext.Location != nil {
 		offsetUnknown := hasUnknownLocalOffset(rfc3339Portion)
-		_, tzErr := checkTimezoneConsistency(t, ext.Location, strict, offsetUnknown)
+		// A critical time zone must be acted upon, so an inconsistency is an
+		// error even in non-strict mode (RFC 9557 Section 3.4).
+		_, tzErr := checkTimezoneConsistency(t, ext.Location, strict || ext.CriticalLocation, offsetUnknown)
 		if tzErr != nil {
 			return newParseError(LayoutRFC3339NanoExtended, s, tzErr)
 		}
@@ -264,6 +277,9 @@ func appendSuffix(t time.Time, ext *IXDTFExtensions, format string) []byte {
 		locName := loc.String()
 		if locName != "" {
 			b = append(b, '[')
+			if ext.CriticalLocation {
+				b = append(b, '!')
+			}
 			b = append(b, locName...)
 			b = append(b, ']')
 		}
@@ -554,16 +570,20 @@ func parseSuffixElement(content string, ext *IXDTFExtensions, strict bool) error
 	}
 
 	// Timezone name handling.
-	if critical {
-		return ErrInvalidTimezone // Timezone cannot be critical
-	}
+	//
+	// RFC 9557 Section 4.1 permits a critical flag ("!") on a time-zone
+	// annotation, e.g. "[!Europe/London]" (Figure 1/Figure 2). A critical
+	// annotation MUST be processable (Section 3.3), so an unknown or invalid
+	// name is rejected even in non-strict mode.
 	tzContent := content[startIdx:]
 	if tzContent == "" {
 		return nil
 	}
+	tzStrict := strict || critical
 
 	if loc, ok := tryLoadTimezone(tzContent); ok {
 		ext.Location = loc
+		ext.CriticalLocation = critical
 		return nil
 	}
 
@@ -575,14 +595,15 @@ func parseSuffixElement(content string, ext *IXDTFExtensions, strict bool) error
 			// Convert "+09:00" to "+0900" format for timezone name
 			zoneName := formatOffsetName(tzContent)
 			ext.Location = time.FixedZone(zoneName, offset)
+			ext.CriticalLocation = critical
 			return nil
 		}
 	}
 
 	// Try to validate timezone existence
-	if err := abnf.AbnfTimezone.ValidateTimezone(tzContent, strict); err != nil {
+	if err := abnf.AbnfTimezone.ValidateTimezone(tzContent, tzStrict); err != nil {
 		// In non-strict mode, ignore unknown timezone names per RFC 9557
-		if !strict {
+		if !tzStrict {
 			return nil
 		}
 		return ErrInvalidTimezone
@@ -591,7 +612,7 @@ func parseSuffixElement(content string, ext *IXDTFExtensions, strict bool) error
 	// Additional check: try to load the timezone to see if it actually exists
 	if _, err := time.LoadLocation(tzContent); err != nil {
 		// In non-strict mode, ignore unknown timezone names per RFC 9557
-		if !strict {
+		if !tzStrict {
 			return nil
 		}
 		return ErrInvalidTimezone
@@ -599,6 +620,7 @@ func parseSuffixElement(content string, ext *IXDTFExtensions, strict bool) error
 
 	// Timezone exists - set the location
 	ext.Location = time.FixedZone(tzContent, 0)
+	ext.CriticalLocation = critical
 	return nil
 }
 

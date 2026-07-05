@@ -161,11 +161,28 @@ func TestParseNumericOffset(t *testing.T) {
 
 func TestParseSuffix(t *testing.T) {
 	t.Parallel()
-	t.Run("critical timezone", func(t *testing.T) {
+	t.Run("critical timezone is accepted", func(t *testing.T) {
 		t.Parallel()
+		// RFC 9557 Section 4.1 permits a "!" flag on a time-zone annotation.
 		ext := NewIXDTFExtensions(nil)
-		if err := parseSuffixElement("!Asia/Tokyo", ext, false); !errors.Is(err, ErrInvalidTimezone) {
-			t.Fatalf("expected ErrInvalidTimezone for critical timezone, got %v", err)
+		if err := parseSuffixElement("!Asia/Tokyo", ext, false); err != nil {
+			t.Fatalf("expected critical timezone to be accepted, got %v", err)
+		}
+		if ext.Location == nil || ext.Location.String() != "Asia/Tokyo" {
+			t.Fatalf("expected Asia/Tokyo location, got %+v", ext.Location)
+		}
+		if !ext.CriticalLocation {
+			t.Fatalf("expected CriticalLocation to be true")
+		}
+	})
+
+	t.Run("critical unknown timezone is rejected in non-strict mode", func(t *testing.T) {
+		t.Parallel()
+		// A critical annotation MUST be processable (Section 3.3), so an
+		// unknown name is an error even in non-strict mode.
+		ext := NewIXDTFExtensions(nil)
+		if err := parseSuffixElement("!Foo/Bar", ext, false); !errors.Is(err, ErrInvalidTimezone) {
+			t.Fatalf("expected ErrInvalidTimezone for critical unknown timezone, got %v", err)
 		}
 	})
 
