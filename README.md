@@ -58,7 +58,7 @@ func main() {
     fmt.Printf("Parsed Time: %v\n", parsedTime)
     // => Parsed Time: 2025-01-02 03:04:05 -0500 EST
     fmt.Printf("Extensions: %+v\n", parsedExt)
-    // => &ixdtf.IXDTFExtensions{Location:America/New_York Tags:map[u-ca:gregorian] Critical:map[u-ca:true]}
+    // => &ixdtf.IXDTFExtensions{Location:America/New_York CriticalLocation:false Tags:map[u-ca:gregorian] Critical:map[u-ca:true]}
 
     // Format a time with same extensions
     now := time.Now()
@@ -181,13 +181,18 @@ The second argument `strict` in `Parse` / `Validate` controls how strictly the l
 | Mode | Behavior | Example |
 |------|----------|---------|
 | `true` | If the zone-derived offset for that instant differs from the RFC 3339 numeric offset, an **error (ErrTimezoneOffsetMismatch)** is returned. | `2025-01-01T12:00:00+09:00[America/New_York]` → New York at that instant is `-05:00`, so mismatch → error |
-| `false` | Mismatches do NOT produce an error. The original timestamp (its instant + numeric offset) is kept; the location is only applied if offsets match. | Same example above: no error; the provided time value is kept as-is (location not applied) |
+| `false` | Mismatches do NOT produce an error unless the annotation is critical (see below). The original timestamp (its instant + numeric offset) is kept; the location is only applied if offsets match. | Same example above: no error; the provided time value is kept as-is (location not applied) |
 
 Notes:
 
-- An invalid or unresolvable time zone name always yields an error (regardless of mode).
-- Time zones with `Etc/GMT±X` naming are skipped for consistency checking (POSIX inverted offset semantics would cause false positives).
-- `Validate` follows the same policy: with `strict=false` an offset mismatch is considered acceptable.
+- A time-zone annotation may carry the RFC 9557 critical flag, e.g. `[!Europe/London]`.
+  A critical zone must be processable and consistent (RFC 9557 Sections 3.3/3.4): an
+  unknown name or an offset mismatch is an error even with `strict=false`. The flag is
+  exposed as `IXDTFExtensions.CriticalLocation` and round-trips through `Format`.
+- An invalid or unresolvable time zone name yields an error in strict mode or when the
+  annotation is critical; otherwise it is ignored per RFC 9557.
+- `Validate` follows the same policy as `Parse`: with `strict=false` an offset mismatch
+  is acceptable unless the annotation is critical.
 - Extension tag syntax and critical tag handling are independent of `strict`, except for
   `u-ca` validation which is enforced in strict mode even for non-critical tags.
 - Recommended usage: accept loosely formed inputs with `strict=false` at system boundaries (ingest phase), then re-normalize if needed; enforce `strict=true` where data integrity or audit requirements apply.

@@ -106,6 +106,8 @@ type TimezoneConsistencyResult struct {
 }
 
 // Format formats a time with IXDTF extensions using RFC 3339 format.
+// The time-zone annotation is emitted with a leading "!" when
+// ext.CriticalLocation is set.
 func Format(t time.Time, ext *IXDTFExtensions) (string, error) {
 	// Validate extensions (including critical tag processing).
 	if err := validateExtensions(ext); err != nil {
@@ -117,6 +119,8 @@ func Format(t time.Time, ext *IXDTFExtensions) (string, error) {
 }
 
 // FormatNano formats a time with IXDTF extensions using RFC 3339 format with nanoseconds.
+// The time-zone annotation is emitted with a leading "!" when
+// ext.CriticalLocation is set.
 func FormatNano(t time.Time, ext *IXDTFExtensions) (string, error) {
 	// Validate extensions (including critical tag processing).
 	if err := validateExtensions(ext); err != nil {
@@ -129,7 +133,9 @@ func FormatNano(t time.Time, ext *IXDTFExtensions) (string, error) {
 
 // NewIXDTFExtensionsArgs contains the arguments for creating IXDTFExtensions.
 type NewIXDTFExtensionsArgs struct {
-	Location         *time.Location
+	Location *time.Location
+	// CriticalLocation marks the time-zone annotation as critical ("!");
+	// see IXDTFExtensions.CriticalLocation.
 	CriticalLocation bool
 	Tags             map[string]string
 	Critical         map[string]bool
@@ -243,8 +249,9 @@ func Validate(s string, strict bool) error {
 		if tzErr != nil {
 			return newParseError(LayoutRFC3339NanoExtended, s, tzErr)
 		}
-		// Note: Inconsistencies are not treated as validation errors per RFC 9557
-		// but invalid timezone names will cause errors
+		// Non-critical inconsistencies are not validation errors in
+		// non-strict mode; strict mode or a critical zone turns them into
+		// errors above.
 	}
 
 	// Optional: check if the complete string matches the ABNF pattern.
@@ -385,8 +392,9 @@ func checkTimezoneConsistency(
 		return nil, ErrTimezoneOffsetMismatch
 	}
 
-	// Per RFC 9557, inconsistencies should be detectable but not cause failures.
-	// This allows applications to handle inconsistencies as needed.
+	// In non-strict mode (callers escalate critical zones to strict per
+	// RFC 9557 Section 3.4), inconsistencies are recorded in the result but
+	// do not cause failures.
 	return result, nil
 }
 
@@ -575,7 +583,8 @@ func parseSuffixElement(content string, ext *IXDTFExtensions, strict bool) error
 	// Timezone name handling.
 	//
 	// RFC 9557 Section 4.1 permits a critical flag ("!") on a time-zone
-	// annotation, e.g. "[!Europe/London]" (Figure 1/Figure 2). A critical
+	// annotation, e.g. "[!Europe/London]" (Figures 1 and 2 in Section 3.4).
+	// A critical
 	// annotation MUST be processable (Section 3.3), so an unknown or invalid
 	// name is rejected even in non-strict mode.
 	//
