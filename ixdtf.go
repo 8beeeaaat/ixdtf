@@ -685,6 +685,13 @@ func validateExtensionsStrict(ext *IXDTFExtensions, strict bool) error {
 		return err
 	}
 
+	// A critical time-zone flag without a zone cannot be honored; emitting
+	// output that silently drops the "!" would violate RFC 9557 Section 3.3.
+	// This mirrors validateCriticalTags for the Critical map.
+	if ext.CriticalLocation && ext.Location == nil {
+		return ErrCriticalExtension
+	}
+
 	if err := validateTagKeys(ext.Tags); err != nil {
 		return err
 	}

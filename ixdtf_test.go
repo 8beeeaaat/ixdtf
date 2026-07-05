@@ -42,6 +42,16 @@ func TestFormat(t *testing.T) {
 			want: "2025-01-01T00:00:00Z[Asia/Tokyo]",
 		},
 		{
+			// A critical time-zone flag without a zone cannot be honored;
+			// silently dropping the "!" would violate RFC 9557 Section 3.3.
+			name: "critical location flag without location errors",
+			tm:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
+			ext: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
+				CriticalLocation: true,
+			}),
+			wantErr: ixdtf.ErrCriticalExtension,
+		},
+		{
 			name: "tags sorting and critical",
 			tm:   time.Date(2025, 3, 4, 5, 6, 7, 0, time.UTC),
 			ext: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
