@@ -35,7 +35,7 @@ func TestCheckTimezoneConsistency(t *testing.T) {
 		t.Parallel()
 		timezoneCache.Delete("Asia/Tokyo")
 		placeholder := time.FixedZone("Asia/Tokyo", 9*3600)
-		res, err := checkTimezoneConsistency(now, placeholder, false)
+		res, err := checkTimezoneConsistency(now, placeholder, false, false)
 		if err != nil {
 			t.Fatalf("expected fallback load to succeed, got %v", err)
 		}
@@ -46,15 +46,33 @@ func TestCheckTimezoneConsistency(t *testing.T) {
 
 	t.Run("nil location", func(t *testing.T) {
 		t.Parallel()
-		if res, err := checkTimezoneConsistency(now, nil, false); err != nil || !res.IsConsistent {
+		if res, err := checkTimezoneConsistency(now, nil, false, false); err != nil || !res.IsConsistent {
 			t.Fatalf("expected nil location to be consistent, got res=%+v err=%v", res, err)
 		}
 	})
 
 	t.Run("strict mode with unknown fixed zone", func(t *testing.T) {
 		t.Parallel()
-		if _, err := checkTimezoneConsistency(now, time.FixedZone("+0900", 9*3600), true); err == nil {
+		if _, err := checkTimezoneConsistency(now, time.FixedZone("+0900", 9*3600), true, false); err == nil {
 			t.Fatalf("expected strict mode to fail for unknown fixed zone")
+		}
+	})
+
+	t.Run("unknown local offset is consistent even in strict mode", func(t *testing.T) {
+		t.Parallel()
+		london, err := time.LoadLocation("Europe/London")
+		if err != nil {
+			t.Skipf("Europe/London unavailable: %v", err)
+		}
+		// July: London is BST (+01:00), which differs from the Z offset (0),
+		// yet an unknown local offset must never be flagged as inconsistent.
+		summer := time.Date(2022, 7, 8, 0, 14, 7, 0, time.UTC)
+		res, err := checkTimezoneConsistency(summer, london, true, true)
+		if err != nil {
+			t.Fatalf("unknown offset should not error in strict mode, got %v", err)
+		}
+		if !res.IsConsistent {
+			t.Fatalf("unknown offset should be consistent, got %+v", res)
 		}
 	})
 }

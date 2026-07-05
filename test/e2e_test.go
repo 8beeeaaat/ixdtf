@@ -16,7 +16,9 @@ func TestE2E_RoundTrip(t *testing.T) {
 			inputHasErrorInStrictMode:                false,
 			overrideWithNyExt:                        "2025-01-02T03:04:05Z[America/New_York]",
 			overrideWithNyExtHasErrorInNonStrictMode: false,
-			overrideWithNyExtHasErrorInStrictMode:    true,
+			// Z denotes an unknown local offset, so pairing it with a time-zone
+			// annotation is not an inconsistency (RFC 9557 Section 3.4, Figure 2).
+			overrideWithNyExtHasErrorInStrictMode: false,
 		},
 		{
 			name:                         "basic UTC time with invalid critical time zone tag",
@@ -74,7 +76,9 @@ func TestE2E_RoundTrip(t *testing.T) {
 			inputHasErrorInStrictMode:                false,
 			overrideWithNyExt:                        "2025-03-04T05:06:07Z[America/New_York][u-ca=gregory]",
 			overrideWithNyExtHasErrorInNonStrictMode: false,
-			overrideWithNyExtHasErrorInStrictMode:    true,
+			// Z denotes an unknown local offset, so pairing it with a time-zone
+			// annotation is not an inconsistency (RFC 9557 Section 3.4, Figure 2).
+			overrideWithNyExtHasErrorInStrictMode: false,
 		},
 		{
 			name:                                     "with critical tags",
