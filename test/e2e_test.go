@@ -21,8 +21,22 @@ func TestE2E_RoundTrip(t *testing.T) {
 			overrideWithNyExtHasErrorInStrictMode: false,
 		},
 		{
-			name:                         "basic UTC time with invalid critical time zone tag",
-			input:                        "2025-01-02T03:04:05Z[!America/New_York]",
+			// An accepted critical zone survives Parse -> Format with its
+			// "!" flag (Z is an unknown local offset, so no inconsistency).
+			name:                                     "critical time zone with Z",
+			input:                                    "2025-01-02T03:04:05Z[!America/New_York]",
+			inputHasErrorInNonStrictMode:             false,
+			inputHasErrorInStrictMode:                false,
+			inputFormatted:                           "2025-01-01T22:04:05-05:00[!America/New_York]",
+			overrideWithNyExt:                        "2025-01-01T22:04:05-05:00[America/New_York]",
+			overrideWithNyExtHasErrorInNonStrictMode: false,
+			overrideWithNyExtHasErrorInStrictMode:    false,
+		},
+		{
+			// A critical time zone must be processable (RFC 9557 Section 3.3);
+			// an unknown name errors in both modes.
+			name:                         "critical unknown time zone tag",
+			input:                        "2025-01-02T03:04:05Z[!Foo/Bar]",
 			inputHasErrorInNonStrictMode: true,
 			inputHasErrorInStrictMode:    true,
 		},
