@@ -1180,12 +1180,7 @@ func TestParseCriticalTimezone(t *testing.T) {
 		// July; the critical flag forces the error even in non-strict mode.
 		const input = "2022-07-08T00:14:07+00:00[!Europe/London]"
 		_, _, err := ixdtf.Parse(input, false)
-		if err == nil {
-			t.Fatalf("Parse(%q, false) expected inconsistency error, got nil", input)
-		}
-		if !strings.Contains(err.Error(), "timezone offset does not match") {
-			t.Errorf("Parse(%q, false) error = %v, want offset mismatch", input, err)
-		}
+		checkParseError(t, err, input, false, "timezone offset does not match")
 	})
 }
 

@@ -340,23 +340,23 @@ func checkTimezoneConsistency(
 		return result, nil
 	}
 	loc := ensureRealLocation(location)
-	if loc == nil {
-		if isOffsetLocationName(location.String()) {
-			// A numeric-offset annotation (e.g. "[+09:00]") produced this
-			// FixedZone; its offset is authoritative, so use it directly.
-			loc = location
-		} else {
-			loaded, err := loadLocationCached(location.String())
-			if err != nil {
-				// In non-strict mode, ignore unknown timezone errors per RFC 9557
-				if !strict {
-					result.IsConsistent = true // Can't check consistency for unknown timezone
-					return result, nil
-				}
-				return result, err
+	switch {
+	case loc != nil:
+	case isOffsetLocationName(location.String()):
+		// A numeric-offset annotation (e.g. "[+09:00]") produced this
+		// FixedZone; its offset is authoritative, so use it directly.
+		loc = location
+	default:
+		loaded, err := loadLocationCached(location.String())
+		if err != nil {
+			// In non-strict mode, ignore unknown timezone errors per RFC 9557
+			if !strict {
+				result.IsConsistent = true // Can't check consistency for unknown timezone
+				return result, nil
 			}
-			loc = loaded
+			return result, err
 		}
+		loc = loaded
 	}
 	result.Location = loc
 
