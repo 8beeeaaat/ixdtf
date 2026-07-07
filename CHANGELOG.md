@@ -31,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Technical
 
+- Refactored the IXDTF implementation from a monolithic file into focused modules for parsing, formatting, suffix handling, timezone resolution, validation, calendar tags, extensions, and errors, with expanded targeted tests (PR #27)
 - Broadened test coverage for critical time-zone and unknown-local-offset paths, raising total coverage to 96.4%
 - Added RFC 9557 spec-conformance tests: Section 3.3 example strings, the Section 1.2 offset example, and Parse → Format → Parse round trips for offset annotations (PR #26)
 - Bumped GitHub Actions dependencies: actions/checkout v7, actions/cache v6, codecov/codecov-action v7 (PR #18, #19, #20, #21)
