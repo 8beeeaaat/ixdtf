@@ -5,6 +5,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0] - 2026-07-07
+
+### Added
+
+- Support for the critical `!` flag on time-zone annotations per RFC 9557 Section 4.1 (e.g. `[!Europe/London]`); critical zones must be processable and consistent even in non-strict mode (PR #24)
+- New `CriticalLocation` field on `IXDTFExtensions` and its constructor args, so the critical flag round-trips through `Format`/`FormatNano`
+
+### Changed
+
+- `Z` and `-00:00` are now treated as unknown local offset per RFC 9557 Section 2.2: pairing them with a time-zone annotation is no longer an inconsistency, and the annotation is applied to resolve local time (#22, PR #23)
+- Numeric-offset annotations like `[+09:00]` are now accepted by the consistency and strict checks instead of failing with an unknown-time-zone error
+- `TimezoneConsistencyResult.Skipped` is deprecated and always `false` now that Etc/GMT zones are no longer skipped
+
+### Fixed
+
+- A second time-zone annotation (e.g. `...[Europe/London][Asia/Tokyo]`) is rejected with `ErrInvalidSuffix` instead of silently overwriting the first
+- Etc/GMT zones are no longer exempt from the offset consistency check, so real mismatches like `+05:00[!Etc/GMT+3]` are reported
+- `Format` returns `ErrCriticalExtension` when `CriticalLocation` is set without a `Location`, instead of silently dropping the critical flag
+
+### Technical
+
+- Broadened test coverage for critical time-zone and unknown-local-offset paths, raising total coverage to 96.4%
+- Bumped GitHub Actions dependencies: actions/checkout v7, actions/cache v6, codecov/codecov-action v7 (PR #18, #19, #20, #21)
+
 ## [0.3.1] - 2026-01-18
 
 ### Changed
