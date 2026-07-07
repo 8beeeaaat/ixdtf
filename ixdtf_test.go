@@ -123,6 +123,12 @@ func TestFormat(t *testing.T) {
 			want: "2025-01-01T12:00:00Z",
 		},
 		{
+			name: "nil extensions behaves like empty extensions",
+			tm:   time.Date(2025, 2, 3, 4, 5, 6, 0, tokyo),
+			ext:  nil,
+			want: "2025-02-03T04:05:06+09:00[Asia/Tokyo]",
+		},
+		{
 			// RFC 9557 Section 1.2: an offset time zone is serialized using
 			// the same numeric form as the RFC 3339 offset ("+09:00", not the
 			// Go zone-name convention "+0900").
