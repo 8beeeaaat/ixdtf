@@ -309,6 +309,9 @@ func validateCriticalLocation(t time.Time, ext *IXDTFExtensions) error {
 }
 
 func appendSuffix(t time.Time, ext *IXDTFExtensions, format string) []byte {
+	if ext == nil {
+		ext = NewIXDTFExtensions(nil)
+	}
 	b := []byte(t.Format(format))
 
 	// Add timezone if we have a valid location to display
