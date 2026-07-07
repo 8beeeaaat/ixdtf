@@ -162,6 +162,21 @@ strict mode even when non-critical:
 "2023-08-07T14:30:00Z[u-ca=unknown]"    // Error in strict mode
 ```
 
+#### Critical Tags the Library Does Not Understand
+
+RFC 9557 Section 3.3 requires a recipient to treat an IXDTF string as erroneous
+when it cannot process a critical suffix tag. The only key this library
+understands is `u-ca`, so the responsibility split is:
+
+- `strict=true`: the library acts as the recipient and rejects any critical key
+  other than `u-ca` (e.g. `[!knort=blargel]` → error).
+- `strict=false`: unrecognized critical keys are accepted and recorded in
+  `IXDTFExtensions.Critical`; **the caller is the recipient** and MUST check
+  that map and reject strings whose critical tags it cannot process.
+
+A duplicate suffix key is an error in both modes when either occurrence carries
+the critical flag (Section 3.3); elective duplicates keep the first occurrence.
+
 ## API Reference
 
 ### Core Functions
@@ -191,6 +206,12 @@ Notes:
   exposed as `IXDTFExtensions.CriticalLocation` and round-trips through `Format`.
 - An invalid or unresolvable time zone name yields an error in strict mode or when the
   annotation is critical; otherwise it is ignored per RFC 9557.
+- Numeric-offset annotations such as `[+09:00]` are supported; the offset itself is
+  authoritative, and `Format` serializes it back in the same RFC 3339 form
+  (RFC 9557 Section 1.2), so parsed values round-trip.
+- The RFC 9557 Section 4.1 grammar allows at most one time-zone annotation, placed
+  before any suffix tags. A second time-zone annotation — or one appearing after a
+  `key=value` tag — is an `ErrInvalidSuffix` error in both modes.
 - `Validate` follows the same policy as `Parse`: with `strict=false` an offset mismatch
   is acceptable unless the annotation is critical.
 - Extension tag syntax and critical tag handling are independent of `strict`, except for

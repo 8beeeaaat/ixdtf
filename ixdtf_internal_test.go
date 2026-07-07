@@ -77,23 +77,6 @@ func TestCheckTimezoneConsistency(t *testing.T) {
 	})
 }
 
-func TestFormatOffsetName(t *testing.T) {
-	t.Parallel()
-	t.Run("colon variant compression", func(t *testing.T) {
-		t.Parallel()
-		if got := formatOffsetName("+09:00"); got != "+0900" {
-			t.Fatalf("expected colon variant to compress, got %q", got)
-		}
-	})
-
-	t.Run("non-colon offset", func(t *testing.T) {
-		t.Parallel()
-		if got := formatOffsetName("+0900"); got != "+0900" {
-			t.Fatalf("expected formatOffsetName to return original value for non-colon offset, got %q", got)
-		}
-	})
-}
-
 func TestParseErrorError(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -169,13 +152,14 @@ func TestParseNumericOffset(t *testing.T) {
 func TestIsOffsetLocationName(t *testing.T) {
 	t.Parallel()
 	cases := map[string]bool{
-		"+0900":  true,
-		"-0330":  true,
+		"+09:00": true,
+		"-03:30": true,
 		"":       false,
-		"+090":   false,
-		"+09:00": false,
-		"09000":  false,
-		"+09a0":  false,
+		"+09:0":  false,
+		"+0900":  false,
+		"09:000": false,
+		"+09:a0": false,
+		"+09.00": false,
 	}
 	for name, want := range cases {
 		if got := isOffsetLocationName(name); got != want {
@@ -224,7 +208,7 @@ func TestParseSuffix(t *testing.T) {
 		t.Parallel()
 		// RFC 9557 Section 4.1 permits a "!" flag on a time-zone annotation.
 		ext := NewIXDTFExtensions(nil)
-		if err := parseSuffixElement("!Asia/Tokyo", ext, false); err != nil {
+		if err := parseSuffixElement("!Asia/Tokyo", ext, false, &suffixParseState{}); err != nil {
 			t.Fatalf("expected critical timezone to be accepted, got %v", err)
 		}
 		if ext.Location == nil || ext.Location.String() != "Asia/Tokyo" {
@@ -240,7 +224,7 @@ func TestParseSuffix(t *testing.T) {
 		// A critical annotation MUST be processable (Section 3.3), so an
 		// unknown name is an error even in non-strict mode.
 		ext := NewIXDTFExtensions(nil)
-		if err := parseSuffixElement("!Foo/Bar", ext, false); !errors.Is(err, ErrInvalidTimezone) {
+		if err := parseSuffixElement("!Foo/Bar", ext, false, &suffixParseState{}); !errors.Is(err, ErrInvalidTimezone) {
 			t.Fatalf("expected ErrInvalidTimezone for critical unknown timezone, got %v", err)
 		}
 	})
