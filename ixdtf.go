@@ -282,7 +282,8 @@ func Validate(s string, strict bool) error {
 
 // formatLocation returns the location whose name is emitted as the time-zone
 // annotation: ext.Location when set, otherwise the timestamp's own named zone.
-// UTC, Local, and unnamed zones produce no annotation, so nil is returned.
+// When falling back to the timestamp's zone, UTC, Local, and unnamed zones
+// produce no annotation, so nil is returned.
 func formatLocation(t time.Time, ext *IXDTFExtensions) *time.Location {
 	loc := ext.Location
 	if loc == nil {
