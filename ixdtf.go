@@ -86,6 +86,12 @@ func (e *ParseError) Error() string {
 	return "IXDTFE parsing time \"" + e.Value + "\" as \"" + string(e.Layout) + "\": " + e.Err.Error()
 }
 
+// Unwrap returns the underlying error, so callers can match sentinel errors
+// with errors.Is (e.g. errors.Is(err, ErrTimezoneOffsetMismatch)).
+func (e *ParseError) Unwrap() error {
+	return e.Err
+}
+
 // TimezoneConsistencyResult holds information about timezone offset consistency.
 type TimezoneConsistencyResult struct {
 	// Location is the loaded timezone location.
@@ -113,6 +119,9 @@ func Format(t time.Time, ext *IXDTFExtensions) (string, error) {
 	if err := validateExtensions(ext); err != nil {
 		return "", err
 	}
+	if err := validateCriticalLocation(t, ext); err != nil {
+		return "", err
+	}
 	b := appendSuffix(t, ext, time.RFC3339)
 
 	return string(b), nil
@@ -124,6 +133,9 @@ func Format(t time.Time, ext *IXDTFExtensions) (string, error) {
 func FormatNano(t time.Time, ext *IXDTFExtensions) (string, error) {
 	// Validate extensions (including critical tag processing).
 	if err := validateExtensions(ext); err != nil {
+		return "", err
+	}
+	if err := validateCriticalLocation(t, ext); err != nil {
 		return "", err
 	}
 	b := appendSuffix(t, ext, time.RFC3339Nano)
@@ -268,31 +280,49 @@ func Validate(s string, strict bool) error {
 	return nil
 }
 
+// formatLocation returns the location whose name is emitted as the time-zone
+// annotation: ext.Location when set, otherwise the timestamp's own named zone.
+// When falling back to the timestamp's zone, UTC, Local, and unnamed zones
+// produce no annotation, so nil is returned.
+func formatLocation(t time.Time, ext *IXDTFExtensions) *time.Location {
+	loc := ext.Location
+	if loc == nil {
+		loc = t.Location()
+		if loc == time.UTC || loc.String() == "Local" {
+			return nil
+		}
+	}
+	if loc.String() == "" {
+		return nil
+	}
+	return loc
+}
+
+// validateCriticalLocation rejects a critical time-zone flag that has no zone
+// to attach to — neither ext.Location nor the timestamp's own named zone.
+// Emitting output that silently drops the "!" would misrepresent the caller's
+// declared critical intent (RFC 9557 Section 3.3).
+func validateCriticalLocation(t time.Time, ext *IXDTFExtensions) error {
+	if ext != nil && ext.CriticalLocation && formatLocation(t, ext) == nil {
+		return ErrCriticalExtension
+	}
+	return nil
+}
+
 func appendSuffix(t time.Time, ext *IXDTFExtensions, format string) []byte {
+	if ext == nil {
+		ext = NewIXDTFExtensions(nil)
+	}
 	b := []byte(t.Format(format))
 
-	// Determine which location to use for timezone information
-	var loc *time.Location
-	if ext.Location != nil {
-		// Extension explicitly specifies a location
-		loc = ext.Location
-	} else if t.Location() != time.UTC && t.Location().String() != "Local" {
-		// time.Time has a specific location (not UTC or Local)
-		loc = t.Location()
-	}
-	// If ext.Location is nil and t.Location() is UTC or Local, don't add timezone
-
 	// Add timezone if we have a valid location to display
-	if loc != nil {
-		locName := loc.String()
-		if locName != "" {
-			b = append(b, '[')
-			if ext.CriticalLocation {
-				b = append(b, '!')
-			}
-			b = append(b, locName...)
-			b = append(b, ']')
+	if loc := formatLocation(t, ext); loc != nil {
+		b = append(b, '[')
+		if ext.CriticalLocation {
+			b = append(b, '!')
 		}
+		b = append(b, loc.String()...)
+		b = append(b, ']')
 	}
 
 	// set tags
@@ -530,8 +560,20 @@ func parseRFC3339Portion(rfc3339Portion string) (time.Time, error) {
 	return time.Time{}, lastErr
 }
 
+// suffixParseState tracks which element kinds have been seen while parsing a
+// suffix, enforcing the RFC 9557 Section 4.1 grammar
+// "suffix = [time-zone] *suffix-tag": at most one time-zone annotation, and
+// it must precede all suffix tags. The state is deliberately independent of
+// ext.Location, which stays nil when a non-strict parse ignores an unknown
+// zone.
+type suffixParseState struct {
+	seenTimezone bool
+	seenTag      bool
+}
+
 func parseSuffix(s string, strict bool) (*IXDTFExtensions, error) {
 	ext := NewIXDTFExtensions(nil)
+	state := &suffixParseState{}
 
 	i := 0
 	for i < len(s) {
@@ -550,7 +592,7 @@ func parseSuffix(s string, strict bool) (*IXDTFExtensions, error) {
 
 		// Parse the content between '[' and ']'
 		content := s[i+1 : j]
-		if err := parseSuffixElement(content, ext, strict); err != nil {
+		if err := parseSuffixElement(content, ext, strict, state); err != nil {
 			return ext, err
 		}
 
@@ -560,7 +602,7 @@ func parseSuffix(s string, strict bool) (*IXDTFExtensions, error) {
 	return ext, nil
 }
 
-func parseSuffixElement(content string, ext *IXDTFExtensions, strict bool) error {
+func parseSuffixElement(content string, ext *IXDTFExtensions, strict bool, state *suffixParseState) error {
 	if content == "" {
 		return ErrInvalidSuffix
 	}
@@ -577,23 +619,26 @@ func parseSuffixElement(content string, ext *IXDTFExtensions, strict bool) error
 
 	// Extension tag (has '=') vs timezone name.
 	if strings.IndexByte(content[startIdx:], '=') >= 0 {
-		return handleExtensionTag(content, critical, startIdx, ext)
+		state.seenTag = true
+		return handleExtensionTag(content, critical, startIdx, ext, strict)
 	}
 
 	// Timezone name handling.
 	//
 	// RFC 9557 Section 4.1 permits a critical flag ("!") on a time-zone
 	// annotation, e.g. "[!Europe/London]" (Figures 1 and 2 in Section 3.4).
-	// A critical
-	// annotation MUST be processable (Section 3.3), so an unknown or invalid
-	// name is rejected even in non-strict mode.
+	// A critical annotation MUST be processable (Section 3.3), so an unknown
+	// or invalid name is rejected even in non-strict mode.
 	//
-	// The grammar allows at most one time-zone annotation; a second one would
-	// overwrite the zone and its critical flag, hiding a mandatory Section 3.4
-	// inconsistency error.
-	if ext.Location != nil {
+	// The Section 4.1 grammar ("suffix = [time-zone] *suffix-tag") allows at
+	// most one time-zone annotation, placed before any suffix tags. A second
+	// one would overwrite the zone and its critical flag, hiding a mandatory
+	// Section 3.4 inconsistency error — even when the first zone was unknown
+	// and ignored by a non-strict parse.
+	if state.seenTimezone || state.seenTag {
 		return ErrInvalidSuffix
 	}
+	state.seenTimezone = true
 	tzContent := content[startIdx:]
 	if tzContent == "" {
 		return nil
@@ -611,9 +656,10 @@ func parseSuffixElement(content string, ext *IXDTFExtensions, strict bool) error
 	if offsetErr := abnf.AbnfTimezoneTag.ValidateTimezoneTag(offsetPattern, false); offsetErr == nil {
 		// Parse numeric offset
 		if offset, err := parseNumericOffset(tzContent); err == nil {
-			// Convert "+09:00" to "+0900" format for timezone name
-			zoneName := formatOffsetName(tzContent)
-			ext.Location = time.FixedZone(zoneName, offset)
+			// Keep the RFC 3339 serialization form ("+09:00") as the zone
+			// name so Format round-trips the annotation per RFC 9557
+			// Section 1.2 and the Section 4.1 time-numoffset grammar.
+			ext.Location = time.FixedZone(tzContent, offset)
 			ext.CriticalLocation = critical
 			return nil
 		}
@@ -644,7 +690,7 @@ func parseSuffixElement(content string, ext *IXDTFExtensions, strict bool) error
 }
 
 // handleExtensionTag processes an extension tag element (key=value pair).
-func handleExtensionTag(content string, critical bool, startIdx int, ext *IXDTFExtensions) error {
+func handleExtensionTag(content string, critical bool, startIdx int, ext *IXDTFExtensions, strict bool) error {
 	equalIndex := strings.IndexByte(content[startIdx:], '=')
 	if equalIndex < 0 {
 		return ErrInvalidExtension
@@ -662,14 +708,27 @@ func handleExtensionTag(content string, critical bool, startIdx int, ext *IXDTFE
 
 	key := content[startIdx:equalIndex]
 
-	// Respect RFC 9557: first occurrence wins.
+	// RFC 9557 Section 3.3: for elective duplicates the first occurrence
+	// wins, but a duplicate suffix key involving a critical flag on either
+	// occurrence MUST be treated as erroneous — in both modes.
 	if _, exists := ext.Tags[key]; exists {
+		if critical || ext.Critical[key] {
+			return ErrCriticalExtension
+		}
 		return nil
 	}
 	value := content[equalIndex+1:]
 	if critical {
 		if err := validateCriticalExtension(key, value); err != nil {
 			return err
+		}
+		// RFC 9557 Section 3.3: a recipient MUST treat the string as
+		// erroneous when it cannot process a critical suffix key. In strict
+		// mode this library acts as the recipient and only understands
+		// "u-ca"; in non-strict mode processing is delegated to the caller
+		// via the Critical map.
+		if strict && key != ExtensionUnicodeCalendar {
+			return ErrCriticalExtension
 		}
 	}
 	ext.Tags[key] = value
@@ -692,13 +751,6 @@ func validateExtensionsStrict(ext *IXDTFExtensions, strict bool) error {
 
 	if err := validateLocationStrict(ext.Location, strict); err != nil {
 		return err
-	}
-
-	// A critical time-zone flag without a zone cannot be honored; emitting
-	// output that silently drops the "!" would violate RFC 9557 Section 3.3.
-	// This mirrors validateCriticalTags for the Critical map.
-	if ext.CriticalLocation && ext.Location == nil {
-		return ErrCriticalExtension
 	}
 
 	if err := validateTagKeys(ext.Tags); err != nil {
@@ -844,23 +896,18 @@ func parseNumericOffset(s string) (int, error) {
 	return sign * (hours*3600 + minutes*60), nil
 }
 
-// formatOffsetName converts "+09:00" format to "+0900" format for timezone names.
-func formatOffsetName(offset string) string {
-	if len(offset) == 6 && offset[3] == ':' {
-		return offset[:3] + offset[4:]
-	}
-	return offset
-}
-
-// isOffsetLocationName reports whether name is a numeric-offset zone name as
-// produced by formatOffsetName (e.g. "+0900", "-0330"). Such a location's
-// offset is authoritative and has no timezone-database entry, so it must not
-// be resolved via time.LoadLocation (the lookup would always fail).
+// isOffsetLocationName reports whether name is a numeric-offset zone name in
+// the RFC 3339 serialization form used for offset time-zone annotations
+// (e.g. "+09:00", "-03:30"), as produced when parsing "[+09:00]". Such a
+// location's offset is authoritative and has no timezone-database entry, so
+// it must not be resolved via time.LoadLocation (the lookup would always
+// fail).
 func isOffsetLocationName(name string) bool {
-	if len(name) != 5 || (name[0] != '+' && name[0] != '-') {
+	const offsetNameLength = 6 // len("+09:00")
+	if len(name) != offsetNameLength || (name[0] != '+' && name[0] != '-') || name[3] != ':' {
 		return false
 	}
-	for i := 1; i < len(name); i++ {
+	for _, i := range [...]int{1, 2, 4, 5} {
 		if name[i] < '0' || name[i] > '9' {
 			return false
 		}

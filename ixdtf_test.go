@@ -122,6 +122,43 @@ func TestFormat(t *testing.T) {
 			}),
 			want: "2025-01-01T12:00:00Z",
 		},
+		{
+			name: "nil extensions behaves like empty extensions",
+			tm:   time.Date(2025, 2, 3, 4, 5, 6, 0, tokyo),
+			ext:  nil,
+			want: "2025-02-03T04:05:06+09:00[Asia/Tokyo]",
+		},
+		{
+			// RFC 9557 Section 1.2: an offset time zone is serialized using
+			// the same numeric form as the RFC 3339 offset ("+09:00", not the
+			// Go zone-name convention "+0900").
+			name: "offset time zone serialized in RFC form",
+			tm:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.FixedZone("+09:00", 9*3600)),
+			ext: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
+				Location: time.FixedZone("+09:00", 9*3600),
+			}),
+			want: "2025-01-01T00:00:00+09:00[+09:00]",
+		},
+		{
+			name: "critical offset time zone keeps flag and RFC form",
+			tm:   time.Date(2025, 1, 1, 0, 0, 0, 0, time.FixedZone("+09:00", 9*3600)),
+			ext: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
+				Location:         time.FixedZone("+09:00", 9*3600),
+				CriticalLocation: true,
+			}),
+			want: "2025-01-01T00:00:00+09:00[!+09:00]",
+		},
+		{
+			// The critical flag also applies to the timestamp's own named
+			// zone when ext.Location is unset — the same fallback used for
+			// non-critical output, so the "!" is not silently dropped.
+			name: "critical flag applies to fallback zone from timestamp",
+			tm:   time.Date(2025, 2, 3, 4, 5, 6, 0, tokyo),
+			ext: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
+				CriticalLocation: true,
+			}),
+			want: "2025-02-03T04:05:06+09:00[!Asia/Tokyo]",
+		},
 	}
 
 	sort.Slice(tests, func(i, j int) bool { return tests[i].name < tests[j].name })
@@ -146,6 +183,61 @@ func TestFormat(t *testing.T) {
 				t.Fatalf("want %q got %q", tc.want, got)
 			}
 		})
+	}
+}
+
+// TestOffsetTimezoneRoundTrip verifies that offset time-zone annotations
+// survive a Parse -> Format -> Parse round trip in the RFC 9557 Section 1.2
+// serialization form, including the Section 1.2 example "+08:45[+08:45]" and
+// the critical variant.
+func TestOffsetTimezoneRoundTrip(t *testing.T) {
+	t.Parallel()
+
+	inputs := []string{
+		"2025-01-01T00:00:00+09:00[+09:00]",
+		"2022-07-08T00:14:07+08:45[+08:45]", // RFC 9557 Section 1.2 example
+		"2025-01-01T00:00:00+09:00[!+09:00]",
+	}
+
+	for _, input := range inputs {
+		t.Run(input, func(t *testing.T) {
+			t.Parallel()
+			tm, ext, err := ixdtf.Parse(input, true)
+			if err != nil {
+				t.Fatalf("Parse(%q, true) unexpected error: %v", input, err)
+			}
+
+			formatted, err := ixdtf.Format(tm, ext)
+			if err != nil {
+				t.Fatalf("Format after Parse(%q) unexpected error: %v", input, err)
+			}
+			if formatted != input {
+				t.Fatalf("round trip = %q, want %q", formatted, input)
+			}
+
+			if _, _, reparseErr := ixdtf.Parse(formatted, true); reparseErr != nil {
+				t.Fatalf("re-Parse(%q, true) unexpected error: %v", formatted, reparseErr)
+			}
+			if validateErr := ixdtf.Validate(formatted, true); validateErr != nil {
+				t.Fatalf("Validate(%q, true) unexpected error: %v", formatted, validateErr)
+			}
+		})
+	}
+}
+
+// TestParseErrorUnwrap verifies that ParseError supports errors.Is matching
+// against the package's sentinel errors via Unwrap.
+func TestParseErrorUnwrap(t *testing.T) {
+	t.Parallel()
+
+	_, _, err := ixdtf.Parse("2025-06-01T12:00:00+09:00[America/New_York]", true)
+	if !errors.Is(err, ixdtf.ErrTimezoneOffsetMismatch) {
+		t.Fatalf("expected errors.Is(err, ErrTimezoneOffsetMismatch), got %v", err)
+	}
+
+	_, _, err = ixdtf.Parse("2022-07-08T00:14:07Z[Asia/Tokyo][Europe/Paris]", true)
+	if !errors.Is(err, ixdtf.ErrInvalidSuffix) {
+		t.Fatalf("expected errors.Is(err, ErrInvalidSuffix), got %v", err)
 	}
 }
 
@@ -503,20 +595,40 @@ func TestParse(t *testing.T) {
 			wantErr: "IXDTFE parsing time",
 		},
 		{
-			name:     "suffix with non-existent timezone - non-strict mode",
-			input:    "2025-01-01T00:00:00Z[!u-ca=gregory][t-invalid]",
-			strict:   false,
-			wantTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
-			wantExt: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
-				Tags:     map[string]string{"u-ca": "gregory"},
-				Critical: map[string]bool{"u-ca": true},
-			}),
+			// "[t-invalid]" has no "=" so it can only be a time-zone
+			// annotation, which the RFC 9557 Section 4.1 grammar
+			// ("suffix = [time-zone] *suffix-tag") forbids after a suffix tag.
+			name:    "timezone-shaped element after tag - non-strict mode",
+			input:   "2025-01-01T00:00:00Z[!u-ca=gregory][t-invalid]",
+			strict:  false,
+			wantErr: "invalid IXDTF suffix format",
 		},
 		{
-			name:    "suffix with non-existent timezone - strict mode",
+			name:    "timezone-shaped element after tag - strict mode",
 			input:   "2025-01-01T00:00:00Z[!u-ca=gregory][t-invalid]",
 			strict:  true,
-			wantErr: "invalid timezone name",
+			wantErr: "invalid IXDTF suffix format",
+		},
+		{
+			name:    "timezone annotation after suffix tag rejected in strict",
+			input:   "2025-03-04T05:06:07Z[u-ca=hebrew][Asia/Tokyo]",
+			strict:  true,
+			wantErr: "invalid IXDTF suffix format",
+		},
+		{
+			name:    "timezone annotation after suffix tag rejected in non-strict",
+			input:   "2025-03-04T05:06:07Z[u-ca=hebrew][Asia/Tokyo]",
+			strict:  false,
+			wantErr: "invalid IXDTF suffix format",
+		},
+		{
+			// Even when the first zone is unknown and ignored by a non-strict
+			// parse, a second time-zone annotation stays a grammar violation;
+			// it must not be silently applied in place of the first.
+			name:    "second timezone annotation after ignored unknown zone rejected",
+			input:   "2022-07-08T00:14:07Z[Foo/Bar][Asia/Tokyo]",
+			strict:  false,
+			wantErr: "invalid IXDTF suffix format",
 		},
 		{
 			name:    "suffix with private extension",
@@ -604,7 +716,7 @@ func TestParse(t *testing.T) {
 			strict:   false,
 			wantTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
 			wantExt: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
-				Location: time.FixedZone("+0900", 9*3600),
+				Location: time.FixedZone("+09:00", 9*3600),
 				Tags:     map[string]string{},
 				Critical: map[string]bool{},
 			}),
@@ -616,9 +728,9 @@ func TestParse(t *testing.T) {
 			name:     "critical matching numeric offset is accepted",
 			input:    "2025-01-01T00:00:00+09:00[!+09:00]",
 			strict:   false,
-			wantTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.FixedZone("+0900", 9*3600)),
+			wantTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.FixedZone("+09:00", 9*3600)),
 			wantExt: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
-				Location:         time.FixedZone("+0900", 9*3600),
+				Location:         time.FixedZone("+09:00", 9*3600),
 				CriticalLocation: true,
 			}),
 		},
@@ -635,9 +747,9 @@ func TestParse(t *testing.T) {
 			name:     "matching numeric offset is accepted in strict mode",
 			input:    "2025-01-01T00:00:00+09:00[+09:00]",
 			strict:   true,
-			wantTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.FixedZone("+0900", 9*3600)),
+			wantTime: time.Date(2025, 1, 1, 0, 0, 0, 0, time.FixedZone("+09:00", 9*3600)),
 			wantExt: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
-				Location: time.FixedZone("+0900", 9*3600),
+				Location: time.FixedZone("+09:00", 9*3600),
 			}),
 		},
 		{
@@ -661,6 +773,49 @@ func TestParse(t *testing.T) {
 			wantExt: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{Tags: map[string]string{
 				"key": "one",
 			}}),
+		},
+		{
+			// RFC 9557 Section 3.3 example: a duplicate suffix key where the
+			// first occurrence is critical MUST be treated as erroneous.
+			name:    "critical duplicate tag rejected (first critical)",
+			input:   "2022-07-08T00:14:07Z[!u-ca=chinese][u-ca=japanese]",
+			strict:  false,
+			wantErr: "critical extension cannot be processed",
+		},
+		{
+			// RFC 9557 Section 3.3 example: the critical flag on the second
+			// occurrence must not be silently discarded either.
+			name:    "critical duplicate tag rejected (second critical)",
+			input:   "2022-07-08T00:14:07Z[u-ca=chinese][!u-ca=japanese]",
+			strict:  false,
+			wantErr: "critical extension cannot be processed",
+		},
+		{
+			name:    "critical duplicate tag rejected in strict mode",
+			input:   "2022-07-08T00:14:07Z[!u-ca=chinese][u-ca=japanese]",
+			strict:  true,
+			wantErr: "critical extension cannot be processed",
+		},
+		{
+			// RFC 9557 Section 3.3 example "[!knort=blargel]": in strict mode
+			// this library is the recipient, understands only "u-ca", and MUST
+			// treat an unrecognized critical key as erroneous.
+			name:    "unknown critical suffix key rejected in strict mode",
+			input:   "2022-07-08T00:14:07Z[!knort=blargel]",
+			strict:  true,
+			wantErr: "critical extension cannot be processed",
+		},
+		{
+			// In non-strict mode processing of unrecognized critical keys is
+			// delegated to the caller via the Critical map.
+			name:     "unknown critical suffix key delegated in non-strict mode",
+			input:    "2022-07-08T00:14:07Z[!knort=blargel]",
+			strict:   false,
+			wantTime: time.Date(2022, 7, 8, 0, 14, 7, 0, time.UTC),
+			wantExt: ixdtf.NewIXDTFExtensions(&ixdtf.NewIXDTFExtensionsArgs{
+				Tags:     map[string]string{"knort": "blargel"},
+				Critical: map[string]bool{"knort": true},
+			}),
 		},
 	}
 
