@@ -11,22 +11,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Support for the critical `!` flag on time-zone annotations per RFC 9557 Section 4.1 (e.g. `[!Europe/London]`); critical zones must be processable and consistent even in non-strict mode (PR #24)
 - New `CriticalLocation` field on `IXDTFExtensions` and its constructor args, so the critical flag round-trips through `Format`/`FormatNano`
+- `ParseError` now implements `Unwrap`, so sentinel errors like `ErrTimezoneOffsetMismatch` match with `errors.Is` (PR #26)
 
 ### Changed
 
 - `Z` and `-00:00` are now treated as unknown local offset per RFC 9557 Section 2.2: pairing them with a time-zone annotation is no longer an inconsistency, and the annotation is applied to resolve local time (#22, PR #23)
 - Numeric-offset annotations like `[+09:00]` are now accepted by the consistency and strict checks instead of failing with an unknown-time-zone error
 - `TimezoneConsistencyResult.Skipped` is deprecated and always `false` now that Etc/GMT zones are no longer skipped
+- Strict mode now rejects unknown critical suffix keys other than `u-ca` with `ErrCriticalExtension`; non-strict callers can still inspect them via the `Critical` map (PR #26)
 
 ### Fixed
 
-- A second time-zone annotation (e.g. `...[Europe/London][Asia/Tokyo]`) is rejected with `ErrInvalidSuffix` instead of silently overwriting the first
+- A second time-zone annotation (e.g. `...[Europe/London][Asia/Tokyo]`) is rejected with `ErrInvalidSuffix` instead of silently overwriting the first, even when the first annotation was an ignored unknown zone (PR #24, #26)
 - Etc/GMT zones are no longer exempt from the offset consistency check, so real mismatches like `+05:00[!Etc/GMT+3]` are reported
-- `Format` returns `ErrCriticalExtension` when `CriticalLocation` is set without a `Location`, instead of silently dropping the critical flag
+- `Format` now keeps the RFC 3339 form as the zone name for offset annotations, emitting `[+09:00]` instead of the grammar-violating `[+0900]`, so Parse → Format → Parse round trips are lossless (PR #26)
+- Duplicate suffix keys are rejected with `ErrCriticalExtension` when either occurrence carries the critical flag, per RFC 9557 Section 3.3 (PR #26)
+- A time-zone annotation appearing after a suffix tag is rejected with `ErrInvalidSuffix`, enforcing the RFC 9557 `suffix = [time-zone] *suffix-tag` ordering (PR #26)
+- `Format`/`FormatNano` apply `CriticalLocation` to the timestamp's own zone when `Location` is unset, and return `ErrCriticalExtension` only when no zone is available to attach the flag to (PR #24, #26)
 
 ### Technical
 
 - Broadened test coverage for critical time-zone and unknown-local-offset paths, raising total coverage to 96.4%
+- Added RFC 9557 spec-conformance tests: Section 3.3 example strings, the Section 1.2 offset example, and Parse → Format → Parse round trips for offset annotations (PR #26)
 - Bumped GitHub Actions dependencies: actions/checkout v7, actions/cache v6, codecov/codecov-action v7 (PR #18, #19, #20, #21)
 
 ## [0.3.1] - 2026-01-18
