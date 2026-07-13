@@ -4,6 +4,10 @@
 //
 // See RFC 9557: https://datatracker.ietf.org/doc/rfc9557/
 //
+// An interactive demo is available at https://ixdtf.8beeeaaat.com/, which runs
+// IXDTF strings through both the browser-native TC39 Temporal API and this
+// library (source: https://github.com/8beeeaaat/ixdtf_demo).
+//
 // The package is organized so each file covers one RFC 9557 concern:
 //
 //   - format.go: serialization (Section 4.1) and critical output rules (Section 3.3)
