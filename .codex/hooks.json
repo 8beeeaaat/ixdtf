@@ -1,0 +1,30 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "apply_patch|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/.codex/hooks/guard-generated.sh\"",
+            "timeout": 10,
+            "statusMessage": "Checking generated files"
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "Bash|apply_patch|Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash \"$(git rev-parse --show-toplevel)/.codex/hooks/post-edit-checks.sh\"",
+            "timeout": 10,
+            "statusMessage": "Checking project follow-ups"
+          }
+        ]
+      }
+    ]
+  }
+}

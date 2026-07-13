@@ -7,11 +7,15 @@ A demo for https://pkg.go.dev/github.com/8beeeaaat/ixdtf
 - [設計書](./docs/architecture.md)
 - [UI デザインシステム](./docs/DESIGN.md)
 
-## 開発支援 (.claude/)
+## 開発支援
 
-実装フェーズの規約を自動で守らせる Claude Code 用プロジェクト設定。
+実装フェーズの規約を自動で守らせるプロジェクト設定。
+Skills は `.agent/skills/` を実体とし、Claude Code は `.claude/skills`、Codex は `.agents/skills`
+の symlink から同じ内容を参照する。
 
 ### Agents (自動レビュー)
+
+Claude Code 用のプロジェクト agents は `.claude/agents/` に置く。
 
 | Agent | 検査対象 | 規範 |
 |---|---|---|
@@ -27,5 +31,7 @@ A demo for https://pkg.go.dev/github.com/8beeeaaat/ixdtf
 
 ### Hooks
 
+- Claude Code: `.claude/hooks/`
+- Codex: `.codex/hooks.json` + `.codex/hooks/`。初回または変更後は Codex の `/hooks` で内容を確認して trust する
 - `guard-generated.sh` (PreToolUse) — codegen 生成物 (`*/generated/`) の手動編集をブロック
 - `post-edit-checks.sh` (PostToolUse) — openapi / locale 変更の追従リマインド、DESIGN.md 禁止パターン警告

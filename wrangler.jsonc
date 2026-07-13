@@ -1,0 +1,49 @@
+// Cloudflare Workers デプロイ設定。
+// API は server/cmd/worker (Go → WASM, syumai/workers)、
+// フロントエンドは Workers Static Assets (web/dist) で配信する。
+// エントリは手書きラッパー server/worker-entry.mjs。全リクエストを先に通し、
+// 旧 workers.dev URL を正規ドメインへ 301 リダイレクト、/api/* を Go WASM へ、
+// 残りを ASSETS binding 経由でアセット配信 + SPA フォールバックへ委譲する。
+{
+  "name": "ixdtf-demo",
+  "main": "./server/worker-entry.mjs",
+  "compatibility_date": "2026-07-01",
+  // カスタムドメイン公開。custom_domain=true で Cloudflare が DNS レコード作成と
+  // 証明書発行を自動化する (ゾーン 8beeeaaat.com は取得済み)。
+  "routes": [
+    {
+      "pattern": "ixdtf.8beeeaaat.com",
+      "custom_domain": true
+    }
+  ],
+  // routes 指定時 workers_dev はデフォルト無効化されるため、既存の
+  // ixdtf-demo.8beeeaaat.workers.dev を維持するには明示的に true が必要。
+  "workers_dev": true,
+  "assets": {
+    "directory": "./web/dist",
+    "not_found_handling": "single-page-application",
+    // worker-entry.mjs で旧 URL リダイレクトを行うため全リクエストを
+    // Worker に先行させる。非 API パスは env.ASSETS.fetch() でアセットへ委譲。
+    "run_worker_first": true,
+    // Worker から env.ASSETS.fetch() を呼ぶためのバインディング。
+    "binding": "ASSETS"
+  },
+  "build": {
+    "command": "make build-worker"
+  },
+  "observability": {
+    "enabled": false,
+    "head_sampling_rate": 1,
+    "logs": {
+      "enabled": true,
+      "head_sampling_rate": 1,
+      "persist": true,
+      "invocation_logs": true
+    },
+    "traces": {
+      "enabled": false,
+      "persist": true,
+      "head_sampling_rate": 1
+    }
+  }
+}

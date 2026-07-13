@@ -27,6 +27,15 @@ go.work.sum
 # env file
 .env
 
+# ビルド成果物と codegen 中間ファイル
+bin/
+server/build/
+server/openapi-3.0.gen.yaml
+server/framework/dist/*
+!server/framework/dist/.gitkeep
+
 # Editor/IDE
 # .idea/
 # .vscode/
+.wrangler
+.playwright-mcp
