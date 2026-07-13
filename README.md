@@ -8,6 +8,8 @@ A Go implementation of [RFC 9557: Internet Extended Date/Time Format (IXDTF)](ht
 
 IXDTF extends RFC 3339 by adding optional suffix elements for timezone names and additional metadata while maintaining full backward compatibility.
 
+> 🕹️ **Try it live:** an interactive demo is available at **[ixdtf.8beeeaaat.com](https://ixdtf.8beeeaaat.com/)** — see [Demo](#demo).
+
 ```go
 strictMode := false
 rfc9557 := "2025-02-03T04:05:06+09:00[Asia/Tokyo][!u-ca=gregory]"
@@ -26,6 +28,20 @@ result, _ := ixdtf.Format(parsedTime, ixdtfExtensions)
 - **Extended Format Support**: Handles timezone names and additional metadata via suffix elements
 - **Zero Dependencies**: Pure Go implementation using only the standard library
 - **Comprehensive Validation**: ABNF-based validation ensuring format compliance
+
+## Demo
+
+An interactive demo application is available at **[ixdtf.8beeeaaat.com](https://ixdtf.8beeeaaat.com/)**
+([source](https://github.com/8beeeaaat/ixdtf_demo)).
+
+It feeds the same IXDTF strings through both the browser-native
+[TC39 Temporal API](https://tc39.es/proposal-temporal/) and this library to demonstrate
+interoperability, and showcases the `Parse` / `Format` / `FormatNano` / `Validate` APIs across
+several screens: a live IXDTF clock, a Parse/Validate playground, a Temporal ↔ Go round-trip
+comparison, a timezone/calendar converter, and an RFC 9557 learning guide.
+
+> The demo relies on native `Temporal` support (Chrome 144+ / Edge 144+ / Firefox 139+) and
+> uses no polyfill, so an up-to-date browser is required.
 
 ## Installation
 
