@@ -69,7 +69,7 @@
     "close": "Close explanation",
     "sourcesHeading": "Official sources",
     "implementationNote": "About browser implementations",
-    "implementationNoticeBody": "Values shown are measured from the Temporal implementation running in your browser (native when available, otherwise temporal-polyfill) and its time-zone and calendar data. Behavior may differ from the specification depending on the browser or version.",
+    "implementationNoticeBody": "The browser-side results in this demo are measured from the browser's Temporal implementation (native Temporal / temporal-polyfill) and its time-zone and calendar data. They may differ from the specification depending on the browser or version.",
     "newTab": "opens in a new tab",
     "kinds": {
       "spec": "Spec",

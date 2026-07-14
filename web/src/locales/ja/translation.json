@@ -69,7 +69,7 @@
     "close": "解説を閉じる",
     "sourcesHeading": "公式の参照先",
     "implementationNote": "ブラウザ実装について",
-    "implementationNoticeBody": "表示は実行中のブラウザの Temporal 実装 (ネイティブがあればネイティブ、なければ temporal-polyfill) と、そのタイムゾーン・カレンダーデータによる実測値です。ブラウザやバージョンにより、仕様上の期待動作と異なる場合があります。",
+    "implementationNoticeBody": "このデモのブラウザ側の結果は、そのブラウザの Temporal 実装 (ネイティブ Temporal / temporal-polyfill) と、そのタイムゾーン・カレンダーデータによる実測値です。ブラウザやバージョンにより、仕様上の期待動作と異なる場合があります。",
     "newTab": "新しいタブで開く",
     "kinds": {
       "spec": "仕様",

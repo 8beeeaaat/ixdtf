@@ -117,7 +117,7 @@ export function Layout() {
                 rel="noreferrer"
                 className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "shrink-0")}
               >
-                <span className="sr-only">{t("banner.ixdtf")}</span>
+                <span className="sr-only">{`${t("banner.ixdtf")} (${t("references.newTab")})`}</span>
                 <svg
                   viewBox="0 0 16 16"
                   aria-hidden="true"
