@@ -6,10 +6,8 @@
   "nav": {
     "home": "Home",
     "about": "About",
-    "playground": "Playground",
-    "interop": "Interop",
+    "workbench": "Workbench",
     "converter": "Converter",
-    "temporalLab": "Temporal Lab",
     "guide": "Guide"
   },
   "banner": {
@@ -209,11 +207,21 @@
     },
     "related": {
       "heading": "Experience it in this demo",
-      "playground": "Playground — parse strings in real time",
-      "interop": "Interop — compare implementation behaviour",
+      "workbench": "Workbench — try parsing and implementation differences",
       "guide": "Guide — learn the RFC 9557 syntax",
       "temporalLab": "Temporal Lab — observe the date-time model"
     }
+  },
+  "workbench": {
+    "title": "IXDTF Workbench",
+    "tagline": "Run the same IXDTF input through three implementations (native Temporal / temporal-polyfill / Go server) and switch between parse & validate, round-trip comparison, and Temporal Lab",
+    "modeLabel": "Mode",
+    "modeParse": "Parse & validate",
+    "modeParseHint": "Visualize Parse / Validate of the string in real time",
+    "modeRoundtrip": "Round-trip comparison",
+    "modeRoundtripHint": "Parse → format the same input and line up the behavioral differences across three implementations",
+    "modeLab": "Temporal Lab",
+    "modeLabHint": "Observe properties of the IXDTF / Temporal date-time model with fixed samples (no scoring)"
   },
   "playground": {
     "title": "IXDTF Playground",

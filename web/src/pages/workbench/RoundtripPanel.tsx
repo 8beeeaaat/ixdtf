@@ -1,22 +1,16 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { IxdtfHighlight, IxdtfLegend } from "@/components/IxdtfHighlight";
 import { ReferenceDialog } from "@/components/ReferenceDialog";
 import { ReproduceSection } from "@/components/ReproduceSection";
 import { Button } from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
-import { FormField } from "@/components/ui/FormField";
-import { Input } from "@/components/ui/Input";
 import { TagBadge } from "@/components/ui/TagBadge";
-import { ToggleSwitch } from "@/components/ui/ToggleSwitch";
 import { useRoundtripIxdtf } from "@/generated/api/endpoints";
 import { interopPresets } from "@/lib/fixtures";
 import { goRoundtripSample, jsRoundtripSample } from "@/lib/reproduce";
 import { browserParse } from "@/lib/temporal/browserParse";
 import { getNativeTemporal, getPolyfillTemporal } from "@/lib/temporal/detect";
-import { useDebounce } from "@/lib/useDebounce";
 import { cn } from "@/lib/utils";
-import { useNowIXDTF } from "../home/useNow";
 
 interface ComparisonRow {
   key: string;
@@ -27,37 +21,41 @@ interface ComparisonRow {
   match?: boolean;
 }
 
-/** F-3: the behavioural differences between the two implementations ARE the content. */
-export function InteropPage() {
+interface RoundtripPanelProps {
+  /** デバウンス後の入力 */
+  input: string;
+  strict: boolean;
+  /** プリセット選択で入力と strict をまとめて更新する (共有入力・URL 同期は shell が担う) */
+  onApplyPreset: (input: string, strict: boolean) => void;
+}
+
+/** ワークベンチ「往復・実装差比較」モード (旧 F-3 Interop)。3 実装の挙動差そのものがコンテンツ。 */
+export function RoundtripPanel({ input, strict, onApplyPreset }: RoundtripPanelProps) {
   const { t } = useTranslation();
-  const nowIXDTF = useNowIXDTF();
-  const [input, setInput] = useState(nowIXDTF);
-  const [strict, setStrict] = useState(false);
-  const debounced = useDebounce(input, 300);
 
   const roundtripQuery = useRoundtripIxdtf(
-    { input: debounced, strict },
-    { query: { enabled: debounced.length > 0 } },
+    { input, strict },
+    { query: { enabled: input.length > 0 } },
   );
   const server = roundtripQuery.data?.status === 200 ? roundtripQuery.data.data : null;
 
-  // F-3: 3 実装を明示指定して同時に走らせる (ヘッダーの選択に依存せず native / polyfill を併記)。
+  // 3 実装を明示指定して同時に走らせる (ヘッダーの選択に依存せず native / polyfill を併記)。
   // native はブラウザ非対応なら null → その列に案内メッセージを出す。
   const nativeTemporal = getNativeTemporal();
   const nativeSupported = nativeTemporal !== null;
   const nativeParse = useMemo(
-    () => (debounced && nativeTemporal ? browserParse(debounced, nativeTemporal) : null),
-    [debounced, nativeTemporal],
+    () => (input && nativeTemporal ? browserParse(input, nativeTemporal) : null),
+    [input, nativeTemporal],
   );
   const polyParse = useMemo(
-    () => (debounced ? browserParse(debounced, getPolyfillTemporal()) : null),
-    [debounced],
+    () => (input ? browserParse(input, getPolyfillTemporal()) : null),
+    [input],
   );
 
   // 選択中プリセット (入力と strict の一致から導出)。fixtures の note_key で
   // 「このプリセットが何を実証するか」を説明する (F-3-3 の学習導線)
   const activePreset =
-    interopPresets.find((preset) => preset.input === debounced && preset.strict === strict) ?? null;
+    interopPresets.find((preset) => preset.input === input && preset.strict === strict) ?? null;
 
   const rows: ComparisonRow[] = useMemo(() => {
     if (!polyParse || !server) {
@@ -91,8 +89,8 @@ export function InteropPage() {
     const pFmt = polyParse.ok ? polyParse.formatted : null;
     const sFmt = server.formatted;
 
-    const nLoss = nativeParse?.ok ? String(nativeParse.formatted === debounced) : null;
-    const pLoss = polyParse.ok ? String(polyParse.formatted === debounced) : null;
+    const nLoss = nativeParse?.ok ? String(nativeParse.formatted === input) : null;
+    const pLoss = polyParse.ok ? String(polyParse.formatted === input) : null;
     const sLoss = server.lossless === null ? null : String(server.lossless);
 
     // タイムゾーンは「解析成功だが注釈なし (null)」を "" として比較対象に含める
@@ -150,44 +148,10 @@ export function InteropPage() {
         match: cmp([nLoss, pLoss, sLoss]),
       },
     ];
-  }, [nativeParse, polyParse, server, debounced, t]);
+  }, [nativeParse, polyParse, server, input, t]);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-12 px-6">
-      <header>
-        <div className="flex flex-wrap items-center gap-2">
-          <h1 className="font-sans font-semibold text-2xl tracking-tight">{t("interop.title")}</h1>
-          <ReferenceDialog referenceId="roundtrip" />
-        </div>
-        <p className="mt-1 font-sans text-muted-foreground text-sm">{t("interop.tagline")}</p>
-      </header>
-
-      <section className="space-y-4">
-        <FormField label={t("interop.inputLabel")} htmlFor="interop-input">
-          <Input
-            id="interop-input"
-            value={input}
-            onChange={(event) => setInput(event.target.value)}
-            placeholder={t("interop.inputPlaceholder")}
-            autoComplete="off"
-            spellCheck={false}
-          />
-        </FormField>
-        <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
-          <div className="flex items-center gap-2">
-            <ToggleSwitch enabled={strict} onChange={setStrict} label={t("common.strict")} />
-            <span className="font-sans text-sm">{t("common.strict")}</span>
-            <ReferenceDialog referenceId="offsetConsistency" />
-          </div>
-        </div>
-        {debounced && (
-          <div className="space-y-2">
-            <IxdtfHighlight value={debounced} className="text-lg md:text-2xl" />
-            <IxdtfLegend />
-          </div>
-        )}
-      </section>
-
+    <>
       <section className="space-y-3">
         <h2 className="font-sans font-semibold text-muted-foreground text-sm uppercase tracking-wider">
           {t("interop.presets")}
@@ -200,10 +164,7 @@ export function InteropPage() {
               size="sm"
               aria-pressed={activePreset?.id === preset.id}
               className={cn("font-mono", activePreset?.id === preset.id && "border-foreground")}
-              onClick={() => {
-                setInput(preset.input);
-                setStrict(preset.strict);
-              }}
+              onClick={() => onApplyPreset(preset.input, preset.strict)}
             >
               {preset.id}
               {preset.strict && (
@@ -221,7 +182,7 @@ export function InteropPage() {
         )}
       </section>
 
-      {!debounced || rows.length === 0 ? (
+      {!input || rows.length === 0 ? (
         <p className="font-sans text-muted-foreground text-sm">{t("interop.empty")}</p>
       ) : (
         <>
@@ -301,11 +262,11 @@ export function InteropPage() {
             </CardContent>
           </Card>
           <ReproduceSection
-            goSample={goRoundtripSample({ input: debounced, strict })}
-            jsSample={jsRoundtripSample(debounced)}
+            goSample={goRoundtripSample({ input, strict })}
+            jsSample={jsRoundtripSample(input)}
           />
         </>
       )}
-    </div>
+    </>
   );
 }

@@ -23,16 +23,7 @@ function StoryPage() {
 
 function createStoryRouter() {
   const rootRoute = createRootRoute({ component: Layout });
-  const routes = [
-    "/",
-    "/about",
-    "/playground",
-    "/interop",
-    "/converter",
-    "/temporal-lab",
-    "/guide",
-    "/support",
-  ].map((path) =>
+  const routes = ["/", "/about", "/playground", "/converter", "/guide", "/support"].map((path) =>
     createRoute({
       getParentRoute: () => rootRoute,
       path,
@@ -59,8 +50,7 @@ export const Default: Story = {
     const canvas = within(canvasElement);
     await expect(canvas.getByText("IXDTF Demo")).toHaveClass("font-mono", "tabular-nums");
     await expect(canvas.getByRole("link", { name: "Home" })).toBeInTheDocument();
-    await expect(canvas.getByRole("link", { name: "Playground" })).toBeInTheDocument();
-    await expect(canvas.getByRole("link", { name: "Temporal Lab" })).toBeInTheDocument();
+    await expect(canvas.getByRole("link", { name: "Workbench" })).toBeInTheDocument();
     await expect(canvas.getByRole("heading", { name: "Story route" })).toBeInTheDocument();
     await expect(canvasElement.querySelector("header")?.className).toContain("border-border");
 
@@ -70,16 +60,8 @@ export const Default: Story = {
     }
     const nav = within(headerNav);
     const mainLinks = nav.getAllByRole("link");
-    await expect(mainLinks).toHaveLength(7);
-    for (const name of [
-      "Home",
-      "About",
-      "Playground",
-      "Interop",
-      "Converter",
-      "Temporal Lab",
-      "Guide",
-    ]) {
+    await expect(mainLinks).toHaveLength(5);
+    for (const name of ["Home", "About", "Workbench", "Converter", "Guide"]) {
       const link = nav.getByRole("link", { name });
       await userEvent.click(link);
       await waitFor(() => expect(link).toHaveClass("text-foreground"));

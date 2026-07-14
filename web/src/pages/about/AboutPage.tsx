@@ -11,13 +11,6 @@ import { cn } from "@/lib/utils";
 // F-7-1 の構造例: タイムゾーン注釈とカレンダー注釈の両方を持つ共有 fixture
 const ANATOMY_SAMPLE = requiredSample("calendar-japanese");
 
-const RELATED_LINKS = [
-  { to: "/playground", labelKey: "about.related.playground" },
-  { to: "/interop", labelKey: "about.related.interop" },
-  { to: "/guide", labelKey: "about.related.guide" },
-  { to: "/temporal-lab", labelKey: "about.related.temporalLab" },
-] as const;
-
 interface SectionHeadingProps {
   headingKey: string;
   referenceId: ReferenceId;
@@ -112,15 +105,23 @@ export function AboutPage() {
           {t("about.related.heading")}
         </h2>
         <div className="flex flex-wrap gap-2">
-          {RELATED_LINKS.map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              className={cn(buttonVariants({ variant: "secondary", size: "sm" }))}
-            >
-              {t(link.labelKey)}
-            </Link>
-          ))}
+          <Link
+            to="/playground"
+            className={cn(buttonVariants({ variant: "secondary", size: "sm" }))}
+          >
+            {t("about.related.workbench")}
+          </Link>
+          <Link to="/guide" className={cn(buttonVariants({ variant: "secondary", size: "sm" }))}>
+            {t("about.related.guide")}
+          </Link>
+          {/* F-6 は F-2 ワークベンチの Lab モードになったため mode=lab で遷移する (旧 /temporal-lab) */}
+          <Link
+            to="/playground"
+            search={{ mode: "lab" }}
+            className={cn(buttonVariants({ variant: "secondary", size: "sm" }))}
+          >
+            {t("about.related.temporalLab")}
+          </Link>
         </div>
       </section>
     </div>

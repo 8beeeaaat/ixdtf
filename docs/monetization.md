@@ -29,7 +29,7 @@
 | Sponsor ボタン | `web/src/components/Layout.tsx` (ヘッダー) | `/support` へ誘導。モノクロのハート (DESIGN.md: 彩度色は IXDTF ハイライト/状態表示に限定) |
 | フッター導線 | `web/src/components/Footer.tsx` (+ `.stories.tsx`) | 「無料・OSS」の明示 + リポジトリ / Buy Me a Coffee / 支援ページへのリンク |
 | サポートページ | `web/src/pages/support/SupportPage.tsx` | 「デモの意義」を先に説明し、その後に GitHub Sponsors / Buy Me a Coffee / スター & 拡散の 3 導線 (F-5 GuidePage のレイアウトを踏襲) |
-| ルート | `web/src/app/router.tsx` | `/support` を追加 (6 画面のメインナビには含めず、ヘッダー/フッターから到達) |
+| ルート | `web/src/app/router.tsx` | `/support` を追加 (5 画面のメインナビには含めず、ヘッダー/フッターから到達) |
 | リンク一元管理 | `web/src/lib/sponsor.ts` | 外部 URL の単一情報源。差し替えはここだけ |
 | i18n | `web/src/locales/{ja,en}/translation.json` | `sponsor` / `footer` / `support` namespace を両 locale 同期 (N-2) |
 | リポジトリ Sponsor ボタン | `.github/FUNDING.yml` | GitHub リポジトリページに Sponsor ボタンを出すゼロコード施策 |
@@ -39,7 +39,7 @@
 - **ヘッダーの Sponsor ボタンは `/support` (内部) へ誘導**し、外部課金導線へ直行させない。
   「価値を説明してから支援を募る」ほうが誠実で、コンバージョンにも資する
 - ハートは慣習の赤ではなく `text-foreground` のモノクロ。既存の GitHub Octicon と同じ扱い
-- 6 画面のメインナビへ Support は加えない (DESIGN.md: アイコン/リンク過多を避ける)
+- 5 画面のメインナビへ Support は加えない (DESIGN.md: アイコン/リンク過多を避ける)
 
 ## 有効化チェックリスト (アカウント側の作業)
 

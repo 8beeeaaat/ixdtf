@@ -11,10 +11,8 @@ const NAV_ITEMS = [
   { to: "/", labelKey: "nav.home" },
   { to: "/about", labelKey: "nav.about" },
   { to: "/guide", labelKey: "nav.guide" },
-  { to: "/playground", labelKey: "nav.playground" },
-  { to: "/interop", labelKey: "nav.interop" },
+  { to: "/playground", labelKey: "nav.workbench" },
   { to: "/converter", labelKey: "nav.converter" },
-  { to: "/temporal-lab", labelKey: "nav.temporalLab" },
 ] as const;
 
 /** 現在のテーマを表すモノクロ線画アイコン (DESIGN.md: 彩度色は導入しない)。 */

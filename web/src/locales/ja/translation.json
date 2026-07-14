@@ -6,10 +6,8 @@
   "nav": {
     "home": "ホーム",
     "about": "はじめに",
-    "playground": "プレイグラウンド",
-    "interop": "相互運用",
+    "workbench": "ワークベンチ",
     "converter": "変換",
-    "temporalLab": "Temporal ラボ",
     "guide": "ガイド"
   },
   "banner": {
@@ -209,11 +207,21 @@
     },
     "related": {
       "heading": "このデモで体験する",
-      "playground": "プレイグラウンド — 文字列の解析を試す",
-      "interop": "相互運用 — 実装間の挙動差を見る",
+      "workbench": "ワークベンチ — 文字列の解析と実装差を試す",
       "guide": "ガイド — RFC 9557 の構文を学ぶ",
       "temporalLab": "Temporal ラボ — 日時モデルを観察する"
     }
+  },
+  "workbench": {
+    "title": "IXDTF ワークベンチ",
+    "tagline": "同一の IXDTF 入力を 3 実装 (ネイティブ Temporal / temporal-polyfill / Go サーバー) に通し、解析・検証・往復・実装差比較・Temporal ラボ を切り替えます",
+    "modeLabel": "モード",
+    "modeParse": "解析・検証",
+    "modeParseHint": "文字列の Parse / Validate をリアルタイムに可視化する",
+    "modeRoundtrip": "往復・実装差比較",
+    "modeRoundtripHint": "同じ入力を Parse → Format 往復させ、3 実装の挙動差を並べる",
+    "modeLab": "Temporal ラボ",
+    "modeLabHint": "IXDTF と Temporal の日時モデルの性質を固定サンプルで観察する (採点なし)"
   },
   "playground": {
     "title": "IXDTF プレイグラウンド",
