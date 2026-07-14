@@ -142,7 +142,7 @@ className にはセマンティックトークンのみ使う:
 ## レイアウト
 
 - 単一カラム: `mx-auto max-w-6xl px-6`
-- ヘッダーナビ: 上部固定 `border-b border-border bg-background`。6 ページのテキストリンク
+- ヘッダーナビ: 上部固定 `border-b border-border bg-background`。6 ページ (ホーム / はじめに / ガイド / ワークベンチ / Temporal ラボ / 変換) のテキストリンク
   (アイコン過多にしない)。モバイルは横スクロール可能なタブ列
 - セクション間隔: `space-y-12` 以上。「詰まった」印象を避ける
 

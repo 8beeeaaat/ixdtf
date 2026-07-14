@@ -309,13 +309,13 @@ web/src/
 ├─ main.tsx                  # Providers → TemporalProvider (native/polyfill 切替) → Router
 ├─ index.css                 # Tailwind エントリ (@import "tailwindcss" + @theme トークン)
 ├─ app/
-│   ├─ router.tsx            # TanStack Router (7 メインルート + support)
+│   ├─ router.tsx            # TanStack Router (6 メインルート + support。/interop は /playground?mode=roundtrip へリダイレクト)
 │   ├─ providers.tsx         # QueryClient / i18n / theme
 │   └─ i18n.ts
 ├─ pages/
 │   ├─ home/                 # F-1: ClockCard, IxdtfDisplay, MonthCalendar, ServerNowCard
-│   ├─ playground/           # F-2: IxdtfForm (TanStack Form), ResultPanel, BrowserResultPanel
-│   ├─ interop/              # F-3: RoundtripForm, ComparisonTable, PresetList
+│   ├─ playground/           # F-2/F-3: ワークベンチ = 解析・検証 / 往復比較の 2 モード (入力共有)。実装時 workbench/ へ統合
+│   ├─ interop/              # F-3: ↑ ワークベンチの往復比較モードへ統合 (ComparisonTable / PresetList を内包)
 │   ├─ converter/            # F-4: WorldClockList, TimeZoneAdder, CalendarSwitch
 │   ├─ guide/                # F-5: GuideContent, SampleGallery
 │   ├─ temporal-lab/         # F-6: native Temporal による日時モデルの実験
@@ -413,7 +413,7 @@ Playground / Interop / Guide で仕様用語や実装差を説明する箇所に
 | #   | 判断                                         | 理由                                                                 |
 | --- | ------------------------------------------ | ------------------------------------------------------------------ |
 | D-1 | 解析失敗を HTTP 200 のドメイン結果で返す                  | 不正入力の観察がデモの目的。エラーハンドリングを UI の分岐 (ok フラグ) に一本化                      |
-| D-2 | ネイティブ / temporal-polyfill を実行時に切替可能にする   | 2 実装の挙動差そのものを展示物にする。選択は localStorage に記憶し、初回はネイティブ優先・非対応環境は polyfill をデフォルト。ネイティブ選択かつ非対応ブラウザのときのみ案内画面 (F-0-4) を出し polyfill への切替を促す |
+| D-2 | ネイティブ / temporal-polyfill をユーザー選択なしで扱う   | 2 実装の挙動差そのものを展示物にする。単一 live-UI (Home/Converter) は native があれば native、無ければ polyfill に自動フォールバック。比較系 (ワークベンチ/Temporal Lab) は 3 実装を明示併記。実行時セレクタ・localStorage 選択・F-0-4 案内画面は撤去済み (`web/src/lib/temporal/detect.ts`)。F-0-4 要件自体も要見直し |
 | D-3 | `unix_nano` を 10 進文字列で運ぶ                   | int64 は JS の `Number.MAX_SAFE_INTEGER` を超えるため                      |
 | D-4 | 拡張タグを map でなく順序付き配列 (`ExtensionTag[]`) で運ぶ | 表表示の安定性と、`!` critical フラグをタグ単位で持たせるため                              |
 | D-5 | ルーターに TanStack Router を採用                  | F-2-7 の共有 URL を型付き search params で実装できる。TanStack Query / Form との整合 |
