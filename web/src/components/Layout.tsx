@@ -10,11 +10,11 @@ import { cn } from "@/lib/utils";
 const NAV_ITEMS = [
   { to: "/", labelKey: "nav.home" },
   { to: "/about", labelKey: "nav.about" },
+  { to: "/guide", labelKey: "nav.guide" },
   { to: "/playground", labelKey: "nav.playground" },
   { to: "/interop", labelKey: "nav.interop" },
   { to: "/converter", labelKey: "nav.converter" },
   { to: "/temporal-lab", labelKey: "nav.temporalLab" },
-  { to: "/guide", labelKey: "nav.guide" },
 ] as const;
 
 /** 現在のテーマを表すモノクロ線画アイコン (DESIGN.md: 彩度色は導入しない)。 */
@@ -109,6 +109,24 @@ export function Layout() {
               ))}
             </nav>
             <div className="flex shrink-0 items-center gap-1">
+              {/* ixdtf ライブラリへの導線。全幅バナーをやめ、GitHub マーク (foreground のみ着色) の
+                  アイコンリンクとしてヘッダー右クラスタに常設する (DESIGN.md: 彩度色を導入しない) */}
+              <a
+                href="https://github.com/8beeeaaat/ixdtf"
+                target="_blank"
+                rel="noreferrer"
+                className={cn(buttonVariants({ variant: "ghost", size: "sm" }), "shrink-0")}
+              >
+                <span className="sr-only">{t("banner.ixdtf")}</span>
+                <svg
+                  viewBox="0 0 16 16"
+                  aria-hidden="true"
+                  fill="currentColor"
+                  className="h-4 w-4 shrink-0 text-foreground"
+                >
+                  <path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z" />
+                </svg>
+              </a>
               <Link
                 to="/support"
                 aria-label={t("sponsor.ariaLabel")}
@@ -142,24 +160,6 @@ export function Layout() {
               />
             </div>
           </div>
-          <a
-            href="https://github.com/8beeeaaat/ixdtf"
-            target="_blank"
-            rel="noreferrer"
-            className="flex items-center justify-center gap-2 border-border border-t bg-muted px-6 py-1.5 font-sans text-muted-foreground text-xs hover:text-foreground"
-          >
-            {/* GitHub Invertocat (Octicons mark-github)。公式ガイドラインに従い
-                foreground トークン (ライト=黒 / ダーク=白) 以外に着色しない */}
-            <svg
-              viewBox="0 0 16 16"
-              aria-hidden="true"
-              fill="currentColor"
-              className="h-4 w-4 shrink-0 text-foreground"
-            >
-              <path d="M8 0c4.42 0 8 3.58 8 8a8.013 8.013 0 0 1-5.45 7.59c-.4.08-.55-.17-.55-.38 0-.27.01-1.13.01-2.2 0-.75-.25-1.23-.54-1.48 1.78-.2 3.65-.88 3.65-3.95 0-.88-.31-1.59-.82-2.15.08-.2.36-1.02-.08-2.12 0 0-.67-.22-2.2.82-.64-.18-1.32-.27-2-.27-.68 0-1.36.09-2 .27-1.53-1.03-2.2-.82-2.2-.82-.44 1.1-.16 1.92-.08 2.12-.51.56-.82 1.28-.82 2.15 0 3.06 1.86 3.75 3.64 3.95-.23.2-.44.55-.51 1.07-.46.21-1.61.55-2.33-.66-.15-.24-.6-.83-1.23-.82-.67.01-.27.38.01.53.34.19.73.9.82 1.13.16.45.68 1.31 2.69.94 0 .67.01 1.3.01 1.49 0 .21-.15.45-.55.38A7.995 7.995 0 0 1 0 8c0-4.42 3.58-8 8-8Z" />
-            </svg>
-            {t("banner.ixdtf")} ↗
-          </a>
         </header>
         <main className="w-full flex-1 py-12">
           <Outlet />

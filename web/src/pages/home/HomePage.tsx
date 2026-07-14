@@ -31,6 +31,7 @@ export function HomePage() {
             <h1 className="font-sans font-semibold text-2xl tracking-tight">{t("home.title")}</h1>
             <p className="mt-1 font-sans text-muted-foreground text-sm">{t("home.tagline")}</p>
           </header>
+          <ClockCard timeZone={timeZone} calendar={calendar} />
           <div className="grid gap-4 md:grid-cols-2">
             <FormField label={t("home.timeZoneLabel")}>
               <TimeZonePicker value={timeZone} onChange={setTimeZone} />
@@ -39,7 +40,6 @@ export function HomePage() {
               <CalendarPicker value={calendar} onChange={setCalendar} />
             </FormField>
           </div>
-          <ClockCard timeZone={timeZone} calendar={calendar} />
           <ServerNowCard timeZone={timeZone} calendar={calendar} />
           <ReproduceSection goSample={goNowSample(sampleArgs)} jsSample={jsNowSample(sampleArgs)} />
           <MonthCalendar timeZone={timeZone} calendar={calendar} />

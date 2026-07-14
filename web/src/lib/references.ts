@@ -38,7 +38,7 @@ const references = {
   temporalApi: {
     titleKey: "references.topics.temporalApi.title",
     bodyKey: "references.topics.temporalApi.body",
-    noticeKey: "references.topics.temporalApi.notice",
+    noticeKey: "references.implementationNoticeBody",
     sources: [
       {
         kind: "docs",
@@ -60,7 +60,7 @@ const references = {
   temporalIxdtf: {
     titleKey: "references.topics.temporalIxdtf.title",
     bodyKey: "references.topics.temporalIxdtf.body",
-    noticeKey: "references.topics.temporalIxdtf.notice",
+    noticeKey: "references.implementationNoticeBody",
     sources: [
       {
         kind: "docs",
@@ -93,7 +93,7 @@ const references = {
   temporalParsing: {
     titleKey: "references.topics.temporalParsing.title",
     bodyKey: "references.topics.temporalParsing.body",
-    noticeKey: "references.topics.temporalParsing.notice",
+    noticeKey: "references.implementationNoticeBody",
     sources: [
       {
         kind: "docs",
@@ -115,7 +115,7 @@ const references = {
   offsetConsistency: {
     titleKey: "references.topics.offsetConsistency.title",
     bodyKey: "references.topics.offsetConsistency.body",
-    noticeKey: "references.topics.offsetConsistency.notice",
+    noticeKey: "references.implementationNoticeBody",
     sources: [
       {
         kind: "spec",
@@ -137,7 +137,7 @@ const references = {
   roundtrip: {
     titleKey: "references.topics.roundtrip.title",
     bodyKey: "references.topics.roundtrip.body",
-    noticeKey: "references.topics.roundtrip.notice",
+    noticeKey: "references.implementationNoticeBody",
     sources: [
       {
         kind: "docs",
@@ -159,7 +159,7 @@ const references = {
   dstAmbiguity: {
     titleKey: "references.topics.dstAmbiguity.title",
     bodyKey: "references.topics.dstAmbiguity.body",
-    noticeKey: "references.topics.dstAmbiguity.notice",
+    noticeKey: "references.implementationNoticeBody",
     sources: [
       {
         kind: "spec",
@@ -181,7 +181,7 @@ const references = {
   zoneArithmetic: {
     titleKey: "references.topics.zoneArithmetic.title",
     bodyKey: "references.topics.zoneArithmetic.body",
-    noticeKey: "references.topics.zoneArithmetic.notice",
+    noticeKey: "references.implementationNoticeBody",
     sources: [
       {
         kind: "docs",
@@ -203,7 +203,7 @@ const references = {
   calendarAnnotation: {
     titleKey: "references.topics.calendarAnnotation.title",
     bodyKey: "references.topics.calendarAnnotation.body",
-    noticeKey: "references.topics.calendarAnnotation.notice",
+    noticeKey: "references.implementationNoticeBody",
     sources: [
       {
         kind: "spec",

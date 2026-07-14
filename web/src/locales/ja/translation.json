@@ -65,10 +65,11 @@
     }
   },
   "references": {
-    "trigger": "解説・参照",
+    "trigger": "解説",
     "close": "解説を閉じる",
     "sourcesHeading": "公式の参照先",
     "implementationNote": "ブラウザ実装について",
+    "implementationNoticeBody": "表示は実行中のブラウザの Temporal 実装 (ネイティブがあればネイティブ、なければ temporal-polyfill) と、そのタイムゾーン・カレンダーデータによる実測値です。ブラウザやバージョンにより、仕様上の期待動作と異なる場合があります。",
     "newTab": "新しいタブで開く",
     "kinds": {
       "spec": "仕様",
@@ -82,13 +83,11 @@
       },
       "temporalApi": {
         "title": "TC39 Temporal API",
-        "body": "Temporal は TC39 が標準化を進める ECMAScript の日時 API で、Date を置き換えるために設計されました。Instant / PlainDate / ZonedDateTime などのイミュータブルな型を提供し、タイムゾーンとカレンダーを明示的な値として扱います。",
-        "notice": "ここで説明するのは仕様上の期待動作です。このデモは、選択中の Temporal 実装 — ブラウザ組込みのネイティブ実装、または temporal-polyfill — の実挙動をそのまま表示します。ネイティブ実装はブラウザやバージョンによって未実装・実装差・仕様との差が生じる場合があります。"
+        "body": "Temporal は TC39 が標準化を進める ECMAScript の日時 API で、Date を置き換えるために設計されました。Instant / PlainDate / ZonedDateTime などのイミュータブルな型を提供し、タイムゾーンとカレンダーを明示的な値として扱います。"
       },
       "temporalIxdtf": {
         "title": "Temporal の文字列形式と RFC 9557",
-        "body": "Temporal が読み書きする文字列形式は RFC 9557 (IXDTF) に基づきます。ZonedDateTime.toString() はタイムゾーン注釈と、ISO 8601 以外のカレンダーでは u-ca 注釈を含む IXDTF 文字列を生成し、ZonedDateTime.from() は同じ形式を解析します。",
-        "notice": "ここで説明するのは仕様上の期待動作です。このデモは、選択中の Temporal 実装 — ブラウザ組込みのネイティブ実装、または temporal-polyfill — の実挙動をそのまま表示します。ネイティブ実装はブラウザやバージョンによって未実装・実装差・仕様との差が生じる場合があります。"
+        "body": "Temporal が読み書きする文字列形式は RFC 9557 (IXDTF) に基づきます。ZonedDateTime.toString() はタイムゾーン注釈と、ISO 8601 以外のカレンダーでは u-ca 注釈を含む IXDTF 文字列を生成し、ZonedDateTime.from() は同じ形式を解析します。"
       },
       "goParsing": {
         "title": "Go ixdtf の Parse と Validate",
@@ -96,33 +95,27 @@
       },
       "temporalParsing": {
         "title": "Temporal による IXDTF の解析",
-        "body": "タイムゾーン注釈を持つ文字列は Temporal.ZonedDateTime.from で解析します。注釈がない RFC 3339 形式は Temporal.Instant.from へフォールバックします。Temporal はオフセットとタイムゾーンの不整合を既定で拒否します。",
-        "notice": "ここで説明するのは仕様上の期待動作です。このデモは、選択中の Temporal 実装 — ブラウザ組込みのネイティブ実装、または temporal-polyfill — の実挙動をそのまま表示します。ネイティブ実装はブラウザやバージョンによって未実装・実装差・仕様との差が生じる場合があります。"
+        "body": "タイムゾーン注釈を持つ文字列は Temporal.ZonedDateTime.from で解析します。注釈がない RFC 3339 形式は Temporal.Instant.from へフォールバックします。Temporal はオフセットとタイムゾーンの不整合を既定で拒否します。"
       },
       "offsetConsistency": {
         "title": "オフセットとタイムゾーンの整合性",
-        "body": "IXDTF では数値オフセットとタイムゾーン注釈が同じ瞬間を示さない場合があります。Go ixdtf の strict モードはこの不整合をエラーにし、非 strict では elective な注釈を適用せず元のオフセットを保ちます。Temporal の既定動作は不整合を拒否します。",
-        "notice": "Temporal 側の結果は、選択中の実装 (ネイティブ Temporal または temporal-polyfill) による観測値です。ネイティブ実装はブラウザやバージョンにより、仕様で定められた挙動と異なる、または機能が未実装である可能性があります。"
+        "body": "IXDTF では数値オフセットとタイムゾーン注釈が同じ瞬間を示さない場合があります。Go ixdtf の strict モードはこの不整合をエラーにし、非 strict では elective な注釈を適用せず元のオフセットを保ちます。Temporal の既定動作は不整合を拒否します。"
       },
       "roundtrip": {
         "title": "Parse → Format のラウンドトリップ",
-        "body": "ラウンドトリップは文字列を構造化された日時へ解析し、再び文字列へ整形する往復です。同じ瞬間を表せても、精度の省略、注釈の扱い、正規化によって元文字列と完全一致しないことがあります。この画面は Temporal と Go ixdtf の結果を同じ観点で比較します。",
-        "notice": "ブラウザ経路は、選択中の Temporal 実装 (ネイティブまたは temporal-polyfill) の実測結果です。ネイティブ実装ではブラウザやバージョンごとの実装状況により、TC39 仕様上の期待動作や別ブラウザの結果と異なる場合があります。"
+        "body": "ラウンドトリップは文字列を構造化された日時へ解析し、再び文字列へ整形する往復です。同じ瞬間を表せても、精度の省略、注釈の扱い、正規化によって元文字列と完全一致しないことがあります。この画面は Temporal と Go ixdtf の結果を同じ観点で比較します。"
       },
       "dstAmbiguity": {
         "title": "DST による重複時刻とオフセット",
-        "body": "夏時間の終了で時計が戻ると、同じローカル時刻が 2 回現れます。IANA タイムゾーン名だけではどちらの瞬間か曖昧ですが、IXDTF にその時点の UTC オフセットを併記すれば一意になります。Temporal は入力オフセットが有効なら、そのオフセットを使って重複を解消します。",
-        "notice": "Temporal 側の epoch は、選択中の Temporal 実装とブラウザのタイムゾーンデータ (Intl) による観測値です。ブラウザやバージョンにより仕様上の期待値と異なる可能性があります。"
+        "body": "夏時間の終了で時計が戻ると、同じローカル時刻が 2 回現れます。IANA タイムゾーン名だけではどちらの瞬間か曖昧ですが、IXDTF にその時点の UTC オフセットを併記すれば一意になります。Temporal は入力オフセットが有効なら、そのオフセットを使って重複を解消します。"
       },
       "zoneArithmetic": {
         "title": "タイムゾーン注釈とカレンダー演算",
-        "body": "ZonedDateTime の add({ days: 1 }) は壁時計を保つカレンダー演算、add({ hours: 24 }) は実時間の演算です。DST 境界をまたぐ夜は 1 日が 25 時間になるため両者はずれます。IXDTF がタイムゾーン名を運ぶからこそ、デシリアライズ後もこの区別を正しく計算できます。",
-        "notice": "演算結果は、選択中の Temporal 実装とブラウザのタイムゾーンデータ (Intl) による観測値です。ブラウザやバージョンにより仕様上の期待値と異なる可能性があります。"
+        "body": "ZonedDateTime の add({ days: 1 }) は壁時計を保つカレンダー演算、add({ hours: 24 }) は実時間の演算です。DST 境界をまたぐ夜は 1 日が 25 時間になるため両者はずれます。IXDTF がタイムゾーン名を運ぶからこそ、デシリアライズ後もこの区別を正しく計算できます。"
       },
       "calendarAnnotation": {
         "title": "u-ca カレンダー注釈",
-        "body": "u-ca タグは、同じ瞬間をどの暦で解釈・表示するかを運びます。Temporal は withCalendar で紀年法・年月日を再計算し、Go ixdtf はタグを解釈せず値を保ったまま運搬します。瞬間そのもの (unix_nano) はタグでは変わりません。",
-        "notice": "投影結果は、実行中のブラウザの ICU カレンダーデータによる観測値です。ブラウザやバージョンにより対応カレンダーや紀年法の表現が異なる場合があります。"
+        "body": "u-ca タグは、同じ瞬間をどの暦で解釈・表示するかを運びます。Temporal は withCalendar で紀年法・年月日を再計算し、Go ixdtf はタグを解釈せず値を保ったまま運搬します。瞬間そのもの (unix_nano) はタグでは変わりません。"
       },
       "suffixSyntax": {
         "title": "IXDTF のサフィックス構文",
@@ -202,7 +195,7 @@
     "temporal": {
       "heading": "Temporal — ECMAScript の日時 API",
       "body1": "Temporal は、TC39 (ECMAScript 標準化委員会) が標準化を進める JavaScript の新しい日時 API です。Date の長年の欠点 (値が可変、タイムゾーンを扱えない、月が 0 始まりなど) を置き換えるために設計され、Instant / PlainDate / ZonedDateTime など目的別のイミュータブルな型を提供します。",
-      "body2": "中心となる Temporal.ZonedDateTime は「瞬間 + IANA タイムゾーン + カレンダー体系」を 1 つの値として保持します。だからこそ DST をまたぐカレンダー演算や、和暦などへの投影を正しく行えます。このデモは、ネイティブ実装を持つブラウザ (Chrome 144+ / Edge 144+ / Firefox 139+) ではその Temporal をそのまま使い、未対応のブラウザでは <polyfillLink>temporal-polyfill</polyfillLink> (fullcalendar 製) で同じ API を再現します。どちらを使うかはヘッダーの「Temporal 実装」から切り替えられ、現在の選択が各画面の結果ラベルに表示されます。"
+      "body2": "中心となる Temporal.ZonedDateTime は「瞬間 + IANA タイムゾーン + カレンダー体系」を 1 つの値として保持します。だからこそ DST をまたぐカレンダー演算や、和暦などへの投影を正しく行えます。このデモは、ネイティブ実装を持つブラウザ (Chrome 144+ / Edge 144+ / Firefox 139+) ではその Temporal をそのまま使い、未対応のブラウザでは <polyfillLink>temporal-polyfill</polyfillLink> (fullcalendar 製) で同じ API を再現します。プレイグラウンドや相互運用の画面では両方を並べて表示し、結果ラベルに実装名を示します。"
     },
     "relation": {
       "heading": "両者の関係 — API と交換形式",
@@ -255,7 +248,7 @@
   },
   "interop": {
     "title": "相互運用 — ラウンドトリップ比較",
-    "tagline": "同じ入力を 3 通り (ネイティブ Temporal / temporal-polyfill / Go サーバー) で Parse → Format し、挙動差を並べます",
+    "tagline": "同じ入力を 3 実装で Parse → Format し、挙動差を並べて比較します",
     "inputLabel": "IXDTF 文字列",
     "inputPlaceholder": "2026-07-07T23:30:00+02:00[Asia/Tokyo]",
     "presets": "挙動差の出るプリセット",

@@ -38,7 +38,7 @@ export function SupportPage() {
         <h2 className="font-sans font-semibold text-muted-foreground text-sm uppercase tracking-wider">
           {t("support.how.heading")}
         </h2>
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="mx-auto grid w-full max-w-3xl gap-4 sm:grid-cols-[repeat(auto-fit,minmax(15rem,1fr))]">
           {OPTIONS.map((opt) => (
             <Card key={opt.key}>
               <CardContent className="flex h-full flex-col gap-3">
