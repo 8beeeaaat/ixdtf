@@ -1,8 +1,9 @@
 import { Link, Outlet } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { setLanguage } from "@/app/i18n";
+import { type Language, setLanguage } from "@/app/i18n";
 import { type ThemeMode, useTheme } from "@/app/theme";
-import { Button, buttonVariants } from "@/components/ui/Button";
+import { buttonVariants } from "@/components/ui/Button";
+import { Select } from "@/components/ui/Select";
 import { TooltipProvider } from "@/components/ui/Tooltip";
 import { cn } from "@/lib/utils";
 
@@ -16,9 +17,7 @@ const NAV_ITEMS = [
   { to: "/guide", labelKey: "nav.guide" },
 ] as const;
 
-const THEME_CYCLE: Record<ThemeMode, ThemeMode> = { auto: "light", light: "dark", dark: "auto" };
-
-/** 切替先テーマを表すモノクロ線画アイコン (DESIGN.md: 彩度色は導入しない)。 */
+/** 現在のテーマを表すモノクロ線画アイコン (DESIGN.md: 彩度色は導入しない)。 */
 function ThemeModeIcon({ mode }: { mode: ThemeMode }) {
   const common = {
     viewBox: "0 0 16 16",
@@ -76,9 +75,17 @@ function LanguageIcon() {
 export function Layout() {
   const { t, i18n } = useTranslation();
   const { mode, setMode } = useTheme();
-  // 言語・テーマともボタンは「切替先」を表示する (状態表示とアクション表示の混在を避ける)
-  const nextLanguage = i18n.language === "ja" ? "en" : "ja";
-  const nextMode = THEME_CYCLE[mode];
+  // ヘッダーの設定コントロールはすべて Select (プルダウン) で現在値を表示する。
+  const currentLanguage: Language = i18n.language.startsWith("ja") ? "ja" : "en";
+  const languageOptions = [
+    { value: "ja", label: t("lang.ja") },
+    { value: "en", label: t("lang.en") },
+  ];
+  const themeOptions = [
+    { value: "auto", label: t("theme.auto") },
+    { value: "light", label: t("theme.light") },
+    { value: "dark", label: t("theme.dark") },
+  ];
 
   return (
     <TooltipProvider>
@@ -119,26 +126,20 @@ export function Layout() {
                 </svg>
                 <span className="hidden sm:inline">{t("sponsor.cta")}</span>
               </Link>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setLanguage(nextLanguage)}
-                title={t("lang.label")}
-                className="gap-1.5"
-              >
-                <LanguageIcon />
-                {t(`lang.${nextLanguage}`)}
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setMode(nextMode)}
-                title={t("theme.label")}
-                className="gap-1.5"
-              >
-                <ThemeModeIcon mode={nextMode} />
-                {t(`theme.${nextMode}`)}
-              </Button>
+              <Select
+                aria-label={t("lang.label")}
+                value={currentLanguage}
+                onValueChange={(value) => setLanguage(value as Language)}
+                options={languageOptions}
+                icon={<LanguageIcon />}
+              />
+              <Select
+                aria-label={t("theme.label")}
+                value={mode}
+                onValueChange={(value) => setMode(value as ThemeMode)}
+                options={themeOptions}
+                icon={<ThemeModeIcon mode={mode} />}
+              />
             </div>
           </div>
           <a

@@ -50,6 +50,11 @@ const references = {
         labelKey: "references.sources.temporalSpec",
         href: "https://tc39.es/proposal-temporal/",
       },
+      {
+        kind: "code",
+        labelKey: "references.sources.temporalPolyfill",
+        href: "https://github.com/fullcalendar/temporal-polyfill",
+      },
     ],
   },
   temporalIxdtf: {
@@ -99,6 +104,11 @@ const references = {
         kind: "docs",
         labelKey: "references.sources.temporalStrings",
         href: "https://tc39.es/proposal-temporal/docs/strings.html",
+      },
+      {
+        kind: "code",
+        labelKey: "references.sources.temporalPolyfill",
+        href: "https://github.com/fullcalendar/temporal-polyfill",
       },
     ],
   },

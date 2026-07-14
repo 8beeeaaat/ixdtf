@@ -30,6 +30,10 @@
     "ja": "日本語",
     "en": "English"
   },
+  "temporal": {
+    "implNative": "Native Temporal",
+    "implPolyfill": "temporal-polyfill"
+  },
   "common": {
     "copy": "Copy",
     "copied": "Copied",
@@ -79,12 +83,12 @@
       "temporalApi": {
         "title": "The TC39 Temporal API",
         "body": "Temporal is the ECMAScript date-time API being standardized by TC39 to replace Date. It provides immutable types such as Instant, PlainDate, and ZonedDateTime, and treats time zones and calendars as explicit values.",
-        "notice": "This describes the behavior expected by the specification. This demo uses the Temporal implementation built into the current browser without a polyfill, so features may be missing and behavior may differ by browser or version, including differences from the specification."
+        "notice": "This describes the behavior expected by the specification. This demo shows the actual behavior of the selected Temporal implementation — either the browser's native implementation or temporal-polyfill. A native implementation may be missing features or behave differently by browser or version, including differences from the specification."
       },
       "temporalIxdtf": {
         "title": "Temporal's string format and RFC 9557",
         "body": "The string format Temporal reads and writes is based on RFC 9557 (IXDTF). ZonedDateTime.toString() emits an IXDTF string with a time-zone annotation — plus a u-ca annotation for calendars other than ISO 8601 — and ZonedDateTime.from() parses the same format.",
-        "notice": "This describes the behavior expected by the specification. This demo uses the Temporal implementation built into the current browser without a polyfill, so features may be missing and behavior may differ by browser or version, including differences from the specification."
+        "notice": "This describes the behavior expected by the specification. This demo shows the actual behavior of the selected Temporal implementation — either the browser's native implementation or temporal-polyfill. A native implementation may be missing features or behave differently by browser or version, including differences from the specification."
       },
       "goParsing": {
         "title": "Parse and Validate in Go ixdtf",
@@ -93,27 +97,27 @@
       "temporalParsing": {
         "title": "Parsing IXDTF with Temporal",
         "body": "Strings with a time-zone annotation are parsed by Temporal.ZonedDateTime.from. RFC 3339 forms without that annotation fall back to Temporal.Instant.from. By default, Temporal rejects a conflict between the numeric offset and time zone.",
-        "notice": "This describes the behavior expected by the specification. This demo uses the Temporal implementation built into the current browser without a polyfill, so features may be missing and behavior may differ by browser or version, including differences from the specification."
+        "notice": "This describes the behavior expected by the specification. This demo shows the actual behavior of the selected Temporal implementation — either the browser's native implementation or temporal-polyfill. A native implementation may be missing features or behave differently by browser or version, including differences from the specification."
       },
       "offsetConsistency": {
         "title": "Offset and time-zone consistency",
         "body": "In IXDTF, the numeric offset and time-zone annotation can disagree about the instant. Go ixdtf's strict mode makes this an error; non-strict mode leaves an elective annotation unapplied and preserves the original offset. Temporal rejects the conflict by default.",
-        "notice": "The Temporal result is observed from the implementation built into the current browser and version. It may differ from the specified behavior, or the feature may not yet be implemented."
+        "notice": "The Temporal result is observed from the selected implementation (native Temporal or temporal-polyfill). A native implementation may differ from the specified behavior by browser and version, or may not yet implement the feature."
       },
       "roundtrip": {
         "title": "Parse → Format round trips",
         "body": "A round trip parses a string into structured date-time data and then formats it back into a string. Even when the instant is preserved, omitted precision, annotation handling, or normalization can keep the output from exactly matching the input. This page compares Temporal and Go ixdtf on the same aspects.",
-        "notice": "The browser path reports measurements from its native Temporal implementation. Depending on the browser and version, the result may differ from the behavior expected by the TC39 specification or from another browser."
+        "notice": "The browser path reports measurements from the selected Temporal implementation (native or temporal-polyfill). With a native implementation, the result may differ by browser and version from the behavior expected by the TC39 specification or from another browser."
       },
       "dstAmbiguity": {
         "title": "DST overlap and offsets",
         "body": "When clocks move back at the end of daylight saving time, the same local time occurs twice. An IANA time-zone name alone leaves the instant ambiguous, but IXDTF can make it exact by carrying the applicable UTC offset too. Temporal uses a valid input offset to resolve which occurrence was meant.",
-        "notice": "The Temporal epoch is observed from the current browser's built-in implementation and time-zone data. It may differ from the specification's expected result depending on the browser or version."
+        "notice": "The Temporal epoch is observed from the selected Temporal implementation and the browser's time-zone data (Intl). It may differ from the specification's expected result depending on the browser or version."
       },
       "zoneArithmetic": {
         "title": "Time-zone annotations and calendar arithmetic",
         "body": "ZonedDateTime's add({ days: 1 }) is calendar arithmetic that preserves the wall clock, while add({ hours: 24 }) is exact-time arithmetic. Across a DST boundary the day is 25 hours long, so they diverge. Because IXDTF carries the IANA time-zone name, the distinction can still be computed after deserialization.",
-        "notice": "Results are measurements of the Temporal implementation and time-zone data built into your running browser, and may differ from the spec's expected behavior across browsers and versions."
+        "notice": "Results are measurements of the selected Temporal implementation and the browser's time-zone data (Intl), and may differ from the spec's expected behavior across browsers and versions."
       },
       "calendarAnnotation": {
         "title": "The u-ca calendar annotation",
@@ -148,6 +152,7 @@
       "temporalCalendars": "TC39 Temporal — Calendars",
       "temporalDocs": "TC39 Temporal — documentation",
       "temporalSpec": "TC39 Temporal — specification (proposal)",
+      "temporalPolyfill": "temporal-polyfill (fullcalendar) — GitHub repository",
       "ixdtfPackage": "Go ixdtf v0.4.0 package documentation",
       "ixdtfParseCode": "Go ixdtf v0.4.0 — parse.go",
       "ixdtfFormatCode": "Go ixdtf v0.4.0 — format.go",
@@ -174,12 +179,6 @@
     "extension": "Extension tag [key=value]. u-ca is the calendar system",
     "critical": "Critical flag (!). An annotation a parser must reject if it cannot honor it"
   },
-  "unsupported": {
-    "title": "This browser does not support Temporal",
-    "body": "This demo uses the browser-native TC39 Temporal API (no polyfill).",
-    "browsers": "Supported: Chrome 144+ / Edge 144+ / Firefox 139+",
-    "note": "Safari stable is not supported as of 2026-07 and is out of scope."
-  },
   "home": {
     "title": "IXDTF Clock",
     "tagline": "Shows the current time as the IXDTF representation itself",
@@ -203,7 +202,7 @@
     "temporal": {
       "heading": "Temporal — the ECMAScript date-time API",
       "body1": "Temporal is the new JavaScript date-time API being standardized by TC39 (the ECMAScript committee). Designed to replace the long-standing shortcomings of Date (mutable values, no time-zone support, zero-based months, and more), it provides purpose-built immutable types such as Instant, PlainDate, and ZonedDateTime.",
-      "body2": "The centerpiece, Temporal.ZonedDateTime, holds an instant + an IANA time zone + a calendar system as a single value. That is what makes calendar arithmetic across DST transitions and projection into calendars such as the Japanese one work correctly. This demo uses no polyfill: it runs on the native Temporal of supporting browsers (Chrome 144+ / Edge 144+ / Firefox 139+)."
+      "body2": "The centerpiece, Temporal.ZonedDateTime, holds an instant + an IANA time zone + a calendar system as a single value. That is what makes calendar arithmetic across DST transitions and projection into calendars such as the Japanese one work correctly. On browsers with a native implementation (Chrome 144+ / Edge 144+ / Firefox 139+) this demo uses that Temporal directly; on other browsers it reproduces the same API with <polyfillLink>temporal-polyfill</polyfillLink> (by fullcalendar). You can switch between them from “Temporal implementation” in the header, and the current choice is shown in the result labels on each screen."
     },
     "relation": {
       "heading": "How they relate — an API and its interchange format",
@@ -234,7 +233,8 @@
     "validateOnlyHint": "Checks validity without returning a parsed value (like Validate)",
     "empty": "Enter an IXDTF string to see the parse result.",
     "serverResult": "Server parse (Go ixdtf)",
-    "browserResult": "Browser parse (Temporal)",
+    "browserResult": "Browser parse ({{impl}})",
+    "nativeUnsupported": "This browser has no native Temporal. Compare the temporal-polyfill and server results instead.",
     "parsedTime": "Parsed time (RFC 3339)",
     "parsedTimeBrowser": "Parsed time (IXDTF)",
     "unixNano": "unix_nano",
@@ -255,14 +255,16 @@
   },
   "interop": {
     "title": "Interop — round-trip comparison",
-    "tagline": "Parse → format the same input through both implementations and line up the behavioral differences",
+    "tagline": "Parse → format the same input three ways (native Temporal / temporal-polyfill / Go server) and line up the behavioral differences",
     "inputLabel": "IXDTF string",
     "inputPlaceholder": "2026-07-07T23:30:00+02:00[Asia/Tokyo]",
     "presets": "Presets that expose behavioral differences",
     "resultTitle": "Comparison result",
     "aspect": "Aspect",
-    "browserCol": "Browser (Temporal)",
+    "nativeCol": "Native Temporal",
+    "polyfillCol": "temporal-polyfill",
     "serverCol": "Server (ixdtf)",
+    "nativeUnsupported": "This browser has no native Temporal. Compare the temporal-polyfill and server columns instead.",
     "empty": "Enter an IXDTF string or pick a preset to see the comparison.",
     "via": "Parsed via",
     "rows": {
@@ -292,9 +294,9 @@
   },
   "temporalLab": {
     "title": "Temporal Lab",
-    "tagline": "Observe the datetime model shared by IXDTF and Temporal, with live measurements from the browser's native Temporal and Go ixdtf",
-    "nativeBadge": "Native Temporal",
+    "tagline": "Observe the datetime model shared by IXDTF and Temporal, with live measurements from the browser's Temporal (native or temporal-polyfill) and Go ixdtf",
     "goBadge": "Go ixdtf",
+    "nativeUnsupported": "This browser has no native Temporal",
     "goPending": "Querying the server…",
     "goUnavailable": "Server measurement unavailable",
     "goEpoch": "Go ixdtf unix_nano (server-measured)",
@@ -306,7 +308,6 @@
       "clockTime": "01:30",
       "earlierOffset": "DST · -07:00",
       "laterOffset": "Standard · -08:00",
-      "nativeTemporal": "Native Temporal",
       "epoch": "Instant (epoch nanoseconds)",
       "parseError": "Temporal could not parse this IXDTF string",
       "errorDetails": "Browser error details",
@@ -406,7 +407,7 @@
     "tagline": "This IXDTF / RFC 9557 learning demo is free and open source",
     "why": {
       "heading": "Why this demo exists",
-      "body": "RFC 9557 (IXDTF) is a modern format that carries time-zone and calendar annotations alongside a date-time in a machine-readable way. This demo round-trips the same string through two independent implementations — Go's ixdtf library and the browser-native Temporal API — so you can understand the format and its interoperability hands-on. It runs with no ads and no tracking."
+      "body": "RFC 9557 (IXDTF) is a modern format that carries time-zone and calendar annotations alongside a date-time in a machine-readable way. This demo round-trips the same string through two independent implementations — Go's ixdtf library and the browser's Temporal API (native or temporal-polyfill) — so you can understand the format and its interoperability hands-on. It runs with no ads and no tracking."
     },
     "how": {
       "heading": "Ways to support"

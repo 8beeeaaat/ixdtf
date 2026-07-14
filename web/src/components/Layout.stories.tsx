@@ -91,17 +91,22 @@ export const SwitchesLanguageAndTheme: Story = {
   render: () => <StoryApp />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(canvas.getByRole("button", { name: "日本語" }));
+    // Radix Select はオプションを document.body の Portal に描画する
+    const body = within(document.body);
+
+    // 言語 Select は現在値 (English) を表示する。プルダウンから日本語を選ぶ
+    const langTrigger = canvas.getByRole("combobox", { name: "Language" });
+    await expect(langTrigger).toHaveTextContent("English");
+    await userEvent.click(langTrigger);
+    await userEvent.click(await body.findByRole("option", { name: "日本語" }));
     await expect(await canvas.findByRole("link", { name: "ホーム" })).toBeInTheDocument();
 
-    // 言語ボタンも「切替先」を表示する (ja へ切替後の次は English)
-    await expect(canvas.getByTitle("言語")).toHaveTextContent("English");
-
-    // テーマ・言語ボタンはどちらも「切替先」を表示する (auto の次はライト)
-    const themeButton = canvas.getByTitle("テーマ");
-    await expect(themeButton).toHaveTextContent("ライト");
-    await userEvent.click(themeButton);
+    // テーマ Select は現在値 (自動) を表示する。ライトへ切り替えると <html> に light が付く
+    const themeTrigger = canvas.getByRole("combobox", { name: "テーマ" });
+    await expect(themeTrigger).toHaveTextContent("自動");
+    await userEvent.click(themeTrigger);
+    await userEvent.click(await body.findByRole("option", { name: "ライト" }));
     await expect(document.documentElement).toHaveClass("light");
-    await expect(themeButton).toHaveTextContent("ダーク");
+    await expect(themeTrigger).toHaveTextContent("ライト");
   },
 };

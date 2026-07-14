@@ -4,7 +4,7 @@ This file provides shared guidance to coding agents when working with code in th
 
 ## プロジェクト概要と現状
 
-RFC 9557 (IXDTF) のデモアプリ。Go 製 [ixdtf ライブラリ](https://github.com/8beeeaaat/ixdtf) とブラウザネイティブの TC39 Temporal API (**ポリフィル不使用**、起動時に feature detection) で同じ IXDTF 文字列を往復させ、相互運用性そのものを展示する。「Temporal」は常に TC39 Temporal API を指す (Temporal.io ではない)。
+RFC 9557 (IXDTF) のデモアプリ。Go 製 [ixdtf ライブラリ](https://github.com/8beeeaaat/ixdtf) とブラウザの TC39 Temporal API (ネイティブ / temporal-polyfill を実行時に切替可能、`app/temporal.tsx` の `TemporalProvider` が選択) で同じ IXDTF 文字列を往復させ、相互運用性そのものを展示する。「Temporal」は常に TC39 Temporal API を指す (Temporal.io ではない)。
 
 **現状: 設計フェーズ完了・実装未着手。** コードを書く前に必ず docs/ を読むこと。docs/ が唯一の規範であり、実装と docs が食い違ったら docs 更新を先行させる:
 

@@ -15,7 +15,9 @@ import type {
 
 interface ZoneArithmeticLabProps {
   input: string;
-  observations: ZoneArithmeticObservations;
+  /** `null` when this browser has no native Temporal. */
+  native: ZoneArithmeticObservations | null;
+  polyfill: ZoneArithmeticObservations;
   plusDayGo: GoObservation;
   plusHoursGo: GoObservation;
 }
@@ -27,21 +29,50 @@ interface ZoneArithmeticLabProps {
  */
 function ZoneArithmeticLab({
   input,
-  observations,
+  native,
+  polyfill,
   plusDayGo,
   plusHoursGo,
 }: ZoneArithmeticLabProps) {
   const { t } = useTranslation();
 
+  // One implementation's epoch for a result (`observation === null` = no native Temporal).
+  const renderEpochBlock = (label: string, observation: ArithmeticObservation | null) => (
+    <div className="space-y-2 border-border border-t pt-4" aria-live="polite">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="font-sans text-muted-foreground text-xs">
+          {t("temporalLab.zoneArithmetic.temporalEpoch")}
+        </span>
+        <TagBadge variant="default">{label}</TagBadge>
+      </div>
+      {observation === null ? (
+        <p className="font-sans text-muted-foreground text-xs">
+          {t("temporalLab.nativeUnsupported")}
+        </p>
+      ) : (
+        <p
+          className={cn(
+            "break-all font-mono text-xs",
+            observation.error ? "text-destructive" : "text-muted-foreground tabular-nums",
+          )}
+        >
+          {observation.epochNanoseconds ?? "—"}
+        </p>
+      )}
+    </div>
+  );
+
   const renderResult = (
     id: "plusDay" | "plusHours",
-    observation: ArithmeticObservation,
+    nativeObservation: ArithmeticObservation | null,
+    polyfillObservation: ArithmeticObservation,
     go: GoObservation,
   ) => {
     const titleId = `zone-arithmetic-${id}`;
+    // polyfill is always present, so the elapsed delta is measured against it.
     const deltaSeconds = epochDeltaSeconds(
-      observations.base.epochNanoseconds,
-      observation.epochNanoseconds,
+      polyfill.base.epochNanoseconds,
+      polyfillObservation.epochNanoseconds,
     );
 
     return (
@@ -65,30 +96,16 @@ function ZoneArithmeticLab({
           </span>
         </div>
 
-        {observation.formatted ? (
-          <IxdtfHighlight value={observation.formatted} className="text-sm" />
+        {polyfillObservation.formatted ? (
+          <IxdtfHighlight value={polyfillObservation.formatted} className="text-sm" />
         ) : (
-          <p className="break-all font-mono text-destructive text-xs">{observation.error ?? "—"}</p>
+          <p className="break-all font-mono text-destructive text-xs">
+            {polyfillObservation.error ?? "—"}
+          </p>
         )}
 
-        <div className="space-y-2 border-border border-t pt-4" aria-live="polite">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="font-sans text-muted-foreground text-xs">
-              {t("temporalLab.zoneArithmetic.temporalEpoch")}
-            </span>
-            <TagBadge variant={observation.error ? "mismatch" : "default"}>
-              {observation.error ? t("common.error") : t("temporalLab.nativeBadge")}
-            </TagBadge>
-          </div>
-          <p
-            className={cn(
-              "break-all font-mono text-xs",
-              observation.error ? "text-destructive" : "text-muted-foreground tabular-nums",
-            )}
-          >
-            {observation.epochNanoseconds ?? "—"}
-          </p>
-        </div>
+        {renderEpochBlock(t("temporal.implNative"), nativeObservation)}
+        {renderEpochBlock(t("temporal.implPolyfill"), polyfillObservation)}
 
         <div className="space-y-2 border-border border-t pt-4" aria-live="polite">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -126,13 +143,18 @@ function ZoneArithmeticLab({
             </span>
             <IxdtfHighlight value={input} className="text-sm" />
             <p className="break-all font-mono text-muted-foreground text-xs tabular-nums">
-              {observations.base.epochNanoseconds ?? observations.base.error ?? "—"}
+              {polyfill.base.epochNanoseconds ?? polyfill.base.error ?? "—"}
             </p>
           </div>
           <div className="grid items-stretch gap-0 md:grid-cols-2 md:gap-6">
-            {renderResult("plusDay", observations.plusDay, plusDayGo)}
+            {renderResult("plusDay", native?.plusDay ?? null, polyfill.plusDay, plusDayGo)}
             <div className="md:border-border md:border-l md:pl-6">
-              {renderResult("plusHours", observations.plusHours, plusHoursGo)}
+              {renderResult(
+                "plusHours",
+                native?.plusHours ?? null,
+                polyfill.plusHours,
+                plusHoursGo,
+              )}
             </div>
           </div>
           <p className="mt-5 border-border border-t pt-4 font-sans text-muted-foreground text-xs">

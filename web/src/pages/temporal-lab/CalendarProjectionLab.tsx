@@ -9,8 +9,16 @@ import type { CalendarProjection, GoRoundtripObservation } from "./observations"
 
 interface CalendarProjectionLabProps {
   input: string;
-  projections: CalendarProjection[];
+  /** `null` when this browser has no native Temporal. */
+  native: CalendarProjection[] | null;
+  polyfill: CalendarProjection[];
   go: GoRoundtripObservation;
+}
+
+function instantOf(projections: CalendarProjection[]): string | null {
+  return (
+    projections.find((projection) => projection.epochNanoseconds !== null)?.epochNanoseconds ?? null
+  );
 }
 
 /**
@@ -18,11 +26,29 @@ interface CalendarProjectionLabProps {
  * Temporal interprets the annotation, Go ixdtf carries it losslessly, and the
  * instant (unix_nano / epochNanoseconds) never changes.
  */
-function CalendarProjectionLab({ input, projections, go }: CalendarProjectionLabProps) {
+function CalendarProjectionLab({ input, native, polyfill, go }: CalendarProjectionLabProps) {
   const { t } = useTranslation();
-  const instant =
-    projections.find((projection) => projection.epochNanoseconds !== null)?.epochNanoseconds ??
-    null;
+
+  // One implementation's shared instant (`projections === null` = no native Temporal).
+  const renderInstant = (label: string, projections: CalendarProjection[] | null) => (
+    <div className="space-y-2 border-border border-t pt-4">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="font-sans text-muted-foreground text-xs">
+          {t("temporalLab.calendarProjection.instant")}
+        </span>
+        <TagBadge variant="default">{label}</TagBadge>
+      </div>
+      {projections === null ? (
+        <p className="font-sans text-muted-foreground text-xs">
+          {t("temporalLab.nativeUnsupported")}
+        </p>
+      ) : (
+        <p className="break-all font-mono text-muted-foreground text-xs tabular-nums">
+          {instantOf(projections) ?? "—"}
+        </p>
+      )}
+    </div>
+  );
 
   return (
     <section className="space-y-4">
@@ -39,17 +65,8 @@ function CalendarProjectionLab({ input, projections, go }: CalendarProjectionLab
         <CardContent className="space-y-5">
           <IxdtfHighlight value={input} className="text-sm" />
 
-          <div className="space-y-2 border-border border-t pt-4">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="font-sans text-muted-foreground text-xs">
-                {t("temporalLab.calendarProjection.instant")}
-              </span>
-              <TagBadge variant="default">{t("temporalLab.nativeBadge")}</TagBadge>
-            </div>
-            <p className="break-all font-mono text-muted-foreground text-xs tabular-nums">
-              {instant ?? "—"}
-            </p>
-          </div>
+          {renderInstant(t("temporal.implNative"), native)}
+          {renderInstant(t("temporal.implPolyfill"), polyfill)}
 
           <div className="overflow-x-auto border-border border-t pt-4">
             <table className="w-full border-collapse text-left">
@@ -73,7 +90,7 @@ function CalendarProjectionLab({ input, projections, go }: CalendarProjectionLab
                 </tr>
               </thead>
               <tbody>
-                {projections.map((projection) => (
+                {polyfill.map((projection) => (
                   <tr
                     key={projection.calendarId}
                     className="border-border border-b align-top last:border-b-0"
@@ -148,7 +165,7 @@ function CalendarProjectionLab({ input, projections, go }: CalendarProjectionLab
         goSample={goCalendarProjectionSample({ input })}
         jsSample={jsCalendarProjectionSample(
           input,
-          projections.map((projection) => projection.calendarId),
+          polyfill.map((projection) => projection.calendarId),
         )}
       />
     </section>

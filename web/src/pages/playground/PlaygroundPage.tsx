@@ -12,7 +12,8 @@ import { TagBadge } from "@/components/ui/TagBadge";
 import { ToggleSwitch } from "@/components/ui/ToggleSwitch";
 import { useParseIxdtf } from "@/generated/api/endpoints";
 import { goParseSample, jsParseSample } from "@/lib/reproduce";
-import { browserParse } from "@/lib/temporal/browserParse";
+import { type BrowserParseResult, browserParse } from "@/lib/temporal/browserParse";
+import { getNativeTemporal, getPolyfillTemporal } from "@/lib/temporal/detect";
 import { useDebounce } from "@/lib/useDebounce";
 import { useNowIXDTF } from "../home/useNow";
 
@@ -64,7 +65,45 @@ export function PlaygroundPage() {
     { query: { enabled: debounced.length > 0 } },
   );
   const server = parseQuery.data?.status === 200 ? parseQuery.data.data : null;
-  const browser = useMemo(() => (debounced ? browserParse(debounced) : null), [debounced]);
+
+  // F-3 と同じ思想で 3 実装を明示指定して併記する (ヘッダーの選択に依存しない)。
+  // native はブラウザ非対応なら null → そのカードに案内メッセージを出す。
+  const nativeTemporal = getNativeTemporal();
+  const nativeSupported = nativeTemporal !== null;
+  const nativeBrowser = useMemo(
+    () => (debounced && nativeTemporal ? browserParse(debounced, nativeTemporal) : null),
+    [debounced, nativeTemporal],
+  );
+  const polyfillBrowser = useMemo(
+    () => (debounced ? browserParse(debounced, getPolyfillTemporal()) : null),
+    [debounced],
+  );
+
+  // ブラウザ側 (native / polyfill) の結果カード本体。両カードで共通に使う。
+  const renderBrowserResult = (parse: BrowserParseResult | null) => {
+    if (!parse) {
+      return <p className="font-sans text-muted-foreground text-sm">{t("common.loading")}</p>;
+    }
+    return parse.ok ? (
+      <dl>
+        <Row label={t("playground.via")}>
+          {parse.via === "zonedDateTime" ? "ZonedDateTime.from" : "Instant.from"}
+        </Row>
+        <Row label={t("playground.parsedTimeBrowser")}>{parse.formatted}</Row>
+        <Row label={t("playground.unixNano")}>{parse.epochNanoseconds}</Row>
+        <Row label={t("playground.timeZone")}>{parse.timeZone ?? t("common.none")}</Row>
+      </dl>
+    ) : (
+      <div className="space-y-2">
+        <p className="font-sans text-muted-foreground text-xs">
+          {t("playground.errorLabelBrowser")}
+        </p>
+        <p className="break-all rounded-md bg-destructive/10 p-3 font-mono text-destructive text-sm">
+          {parse.error}
+        </p>
+      </div>
+    );
+  };
 
   return (
     <div className="mx-auto max-w-6xl space-y-12 px-6">
@@ -132,7 +171,35 @@ export function PlaygroundPage() {
         <p className="font-sans text-muted-foreground text-sm">{t("playground.empty")}</p>
       ) : (
         <>
-          <div className="grid items-start gap-6 lg:grid-cols-2">
+          <div className="grid items-start gap-6 lg:grid-cols-3">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex flex-wrap items-center gap-1">
+                  {t("playground.browserResult", { impl: t("temporal.implNative") })}
+                  <ReferenceDialog referenceId="temporalParsing" />
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {nativeSupported ? (
+                  renderBrowserResult(nativeBrowser)
+                ) : (
+                  <p className="font-sans text-muted-foreground text-sm">
+                    {t("playground.nativeUnsupported")}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex flex-wrap items-center gap-1">
+                  {t("playground.browserResult", { impl: t("temporal.implPolyfill") })}
+                  <ReferenceDialog referenceId="temporalParsing" />
+                </CardTitle>
+              </CardHeader>
+              <CardContent>{renderBrowserResult(polyfillBrowser)}</CardContent>
+            </Card>
+
             <Card>
               <CardHeader>
                 <CardTitle className="flex flex-wrap items-center gap-1">
@@ -192,38 +259,6 @@ export function PlaygroundPage() {
                   )
                 ) : (
                   <p className="font-sans text-muted-foreground text-sm">{t("common.loading")}</p>
-                )}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex flex-wrap items-center gap-1">
-                  {t("playground.browserResult")}
-                  <ReferenceDialog referenceId="temporalParsing" />
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {browser?.ok ? (
-                  <dl>
-                    <Row label={t("playground.via")}>
-                      {browser.via === "zonedDateTime" ? "ZonedDateTime.from" : "Instant.from"}
-                    </Row>
-                    <Row label={t("playground.parsedTimeBrowser")}>{browser.formatted}</Row>
-                    <Row label={t("playground.unixNano")}>{browser.epochNanoseconds}</Row>
-                    <Row label={t("playground.timeZone")}>
-                      {browser.timeZone ?? t("common.none")}
-                    </Row>
-                  </dl>
-                ) : (
-                  <div className="space-y-2">
-                    <p className="font-sans text-muted-foreground text-xs">
-                      {t("playground.errorLabelBrowser")}
-                    </p>
-                    <p className="break-all rounded-md bg-destructive/10 p-3 font-mono text-destructive text-sm">
-                      {browser?.error}
-                    </p>
-                  </div>
                 )}
               </CardContent>
             </Card>

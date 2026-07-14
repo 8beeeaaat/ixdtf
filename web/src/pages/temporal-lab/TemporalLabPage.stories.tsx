@@ -49,7 +49,10 @@ export const NativeTemporalPage: Story = {
     const laterEpoch = temporal.ZonedDateTime.from(laterSample.input).epochNanoseconds.toString();
 
     await expect(canvas.getByRole("heading", { name: i18n.t("temporalLab.title") })).toBeVisible();
-    // Go 併記セルが API 応答済みだと同じ値が 2 箇所に現れるため getAllByText で検証する
+    // ヘッダーと各実験に Native / Polyfill / Go の 3 実装が併記される
+    await expect(canvas.getAllByText(i18n.t("temporal.implNative")).length).toBeGreaterThan(0);
+    await expect(canvas.getAllByText(i18n.t("temporal.implPolyfill")).length).toBeGreaterThan(0);
+    // Native / Polyfill / Go 併記で同じ値が複数箇所に現れるため getAllByText で検証する
     await expect(canvas.getAllByText(earlierEpoch, { exact: true }).length).toBeGreaterThan(0);
     await expect(canvas.getAllByText(laterEpoch, { exact: true }).length).toBeGreaterThan(0);
     await expect(canvas.getByText("+1 h", { exact: true })).toBeVisible();

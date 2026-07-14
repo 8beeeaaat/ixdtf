@@ -8,7 +8,7 @@
 | ------------- | ------------------------------------------------------------------ |
 | バックエンド        | Go (net/http 標準ルーター) + [ixdtf](https://github.com/8beeeaaat/ixdtf) |
 | フロントエンド       | React + Vite + TypeScript                                          |
-| 日時処理 (ブラウザ)   | TC39 Temporal API ネイティブ実装 (**ポリフィル不使用**)                           |
+| 日時処理 (ブラウザ)   | TC39 Temporal API (ネイティブ / temporal-polyfill を実行時に切替可能)             |
 | API 契約        | OpenAPI 3.1 (SSOT) → Orval (TS) / oapi-codegen (Go)                |
 | データ取得         | TanStack Query (Orval 生成 hooks)                                    |
 | フォーム          | TanStack Form                                                      |
@@ -306,7 +306,7 @@ sequenceDiagram
 
 ```text
 web/src/
-├─ main.tsx                  # Temporal feature detection → App or UnsupportedBrowser
+├─ main.tsx                  # Providers → TemporalProvider (native/polyfill 切替) → Router
 ├─ index.css                 # Tailwind エントリ (@import "tailwindcss" + @theme トークン)
 ├─ app/
 │   ├─ router.tsx            # TanStack Router (7 メインルート + support)
@@ -330,7 +330,7 @@ web/src/
 │   │   ├─ zoneTab.ts        # tzdb zone.tab 由来の全ゾーン代表座標 (自動生成)
 │   │   └─ solar.ts          # 現在時刻 → 太陽直下点 (昼夜テルミネータ用)
 │   └─ temporal/
-│       ├─ detect.ts         # globalThis.Temporal の存在検出
+│       ├─ detect.ts         # native/polyfill 実装の解決 + active mode (getTemporal/requireTemporal)
 │       └─ browserParse.ts   # ZonedDateTime.from → 失敗時 Instant.from フォールバック
 ├─ generated/api/            # Orval 出力 (型 + TanStack Query hooks、git 管理)
 └─ locales/
@@ -413,7 +413,7 @@ Playground / Interop / Guide で仕様用語や実装差を説明する箇所に
 | #   | 判断                                         | 理由                                                                 |
 | --- | ------------------------------------------ | ------------------------------------------------------------------ |
 | D-1 | 解析失敗を HTTP 200 のドメイン結果で返す                  | 不正入力の観察がデモの目的。エラーハンドリングを UI の分岐 (ok フラグ) に一本化                      |
-| D-2 | ポリフィル不使用 + feature detection ゲート           | ネイティブ実装のショーケースであることを優先。非対応環境は案内画面 (F-0-4)                          |
+| D-2 | ネイティブ / temporal-polyfill を実行時に切替可能にする   | 2 実装の挙動差そのものを展示物にする。選択は localStorage に記憶し、初回はネイティブ優先・非対応環境は polyfill をデフォルト。ネイティブ選択かつ非対応ブラウザのときのみ案内画面 (F-0-4) を出し polyfill への切替を促す |
 | D-3 | `unix_nano` を 10 進文字列で運ぶ                   | int64 は JS の `Number.MAX_SAFE_INTEGER` を超えるため                      |
 | D-4 | 拡張タグを map でなく順序付き配列 (`ExtensionTag[]`) で運ぶ | 表表示の安定性と、`!` critical フラグをタグ単位で持たせるため                              |
 | D-5 | ルーターに TanStack Router を採用                  | F-2-7 の共有 URL を型付き search params で実装できる。TanStack Query / Form との整合 |
@@ -465,7 +465,7 @@ make deploy     # vite build → make build-worker (wrangler 経由) → wrangle
 | リスク                                   | 対応                                                                                                                                                       |
 | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | oapi-codegen の OpenAPI 3.1 対応が不完全な可能性 | **確定済み (2026-07-08)**: `openapi-down-convert` で 3.0 中間ファイルへ変換してから oapi-codegen に渡す (Makefile `generate-server`)。down-convert が扱えない `oneOf: [$ref, null]` は使わず、nullable なオブジェクト参照は optional な `$ref` で表現する (ok フラグがセマンティクスを担う) |
-| Edge の Temporal が experimental 段階     | feature detection (F-0-4) で実行時に判定するため、対応表の更新のみで追従できる                                                                                                     |
+| Edge の Temporal が experimental 段階     | ネイティブ有無を実行時に判定 (F-0-4) し、非対応時は temporal-polyfill をデフォルトにフォールバックするため、対応表の更新のみで追従できる                                                                          |
 | ブラウザと ixdtf の解析結果が想定外に一致しない           | それ自体を F-3 の展示物として扱う (バグではなく仕様差として明示する)                                                                                                                   |
 
 ## 決定済みの補足事項 (2026-07-07 確定)

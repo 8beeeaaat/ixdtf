@@ -13,13 +13,15 @@ import { useRoundtripIxdtf } from "@/generated/api/endpoints";
 import { interopPresets } from "@/lib/fixtures";
 import { goRoundtripSample, jsRoundtripSample } from "@/lib/reproduce";
 import { browserParse } from "@/lib/temporal/browserParse";
+import { getNativeTemporal, getPolyfillTemporal } from "@/lib/temporal/detect";
 import { useDebounce } from "@/lib/useDebounce";
 import { cn } from "@/lib/utils";
 import { useNowIXDTF } from "../home/useNow";
 
 interface ComparisonRow {
   key: string;
-  browser: string | null;
+  native: string | null;
+  polyfill: string | null;
   server: string | null;
   /** undefined = 比較対象外 (ハイライトしない) */
   match?: boolean;
@@ -38,7 +40,19 @@ export function InteropPage() {
     { query: { enabled: debounced.length > 0 } },
   );
   const server = roundtripQuery.data?.status === 200 ? roundtripQuery.data.data : null;
-  const browser = useMemo(() => (debounced ? browserParse(debounced) : null), [debounced]);
+
+  // F-3: 3 実装を明示指定して同時に走らせる (ヘッダーの選択に依存せず native / polyfill を併記)。
+  // native はブラウザ非対応なら null → その列に案内メッセージを出す。
+  const nativeTemporal = getNativeTemporal();
+  const nativeSupported = nativeTemporal !== null;
+  const nativeParse = useMemo(
+    () => (debounced && nativeTemporal ? browserParse(debounced, nativeTemporal) : null),
+    [debounced, nativeTemporal],
+  );
+  const polyParse = useMemo(
+    () => (debounced ? browserParse(debounced, getPolyfillTemporal()) : null),
+    [debounced],
+  );
 
   // 選択中プリセット (入力と strict の一致から導出)。fixtures の note_key で
   // 「このプリセットが何を実証するか」を説明する (F-3-3 の学習導線)
@@ -46,76 +60,97 @@ export function InteropPage() {
     interopPresets.find((preset) => preset.input === debounced && preset.strict === strict) ?? null;
 
   const rows: ComparisonRow[] = useMemo(() => {
-    if (!browser || !server) {
+    if (!polyParse || !server) {
       return [];
     }
     const parse = server.parse;
     const serverResult = parse.result ?? null;
-    const browserOk = browser.ok;
     const serverCalendarTag = serverResult?.tags.find((tag) => tag.key === "u-ca") ?? null;
-    const serverCalendar = serverCalendarTag?.value ?? (serverResult ? "iso8601" : null);
-    const browserCalendar = browser.ok ? browser.calendar : null;
-    const browserLossless = browser.ok ? String(browser.formatted === debounced) : null;
     const okLabel = (ok: boolean) => t(ok ? "common.ok" : "common.error");
+
+    // 一致判定: null は比較対象から除外し、値が 2 件以上そろって初めて match/mismatch を確定する。
+    // native 非対応時は自動的に polyfill × server の 2 項比較へ縮退する。
+    const cmp = (values: (string | null)[]): boolean | undefined => {
+      const present = values.filter((v): v is string => v !== null);
+      return present.length >= 2 ? present.every((v) => v === present[0]) : undefined;
+    };
+
+    const nEpoch = nativeParse?.ok ? nativeParse.epochNanoseconds : null;
+    const pEpoch = polyParse.ok ? polyParse.epochNanoseconds : null;
+    const sEpoch = serverResult?.unix_nano ?? null;
+
+    const nTz = nativeParse?.ok ? nativeParse.timeZone : null;
+    const pTz = polyParse.ok ? polyParse.timeZone : null;
+    const sTz = serverResult?.time_zone ?? null;
+
+    const nCal = nativeParse?.ok ? nativeParse.calendar : null;
+    const pCal = polyParse.ok ? polyParse.calendar : null;
+    const sCal = serverCalendarTag?.value ?? (serverResult ? "iso8601" : null);
+
+    const nFmt = nativeParse?.ok ? nativeParse.formatted : null;
+    const pFmt = polyParse.ok ? polyParse.formatted : null;
+    const sFmt = server.formatted;
+
+    const nLoss = nativeParse?.ok ? String(nativeParse.formatted === debounced) : null;
+    const pLoss = polyParse.ok ? String(polyParse.formatted === debounced) : null;
+    const sLoss = server.lossless === null ? null : String(server.lossless);
+
+    // タイムゾーンは「解析成功だが注釈なし (null)」を "" として比較対象に含める
+    const tzMatch = cmp([
+      nativeParse?.ok ? (nativeParse.timeZone ?? "") : null,
+      polyParse.ok ? (polyParse.timeZone ?? "") : null,
+      serverResult ? (serverResult.time_zone ?? "") : null,
+    ]);
+
     return [
       {
         key: "status",
-        browser: okLabel(browserOk),
+        native: nativeParse ? okLabel(nativeParse.ok) : null,
+        polyfill: okLabel(polyParse.ok),
         server: okLabel(parse.ok),
-        match: browserOk === parse.ok,
+        match: cmp([
+          nativeParse ? String(nativeParse.ok) : null,
+          String(polyParse.ok),
+          String(parse.ok),
+        ]),
       },
       {
         key: "error",
-        browser: browser.ok ? null : browser.error,
+        native: nativeParse && !nativeParse.ok ? nativeParse.error : null,
+        polyfill: polyParse.ok ? null : polyParse.error,
         server: parse.error?.message ?? null,
       },
       {
         key: "epoch",
-        browser: browser.ok ? browser.epochNanoseconds : null,
-        server: serverResult?.unix_nano ?? null,
-        match:
-          browser.ok && serverResult
-            ? browser.epochNanoseconds === serverResult.unix_nano
-            : undefined,
+        native: nEpoch,
+        polyfill: pEpoch,
+        server: sEpoch,
+        match: cmp([nEpoch, pEpoch, sEpoch]),
       },
-      {
-        key: "timeZone",
-        browser: browser.ok ? browser.timeZone : null,
-        server: serverResult?.time_zone ?? null,
-        match:
-          browser.ok && serverResult
-            ? (browser.timeZone ?? "") === (serverResult.time_zone ?? "")
-            : undefined,
-      },
+      { key: "timeZone", native: nTz, polyfill: pTz, server: sTz, match: tzMatch },
       {
         key: "calendar",
-        browser: browserCalendar,
-        server: serverCalendar,
-        match:
-          browserCalendar !== null && serverCalendar !== null
-            ? browserCalendar === serverCalendar
-            : undefined,
+        native: nCal,
+        polyfill: pCal,
+        server: sCal,
+        match: cmp([nCal, pCal, sCal]),
       },
       {
         key: "roundtrip",
-        browser: browser.ok ? browser.formatted : null,
-        server: server.formatted,
-        match:
-          browser.ok && server.formatted !== null
-            ? browser.formatted === server.formatted
-            : undefined,
+        native: nFmt,
+        polyfill: pFmt,
+        server: sFmt,
+        match: cmp([nFmt, pFmt, sFmt]),
       },
       {
         key: "lossless",
-        browser: browserLossless,
-        server: server.lossless === null ? null : String(server.lossless),
-        match:
-          browserLossless !== null && server.lossless !== null
-            ? browserLossless === String(server.lossless)
-            : undefined,
+        native: nLoss,
+        polyfill: pLoss,
+        server: sLoss,
+        match: cmp([nLoss, pLoss, sLoss]),
       },
     ];
-  }, [browser, server, debounced, t]);
+  }, [nativeParse, polyParse, server, debounced, t]);
 
   return (
     <div className="mx-auto max-w-6xl space-y-12 px-6">
@@ -205,7 +240,10 @@ export function InteropPage() {
                       {t("interop.aspect")}
                     </th>
                     <th className="py-2 pr-4 font-medium font-sans text-muted-foreground text-xs">
-                      {t("interop.browserCol")}
+                      {t("interop.nativeCol")}
+                    </th>
+                    <th className="py-2 pr-4 font-medium font-sans text-muted-foreground text-xs">
+                      {t("interop.polyfillCol")}
                     </th>
                     <th className="py-2 font-medium font-sans text-muted-foreground text-xs">
                       {t("interop.serverCol")}
@@ -213,7 +251,7 @@ export function InteropPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((row) => {
+                  {rows.map((row, index) => {
                     const cell = (value: string | null) => (
                       <span
                         className={cn(
@@ -243,7 +281,17 @@ export function InteropPage() {
                             </TagBadge>
                           )}
                         </td>
-                        <td className="max-w-96 py-2 pr-4">{cell(row.browser)}</td>
+                        {nativeSupported ? (
+                          <td className="max-w-96 py-2 pr-4">{cell(row.native)}</td>
+                        ) : index === 0 ? (
+                          <td
+                            rowSpan={rows.length}
+                            className="max-w-80 py-2 pr-4 align-middle font-sans text-muted-foreground text-sm"
+                          >
+                            {t("interop.nativeUnsupported")}
+                          </td>
+                        ) : null}
+                        <td className="max-w-96 py-2 pr-4">{cell(row.polyfill)}</td>
                         <td className="max-w-96 py-2">{cell(row.server)}</td>
                       </tr>
                     );

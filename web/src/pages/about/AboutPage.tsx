@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { IxdtfHighlight, IxdtfLegend } from "@/components/IxdtfHighlight";
 import { ReferenceDialog } from "@/components/ReferenceDialog";
 import { buttonVariants } from "@/components/ui/Button";
@@ -66,7 +66,22 @@ export function AboutPage() {
       <section className="space-y-4">
         <SectionHeading headingKey="about.temporal.heading" referenceId="temporalApi" />
         <p className="max-w-3xl font-sans text-sm leading-relaxed">{t("about.temporal.body1")}</p>
-        <p className="max-w-3xl font-sans text-sm leading-relaxed">{t("about.temporal.body2")}</p>
+        <p className="max-w-3xl font-sans text-sm leading-relaxed">
+          <Trans
+            i18nKey="about.temporal.body2"
+            components={{
+              polyfillLink: (
+                // biome-ignore lint/a11y/useAnchorContent: <Trans> injects the link text from the translation string
+                <a
+                  href="https://github.com/fullcalendar/temporal-polyfill"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-info underline underline-offset-4 hover:opacity-80"
+                />
+              ),
+            }}
+          />
+        </p>
       </section>
 
       {/* F-7-3: 両者の関係 — API と交換形式 */}
