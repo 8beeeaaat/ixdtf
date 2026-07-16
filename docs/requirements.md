@@ -25,13 +25,13 @@ SPA として以下の 5 画面をヘッダーナビゲーションで切り替�
 | F-2 | IXDTF ワークベンチ | 解析・検証 (F-2) / 往復・実装差比較 (F-3) / Temporal ラボ (F-6) の 3 モード。旧 Playground + Interop + Temporal Lab を統合 |
 | F-4 | Converter | タイムゾーン / カレンダー変換 (ワールドクロック) |
 | F-5 | Guide | RFC 9557 学習ガイド (サンプル文字列集) |
-| F-7 | About | Temporal (API) と IXDTF (規格) それぞれの解説と、両者の関係性の説明 |
+| F-7 | About | IXDTF (規格) と Temporal (API) それぞれの解説と、両者の関係性の説明 |
 
 ## 機能要件
 
 ### F-0: アプリケーションシェル (共通)
 
-- **F-0-1** ヘッダーナビゲーションで 5 画面を切り替えられる SPA であること (ホーム / はじめに / ガイド / ワークベンチ / 変換。旧 Playground+Interop+Temporal Lab はワークベンチの 3 モードに統合)
+- **F-0-1** ヘッダーで 5 画面を切り替えられる SPA であること (ホームへはロゴ兼ホームリンクで遷移し、残り 4 画面 IXDTF と Temporal / 変換 / ワークベンチ / ガイド はテキストナビで遷移。旧 Playground+Interop+Temporal Lab はワークベンチの 3 モードに統合)
 - **F-0-2** UI 言語は日本語 / 英語を切り替えられること (react-i18next、全キーは両 locale で同期)
 - **F-0-3** ライト / ダークテーマに対応すること (`prefers-color-scheme` 追従 + 手動切替)
 - **F-0-4** ブラウザの TC39 Temporal 実装をユーザー選択なしで扱うこと (実行時セレクタは撤去)
@@ -174,7 +174,7 @@ Temporal が持つ日時モデル上の性質そのものを小さな実験群�
 - **F-6-5** 各実験に Go ixdtf のライブ実測値 (既存 4 エンドポイント経由) と、
   F-0-7 準拠の再現セクション (Go / JavaScript サンプルコード) を併記すること
 
-### F-7: About — Temporal と IXDTF の解説
+### F-7: About — IXDTF と Temporal の解説
 
 Guide (F-5) が RFC 9557 の構文詳細を扱うのに対し、About は「Temporal とは何か」
 「IXDTF とは何か」「両者はどう関わるのか」という前提概念を静的コンテンツで解説する

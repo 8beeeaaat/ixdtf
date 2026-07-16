@@ -5,7 +5,7 @@
   },
   "nav": {
     "home": "ホーム",
-    "about": "はじめに",
+    "about": "IXDTF と Temporal",
     "workbench": "ワークベンチ",
     "converter": "変換",
     "guide": "ガイド"
@@ -182,7 +182,7 @@
     "weekdays": "月,火,水,木,金,土,日"
   },
   "about": {
-    "title": "Temporal と IXDTF",
+    "title": "IXDTF と Temporal",
     "tagline": "JavaScript の新しい日時 API と、その値を運ぶ IETF の文字列規格 — それぞれの役割と関係を解説します",
     "ixdtf": {
       "heading": "IXDTF — データ形式の規格 (RFC 9557)",

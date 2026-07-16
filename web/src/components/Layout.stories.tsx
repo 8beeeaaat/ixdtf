@@ -48,8 +48,9 @@ export const Default: Story = {
   render: () => <StoryApp />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
+    // ロゴ兼ホームリンク: 可視ワードマークがアクセシブルネームを兼ねる
     await expect(canvas.getByText("IXDTF Demo")).toHaveClass("font-mono", "tabular-nums");
-    await expect(canvas.getByRole("link", { name: "Home" })).toBeInTheDocument();
+    await expect(canvas.getByRole("link", { name: "IXDTF Demo" })).toBeInTheDocument();
     await expect(canvas.getByRole("link", { name: "Workbench" })).toBeInTheDocument();
     await expect(canvas.getByRole("heading", { name: "Story route" })).toBeInTheDocument();
     await expect(canvasElement.querySelector("header")?.className).toContain("border-border");
@@ -59,9 +60,10 @@ export const Default: Story = {
       throw new Error("Header navigation not found");
     }
     const nav = within(headerNav);
+    // ホームはロゴ側へ移したため、ナビのテキストリンクは 4 件 (IXDTF と Temporal / 変換 / ワークベンチ / ガイド)
     const mainLinks = nav.getAllByRole("link");
-    await expect(mainLinks).toHaveLength(5);
-    for (const name of ["Home", "About", "Workbench", "Converter", "Guide"]) {
+    await expect(mainLinks).toHaveLength(4);
+    for (const name of ["IXDTF & Temporal", "Converter", "Workbench", "Guide"]) {
       const link = nav.getByRole("link", { name });
       await userEvent.click(link);
       await waitFor(() => expect(link).toHaveClass("text-foreground"));
@@ -81,7 +83,7 @@ export const SwitchesLanguageAndTheme: Story = {
     await expect(langTrigger).toHaveTextContent("English");
     await userEvent.click(langTrigger);
     await userEvent.click(await body.findByRole("option", { name: "日本語" }));
-    await expect(await canvas.findByRole("link", { name: "ホーム" })).toBeInTheDocument();
+    await expect(await canvas.findByRole("link", { name: "IXDTF と Temporal" })).toBeInTheDocument();
 
     // テーマ Select は現在値 (自動) を表示する。ライトへ切り替えると <html> に light が付く
     const themeTrigger = canvas.getByRole("combobox", { name: "テーマ" });

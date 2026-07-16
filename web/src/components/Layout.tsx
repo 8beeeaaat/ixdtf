@@ -7,13 +7,35 @@ import { Select } from "@/components/ui/Select";
 import { TooltipProvider } from "@/components/ui/Tooltip";
 import { cn } from "@/lib/utils";
 
+// ホームへはロゴ兼ホームリンクで遷移するため、ナビはそれ以外の 4 画面のみ (F-0-1)。
 const NAV_ITEMS = [
-  { to: "/", labelKey: "nav.home" },
   { to: "/about", labelKey: "nav.about" },
-  { to: "/guide", labelKey: "nav.guide" },
-  { to: "/playground", labelKey: "nav.workbench" },
   { to: "/converter", labelKey: "nav.converter" },
+  { to: "/playground", labelKey: "nav.workbench" },
+  { to: "/guide", labelKey: "nav.guide" },
 ] as const;
+
+/** ロゴマーク: IXDTF の象徴である角括弧 `[ ]` で時計を囲んだ線画。
+ *  DESIGN.md「面より線 / 彩度色を導入しない」に従い無彩色 (text-foreground) の stroke のみ。 */
+function LogoMark() {
+  return (
+    <svg
+      viewBox="0 0 20 16"
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.3}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-4 w-5 shrink-0 text-foreground"
+    >
+      <path d="M5.5 3H3v10h2.5" />
+      <path d="M14.5 3H17v10h-2.5" />
+      <circle cx="10" cy="8" r="3.2" />
+      <path d="M10 8V6.1M10 8l1.5.8" />
+    </svg>
+  );
+}
 
 /** 現在のテーマを表すモノクロ線画アイコン (DESIGN.md: 彩度色は導入しない)。 */
 function ThemeModeIcon({ mode }: { mode: ThemeMode }) {
@@ -90,8 +112,10 @@ export function Layout() {
       <div className="flex min-h-screen flex-col">
         <header className="sticky top-0 z-30 border-border border-b bg-background">
           <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-6">
-            <Link className="shrink-0 font-medium font-mono text-sm tabular-nums" to="/">
-              {t("app.title")}
+            {/* ロゴ兼ホームリンク。可視ワードマークがアクセシブルネームを兼ねる (F-0-1) */}
+            <Link className="flex shrink-0 items-center gap-2" to="/">
+              <LogoMark />
+              <span className="font-medium font-mono text-sm tabular-nums">{t("app.title")}</span>
             </Link>
             <nav className="flex flex-1 gap-4 overflow-x-auto">
               {NAV_ITEMS.map((item) => (
@@ -99,7 +123,6 @@ export function Layout() {
                   key={item.to}
                   to={item.to}
                   className="shrink-0 py-1 font-sans text-muted-foreground text-sm hover:text-foreground"
-                  activeOptions={{ exact: item.to === "/" }}
                   activeProps={{ className: "text-foreground underline underline-offset-8" }}
                 >
                   {t(item.labelKey)}

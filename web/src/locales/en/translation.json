@@ -5,7 +5,7 @@
   },
   "nav": {
     "home": "Home",
-    "about": "About",
+    "about": "IXDTF & Temporal",
     "workbench": "Workbench",
     "converter": "Converter",
     "guide": "Guide"
@@ -182,7 +182,7 @@
     "weekdays": "Mon,Tue,Wed,Thu,Fri,Sat,Sun"
   },
   "about": {
-    "title": "Temporal & IXDTF",
+    "title": "IXDTF & Temporal",
     "tagline": "The new JavaScript date-time API and the IETF string format that carries its values — what each is, and how they relate",
     "ixdtf": {
       "heading": "IXDTF — a data-format standard (RFC 9557)",
