@@ -54,7 +54,7 @@ export function SupportPage() {
                   rel="noreferrer"
                   className={cn(buttonVariants({ variant: opt.variant, size: "sm" }), "w-full")}
                 >
-                  {t(`support.options.${opt.key}Cta`)} ↗
+                  {t(`support.options.${opt.key}Cta`)} <span aria-hidden="true">↗</span>
                 </a>
               </CardContent>
             </Card>

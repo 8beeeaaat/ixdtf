@@ -71,7 +71,8 @@ function Select({
       <SelectPrimitive.Trigger
         aria-label={ariaLabel}
         className={cn(
-          "inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3 font-medium font-sans text-foreground text-xs transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          // モバイル (sm 未満) はタッチターゲット 44px (h-11)。デスクトップは h-8 のまま
+          "inline-flex h-11 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3 font-medium font-sans text-foreground text-xs transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:h-8",
           className,
         )}
       >

@@ -186,6 +186,13 @@ export function RoundtripPanel({ input, strict, onApplyPreset }: RoundtripPanelP
         <p className="font-sans text-muted-foreground text-sm">{t("interop.empty")}</p>
       ) : (
         <>
+          {/* 比較テーブル全体を live region にすると読み上げが長大になるため、
+              要約のみを sr-only で通知する (N-3) */}
+          <p aria-live="polite" className="sr-only">
+            {rows.some((row) => row.match === false)
+              ? t("interop.liveMismatch")
+              : t("interop.liveAllMatch")}
+          </p>
           <Card>
             <CardHeader>
               <CardTitle className="flex flex-wrap items-center gap-1">

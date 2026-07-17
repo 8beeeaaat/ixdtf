@@ -29,20 +29,17 @@ export function IxdtfHighlight({ value, className }: IxdtfHighlightProps) {
   return (
     <span className={cn("break-all font-mono tabular-nums", className)}>
       {tokens.map((token, index) => {
-        const span = (
-          <span
-            // biome-ignore lint/suspicious/noArrayIndexKey: tokens are positional by nature
-            key={`${index}-${token.text}`}
-            className={cn(
-              TOKEN_CLASS[token.type],
-              token.critical && "underline decoration-warning decoration-wavy",
-            )}
-          >
-            {token.text}
-          </span>
+        const tokenClass = cn(
+          TOKEN_CLASS[token.type],
+          token.critical && "underline decoration-warning decoration-wavy",
         );
         if (token.type === "invalid") {
-          return span;
+          return (
+            // biome-ignore lint/suspicious/noArrayIndexKey: tokens are positional by nature
+            <span key={`${index}-${token.text}`} className={tokenClass}>
+              {token.text}
+            </span>
+          );
         }
         const label = token.critical
           ? `${t(`tooltip.${token.type}`)} — ${t("tooltip.critical")}`
@@ -50,7 +47,18 @@ export function IxdtfHighlight({ value, className }: IxdtfHighlightProps) {
         return (
           // biome-ignore lint/suspicious/noArrayIndexKey: tokens are positional by nature
           <Tooltip key={`${index}-${token.text}`} content={label}>
-            {span}
+            {/* tabIndex: ツールチップは「ホバー/フォーカスで表示」(DESIGN.md N-3) —
+                キーボードでも各トークンの説明へ到達できるようフォーカス可能にする */}
+            <span
+              // biome-ignore lint/a11y/noNoninteractiveTabindex: Radix Tooltip.Trigger (asChild) のトリガーで、フォーカスがツールチップを開く操作になる (N-3)
+              tabIndex={0}
+              className={cn(
+                tokenClass,
+                "rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+              )}
+            >
+              {token.text}
+            </span>
           </Tooltip>
         );
       })}

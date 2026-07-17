@@ -270,6 +270,8 @@
     "serverCol": "Server (ixdtf)",
     "nativeUnsupported": "This browser has no native Temporal. Compare the temporal-polyfill and server columns instead.",
     "empty": "Enter an IXDTF string or pick a preset to see the comparison.",
+    "liveAllMatch": "Comparison result: all three implementations agree on every aspect.",
+    "liveMismatch": "Comparison result: some aspects differ between implementations.",
     "via": "Parsed via",
     "rows": {
       "status": "Parse status",

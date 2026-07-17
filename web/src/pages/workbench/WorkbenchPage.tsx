@@ -100,9 +100,10 @@ export function WorkbenchPage() {
       </header>
 
       <section className="space-y-4">
-        <div
-          className="inline-flex flex-wrap gap-0.5 rounded-md border border-border p-0.5"
-          role="group"
+        {/* fieldset + sr-only legend でモード群に名前を付ける (biome useSemanticElements 準拠)。
+            fieldset のデフォルト min-inline-size: min-content は min-w-0 で解除する。 */}
+        <fieldset
+          className="inline-flex min-w-0 flex-wrap gap-0.5 rounded-md border border-border p-0.5"
           aria-label={t("workbench.modeLabel")}
         >
           {MODES.map((m) => (
@@ -112,7 +113,8 @@ export function WorkbenchPage() {
               aria-pressed={mode === m}
               onClick={() => setMode(m)}
               className={cn(
-                "shrink-0 whitespace-nowrap rounded px-3 py-1.5 font-sans text-sm transition-colors",
+                // モバイルはタップターゲット 44px 相当 (py-3)。デスクトップは従来の密度
+                "shrink-0 whitespace-nowrap rounded px-3 py-3 font-sans text-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:py-1.5",
                 mode === m
                   ? "bg-accent text-accent-foreground"
                   : "text-muted-foreground hover:text-foreground",
@@ -121,7 +123,7 @@ export function WorkbenchPage() {
               {t(MODE_LABEL_KEY[m])}
             </button>
           ))}
-        </div>
+        </fieldset>
         <p className="font-sans text-muted-foreground text-sm">{t(MODE_HINT_KEY[mode])}</p>
 
         {/* Lab モードは固定 fixture 駆動なので共有入力欄・strict・ハイライトを持たない (F-6 / F-2-0)。

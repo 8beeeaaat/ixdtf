@@ -88,7 +88,7 @@ export function GlobeBackground({ timeZone, onTimeZoneChange }: GlobeBackgroundP
     if (!hasWebGL()) return;
 
     let cancelled = false;
-    let dispose = () => { };
+    let dispose = () => {};
 
     (async () => {
       // Both stay off other routes' bundles: three (renderer) and the
@@ -601,10 +601,12 @@ export function GlobeBackground({ timeZone, onTimeZoneChange }: GlobeBackgroundP
 
   return (
     <>
+      {/* md 未満はコンテンツが全幅で地球儀と重なるため、全体を減光して
+          文字の可読性を守る (DESIGN.md「文字が主役、地球儀は大気」)。 */}
       <div
         ref={containerRef}
         aria-hidden="true"
-        className="pointer-events-none fixed inset-0 z-0 overflow-hidden [&>canvas]:block"
+        className="pointer-events-none fixed inset-0 z-0 overflow-hidden opacity-40 md:opacity-100 [&>canvas]:block"
       >
         <div
           ref={labelRef}

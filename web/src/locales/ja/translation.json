@@ -270,6 +270,8 @@
     "serverCol": "サーバー (ixdtf)",
     "nativeUnsupported": "このブラウザにはネイティブ Temporal がありません。temporal-polyfill 列とサーバー列で比較できます。",
     "empty": "IXDTF 文字列を入力するか、プリセットを選ぶと比較が表示されます。",
+    "liveAllMatch": "比較結果: すべての観点で 3 実装が一致しています。",
+    "liveMismatch": "比較結果: 実装間で一致しない観点があります。",
     "via": "解析 API",
     "rows": {
       "status": "解析成否",

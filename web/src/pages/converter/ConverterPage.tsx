@@ -86,12 +86,17 @@ export function ConverterPage() {
           </div>
         </FormField>
         <div className="grid gap-4 md:grid-cols-2">
-          <FormField label={t("converter.calendarLabel")}>
-            <CalendarPicker value={calendar} onChange={setCalendar} />
+          <FormField label={t("converter.calendarLabel")} htmlFor="converter-calendar">
+            <CalendarPicker id="converter-calendar" value={calendar} onChange={setCalendar} />
           </FormField>
-          <FormField label={t("converter.addTimeZone")}>
+          <FormField label={t("converter.addTimeZone")} htmlFor="converter-add-zone">
             <div className="flex gap-2">
-              <TimeZonePicker value={pendingZone} onChange={setPendingZone} className="flex-1" />
+              <TimeZonePicker
+                id="converter-add-zone"
+                value={pendingZone}
+                onChange={setPendingZone}
+                className="flex-1"
+              />
               <Button variant="secondary" onClick={addZone}>
                 {t("common.add")}
               </Button>

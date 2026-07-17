@@ -12,8 +12,9 @@ const buttonVariants = cva(
         ghost: "text-foreground hover:bg-accent hover:text-accent-foreground",
       },
       size: {
-        sm: "h-8 px-3 text-xs",
-        md: "h-9 px-4",
+        // モバイル (sm 未満) はタッチターゲット 44px (h-11) を確保し、デスクトップは従来の密度を保つ
+        sm: "h-11 px-3 text-xs sm:h-8",
+        md: "h-11 px-4 sm:h-9",
       },
     },
     defaultVariants: { variant: "primary", size: "md" },

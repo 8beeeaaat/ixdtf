@@ -69,7 +69,7 @@
   --ixdtf-date: oklch(0.45 0.09 250);
   --ixdtf-time: oklch(0.45 0.09 160);
   --ixdtf-offset: oklch(0.5 0.09 60);
-  --ixdtf-timezone: oklch(48.955% 0.19057 19.29);
+  --ixdtf-timezone: oklch(0.45 0.09 320);
   --ixdtf-extension: oklch(0.5 0.09 20);
 }
 
@@ -139,4 +139,28 @@ body {
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* タップ操作要素の double-tap zoom を無効化 (スクロール・ピンチは維持)。
+ * 連続タップ時の 350ms ズーム判定待ちをなくし、モバイルの体感を改善する。 */
+a,
+button,
+input,
+label,
+select,
+textarea {
+  touch-action: manipulation;
+}
+
+/* OS の「視差効果を減らす」設定を全アニメーション・トランジションに適用する (N-3)。
+ * 地球儀 (WebGL) は CSS 外のため GlobeBackground 側で個別に尊重する。 */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

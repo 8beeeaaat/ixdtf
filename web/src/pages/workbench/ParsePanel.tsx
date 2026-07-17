@@ -77,7 +77,9 @@ export function ParsePanel({ input, strict, validateOnly }: ParsePanelProps) {
 
   return (
     <>
-      <div className="grid items-start gap-6 lg:grid-cols-3">
+      {/* aria-live: デバウンス後の解析結果更新をスクリーンリーダーへ通知する
+          (temporal-lab パネル群の aria-live="polite" と同基準、N-3) */}
+      <div aria-live="polite" className="grid items-start gap-6 lg:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle className="flex flex-wrap items-center gap-1">

@@ -33,11 +33,11 @@ export function HomePage() {
           </header>
           <ClockCard timeZone={timeZone} calendar={calendar} />
           <div className="grid gap-4 md:grid-cols-2">
-            <FormField label={t("home.timeZoneLabel")}>
-              <TimeZonePicker value={timeZone} onChange={setTimeZone} />
+            <FormField label={t("home.timeZoneLabel")} htmlFor="home-time-zone">
+              <TimeZonePicker id="home-time-zone" value={timeZone} onChange={setTimeZone} />
             </FormField>
-            <FormField label={t("home.calendarLabel")}>
-              <CalendarPicker value={calendar} onChange={setCalendar} />
+            <FormField label={t("home.calendarLabel")} htmlFor="home-calendar">
+              <CalendarPicker id="home-calendar" value={calendar} onChange={setCalendar} />
             </FormField>
           </div>
           <ServerNowCard timeZone={timeZone} calendar={calendar} />

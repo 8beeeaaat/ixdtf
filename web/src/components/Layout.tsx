@@ -143,21 +143,21 @@ function GuideIcon() {
   );
 }
 
-/** 現在のテーマを表すモノクロ線画アイコン (DESIGN.md: 彩度色は導入しない)。 */
+/** 現在のテーマを表すモノクロ線画アイコン (DESIGN.md: 彩度色は導入しない)。共通 props は
+ *  spread ではなく各 svg に直書きする (biome の noSvgWithoutTitle が aria-hidden を静的解析できるように)。 */
 function ThemeModeIcon({ mode }: { mode: ThemeMode }) {
-  const common = {
-    viewBox: "0 0 16 16",
-    "aria-hidden": true,
-    fill: "none",
-    stroke: "currentColor",
-    strokeWidth: 1.3,
-    strokeLinecap: "round",
-    strokeLinejoin: "round",
-    className: "h-4 w-4 shrink-0",
-  } as const;
   if (mode === "light") {
     return (
-      <svg {...common}>
+      <svg
+        viewBox="0 0 16 16"
+        aria-hidden="true"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.3}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="h-4 w-4 shrink-0"
+      >
         <circle cx="8" cy="8" r="3.2" />
         <path d="M8 1.2v1.6M8 13.2v1.6M1.2 8h1.6M13.2 8h1.6M3.2 3.2l1.1 1.1M11.7 11.7l1.1 1.1M12.8 3.2l-1.1 1.1M4.3 11.7l-1.1 1.1" />
       </svg>
@@ -165,14 +165,32 @@ function ThemeModeIcon({ mode }: { mode: ThemeMode }) {
   }
   if (mode === "dark") {
     return (
-      <svg {...common}>
+      <svg
+        viewBox="0 0 16 16"
+        aria-hidden="true"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth={1.3}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        className="h-4 w-4 shrink-0"
+      >
         <path d="M13.2 9.8A5.8 5.8 0 1 1 6.2 2.8a4.6 4.6 0 0 0 7 7Z" />
       </svg>
     );
   }
   // auto = OS 設定に追従 (モニター)
   return (
-    <svg {...common}>
+    <svg
+      viewBox="0 0 16 16"
+      aria-hidden="true"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={1.3}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      className="h-4 w-4 shrink-0"
+    >
       <rect x="1.7" y="2.7" width="12.6" height="8.6" rx="1.2" />
       <path d="M5.5 14h5M8 11.3V14" />
     </svg>
@@ -215,11 +233,14 @@ export function Layout() {
 
   return (
     <TooltipProvider>
-      <div className="flex min-h-screen flex-col">
+      {/* min-h-dvh: モバイルのアドレスバー伸縮で 100vh が実表示より高くなるのを防ぐ
+          (非対応ブラウザは body の min-height: 100vh がフォールバック) */}
+      <div className="flex min-h-dvh flex-col">
         <header className="sticky top-0 z-30 border-border border-b bg-background">
           <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-6">
             {/* ロゴ兼ホームリンク。可視ワードマークがアクセシブルネームを兼ねる (F-0-1) */}
-            <Link className="flex shrink-0 items-center gap-2" to="/">
+            {/* py-3 でタップ可能領域を 44px 相当へ (h-14 ヘッダー内で視覚位置は不変) */}
+            <Link className="flex shrink-0 items-center gap-2 py-3" to="/">
               <LogoMark />
               <span className="font-medium font-mono text-sm tabular-nums">{t("app.title")}</span>
             </Link>
@@ -302,8 +323,8 @@ export function Layout() {
               key={item.to}
               to={item.to}
               activeOptions={item.exact ? { exact: true } : undefined}
-              className="flex min-w-0 flex-1 flex-col items-center gap-0.5 py-2 font-sans text-[11px] text-muted-foreground"
-              activeProps={{ className: "text-foreground" }}
+              className="flex min-w-0 flex-1 flex-col items-center gap-0.5 py-2 font-sans text-muted-foreground text-xs"
+              activeProps={{ className: "font-medium text-foreground" }}
             >
               <item.Icon />
               <span className="w-full truncate text-center">{t(item.labelKey)}</span>

@@ -168,6 +168,26 @@ className にはセマンティックトークンのみ使う:
 - ボトムタブバーの高さぶん、`<main>` に `pb-[calc(3rem+4.5rem+env(safe-area-inset-bottom))] md:pb-12`
   のようにモバイル時のみ余分な下余白を確保し、コンテンツ末尾がタブバーに隠れないようにする
 
+### モバイル タッチターゲット・入力 (N-3)
+
+sm 未満ではタップ操作を前提に、デスクトップの密度を保ったまま操作領域だけを広げる:
+
+- **タッチターゲットは 44px 相当** (Apple HIG / WCAG 2.5.8 AAA)。手段は 3 つ:
+  高さ切替 (`h-11 sm:h-{8,9}` — Button / Select / Input / Combobox。sm 以上は各コンポーネント
+  既存のデスクトップ密度を保持)、padding 切替 (`py-3 sm:py-1.5` 前後 — タブ型ボタン。
+  コンポーネントごとに微調整あり)、レイアウトを動かせない場合は透明な擬似要素
+  (`after:absolute after:-inset-*` — ToggleSwitch) または `py + 負マージン相殺`
+  (ReferenceDialog トリガー)。本文中のインラインリンクは WCAG の inline 例外として対象外
+- **テキスト入力は sm 未満で 16px** (`text-base sm:text-sm`) — iOS Safari の
+  フォーカス時強制ズームを防ぐ (Input / Combobox)
+- **ホーム地球儀は md 未満で `opacity-40` に減光** — コンテンツ列が全幅になり文字と
+  重なるため (「文字が主役、地球儀は大気」の維持)。タップでのゾーン選択は wide のみ
+  (上記の documented exception)、モバイルはタイムゾーン Picker が正規の操作経路
+- **`prefers-reduced-motion`** は index.css のグローバル CSS で全 transition/animation を
+  無効化する (WebGL の地球儀は GlobeBackground 側で個別に尊重)
+- viewport meta は `viewport-fit=cover` 必須 (`env(safe-area-inset-bottom)` の前提)。
+  `theme-color` は ThemeProvider が解決済みテーマの `--background` を動的同期する
+
 ### Temporal ラボ モード — DST 重複時刻タイムライン
 
 F-6-1 は「同じ壁時計時刻、異なる瞬間」を一目で理解できる横方向の時間軸として表現する。

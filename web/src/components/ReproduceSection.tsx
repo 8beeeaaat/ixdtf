@@ -24,7 +24,7 @@ export function ReproduceSection({ goSample, jsSample, className }: ReproduceSec
 
   return (
     <details className={cn("group", className)}>
-      <summary className="cursor-pointer list-none rounded-md font-sans text-muted-foreground text-sm transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background [&::-webkit-details-marker]:hidden">
+      <summary className="cursor-pointer list-none rounded-md py-2.5 font-sans text-muted-foreground text-sm transition-colors hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:py-0 [&::-webkit-details-marker]:hidden">
         <span aria-hidden className="mr-1 inline-block transition-transform group-open:rotate-90">
           ▸
         </span>
@@ -39,7 +39,8 @@ export function ReproduceSection({ goSample, jsSample, className }: ReproduceSec
               aria-pressed={tab === key}
               onClick={() => setTab(key)}
               className={cn(
-                "whitespace-nowrap rounded-md px-2 py-1 font-sans text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                // モバイルはタップターゲットを 44px 相当へ (py-3.5)。デスクトップは従来の密度
+                "whitespace-nowrap rounded-md px-3 py-3.5 font-sans text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:px-2 sm:py-1",
                 tab === key
                   ? "bg-muted font-medium text-foreground"
                   : "text-muted-foreground hover:text-foreground",

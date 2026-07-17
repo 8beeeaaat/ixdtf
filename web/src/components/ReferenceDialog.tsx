@@ -24,7 +24,8 @@ function ReferenceDialog({ referenceId, className }: ReferenceDialogProps) {
         variant="ghost"
         size="sm"
         className={cn(
-          "h-auto px-2 py-1 font-medium text-info text-xs normal-case tracking-normal",
+          // py-3.5 + 負マージンで、レイアウトを動かさずタップ可能領域だけ 44px 相当に広げる
+          "-my-2.5 h-auto px-2 py-3.5 font-medium text-info text-xs normal-case tracking-normal sm:my-0 sm:py-1",
           className,
         )}
         aria-haspopup="dialog"
