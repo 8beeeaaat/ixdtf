@@ -8,7 +8,10 @@
     "about": "IXDTF & Temporal",
     "workbench": "Workbench",
     "converter": "Converter",
-    "guide": "Guide"
+    "guide": "Guide",
+    "aboutShort": "About",
+    "primaryLabel": "Primary navigation",
+    "mobileLabel": "Mobile navigation"
   },
   "banner": {
     "ixdtf": "View the Go ixdtf library powering this demo on GitHub"

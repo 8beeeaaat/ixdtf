@@ -101,7 +101,7 @@ export function WorkbenchPage() {
 
       <section className="space-y-4">
         <div
-          className="inline-flex rounded-md border border-border p-0.5"
+          className="inline-flex flex-wrap gap-0.5 rounded-md border border-border p-0.5"
           role="group"
           aria-label={t("workbench.modeLabel")}
         >
@@ -112,7 +112,7 @@ export function WorkbenchPage() {
               aria-pressed={mode === m}
               onClick={() => setMode(m)}
               className={cn(
-                "rounded px-3 py-1.5 font-sans text-sm transition-colors",
+                "shrink-0 whitespace-nowrap rounded px-3 py-1.5 font-sans text-sm transition-colors",
                 mode === m
                   ? "bg-accent text-accent-foreground"
                   : "text-muted-foreground hover:text-foreground",

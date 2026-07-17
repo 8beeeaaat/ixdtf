@@ -39,7 +39,7 @@ export function ReproduceSection({ goSample, jsSample, className }: ReproduceSec
               aria-pressed={tab === key}
               onClick={() => setTab(key)}
               className={cn(
-                "rounded-md px-2 py-1 font-sans text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+                "whitespace-nowrap rounded-md px-2 py-1 font-sans text-xs transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
                 tab === key
                   ? "bg-muted font-medium text-foreground"
                   : "text-muted-foreground hover:text-foreground",

@@ -123,10 +123,16 @@ export function ConverterPage() {
                 return (
                   <div key={zone} className="space-y-1 py-4">
                     <div className="flex items-baseline justify-between gap-4">
-                      <p className="font-medium font-mono text-sm tabular-nums">{zone}</p>
+                      <p
+                        title={zone}
+                        className="min-w-0 flex-1 truncate font-medium font-mono text-sm tabular-nums"
+                      >
+                        {zone}
+                      </p>
                       <Button
                         variant="ghost"
                         size="sm"
+                        className="shrink-0"
                         onClick={() => setZones(zones.filter((z) => z !== zone))}
                       >
                         {t("common.remove")}

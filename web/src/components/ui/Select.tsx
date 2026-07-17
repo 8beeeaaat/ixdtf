@@ -71,12 +71,12 @@ function Select({
       <SelectPrimitive.Trigger
         aria-label={ariaLabel}
         className={cn(
-          "inline-flex h-8 items-center gap-1.5 rounded-md px-3 font-medium font-sans text-foreground text-xs transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
+          "inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3 font-medium font-sans text-foreground text-xs transition-colors hover:bg-accent hover:text-accent-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background",
           className,
         )}
       >
         {icon}
-        <span>{current?.label ?? value}</span>
+        <span className={cn(icon && "hidden sm:inline")}>{current?.label ?? value}</span>
         <SelectPrimitive.Icon asChild>
           <ChevronDown />
         </SelectPrimitive.Icon>

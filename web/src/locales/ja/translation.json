@@ -8,7 +8,10 @@
     "about": "IXDTF と Temporal",
     "workbench": "ワークベンチ",
     "converter": "変換",
-    "guide": "ガイド"
+    "guide": "ガイド",
+    "aboutShort": "概要",
+    "primaryLabel": "メインナビゲーション",
+    "mobileLabel": "モバイルナビゲーション"
   },
   "banner": {
     "ixdtf": "このデモを支える Go 製 ixdtf ライブラリを GitHub で見る"

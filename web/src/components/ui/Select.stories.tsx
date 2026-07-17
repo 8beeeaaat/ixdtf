@@ -27,6 +27,27 @@ function Controlled() {
   return <Select aria-label="Theme" value={value} onValueChange={setValue} options={OPTIONS} />;
 }
 
+function DotIcon() {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true" className="h-4 w-4 shrink-0">
+      <circle cx="8" cy="8" r="3" fill="currentColor" />
+    </svg>
+  );
+}
+
+function ControlledWithIcon() {
+  const [value, setValue] = useState("auto");
+  return (
+    <Select
+      aria-label="Theme"
+      value={value}
+      onValueChange={setValue}
+      options={OPTIONS}
+      icon={<DotIcon />}
+    />
+  );
+}
+
 /** トリガーは常に現在値を表示し、プルダウンから別の値を選ぶと即座に反映される。 */
 export const Default: Story = {
   render: () => <Controlled />,
@@ -39,5 +60,16 @@ export const Default: Story = {
     await userEvent.click(trigger);
     await userEvent.click(await body.findByRole("option", { name: "Dark" }));
     await expect(trigger).toHaveTextContent("Dark");
+  },
+};
+
+/** icon 指定時は sm 未満でラベルを隠しアイコンのみにする (ヘッダー右クラスタのモバイル縮退、F-0-5)。 */
+export const WithIcon: Story = {
+  render: () => <ControlledWithIcon />,
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trigger = canvas.getByRole("combobox", { name: "Theme" });
+    const label = within(trigger).getByText("Auto");
+    await expect(label).toHaveClass("hidden", "sm:inline");
   },
 };
