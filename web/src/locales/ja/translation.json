@@ -88,15 +88,15 @@
       },
       "temporalIxdtf": {
         "title": "Temporal の文字列形式と RFC 9557",
-        "body": "Temporal が読み書きする文字列形式は RFC 9557 (IXDTF) に基づきます。ZonedDateTime.toString() はタイムゾーン注釈と、ISO 8601 以外のカレンダーでは u-ca 注釈を含む IXDTF 文字列を生成し、ZonedDateTime.from() は同じ形式を解析します。"
+        "body": "Temporal が読み書きする文字列形式は RFC 9557 (IXDTF) に基づきます。ZonedDateTime.toString() は、タイムゾーン注釈 (ISO 8601 以外のカレンダーでは u-ca 注釈も) を含む IXDTF 文字列を生成し、ZonedDateTime.from() は同じ形式を解析します。"
       },
       "goParsing": {
         "title": "Go ixdtf の Parse と Validate",
-        "body": "Parse は日時と拡張情報を取り出し、Validate は値を返さず形式と拡張を検証します。このデモの検証のみモードは Validate に対応し、エラー文はライブラリの原文を表示します。"
+        "body": "Parse は日時と拡張情報を取り出し、Validate は値を返さず形式と拡張を検証します。このデモの「検証のみ」モードは Validate に対応し、エラーメッセージはライブラリの原文のまま表示します。"
       },
       "temporalParsing": {
         "title": "Temporal による IXDTF の解析",
-        "body": "タイムゾーン注釈を持つ文字列は Temporal.ZonedDateTime.from で解析します。注釈がない RFC 3339 形式は Temporal.Instant.from へフォールバックします。Temporal はオフセットとタイムゾーンの不整合を既定で拒否します。"
+        "body": "タイムゾーン注釈を持つ文字列は Temporal.ZonedDateTime.from で解析します。注釈がない RFC 3339 形式の場合は Temporal.Instant.from へフォールバックします。Temporal はオフセットとタイムゾーンの不整合を既定で拒否します。"
       },
       "offsetConsistency": {
         "title": "オフセットとタイムゾーンの整合性",
@@ -124,11 +124,11 @@
       },
       "criticalAnnotations": {
         "title": "critical 注釈 (!)",
-        "body": "角括弧の直後の ! は、その注釈を処理できなければ文字列全体へ作用してはならないことを受信側へ伝えます。critical でない elective な注釈は、処理系が理解できなければ無視できます。"
+        "body": "角括弧の直後の ! は、その注釈を処理できなければ文字列全体を扱ってはならないことを受信側へ伝えます。critical でない elective な注釈は、処理系が理解できなければ無視できます。"
       },
       "rejectedExtensions": {
         "title": "実験的・未対応拡張の扱い",
-        "body": "アンダースコアで始まるキーは管理された環境での実験用で、通常の交換では拒否が必要です。Go ixdtf はさらに x- プライベート拡張を拒否します。処理系ごとの差は Interop の教材としてそのまま表示します。"
+        "body": "アンダースコアで始まるキーは管理された環境での実験用で、通常の交換では拒否が必要です。Go ixdtf はさらに x- プライベート拡張を拒否します。処理系ごとの差は相互運用の教材としてそのまま表示します。"
       }
     },
     "sources": {
@@ -167,7 +167,7 @@
   },
   "tooltip": {
     "date": "暦日 (YYYY-MM-DD)",
-    "time": "時刻。任意で小数秒を含む",
+    "time": "時刻。小数秒は任意",
     "offset": "UTC からのオフセット。RFC 9557 では Z は -00:00 (ローカルオフセット不明) と同義",
     "timezone": "IANA タイムゾーン名の注釈 [Area/Location]",
     "extension": "拡張タグ [key=value]。u-ca はカレンダー体系",
@@ -195,7 +195,7 @@
     },
     "temporal": {
       "heading": "Temporal — ECMAScript の日時 API",
-      "body1": "Temporal は、TC39 (ECMAScript 標準化委員会) が標準化を進める JavaScript の新しい日時 API です。Date の長年の欠点 (値が可変、タイムゾーンを扱えない、月が 0 始まりなど) を置き換えるために設計され、Instant / PlainDate / ZonedDateTime など目的別のイミュータブルな型を提供します。",
+      "body1": "Temporal は、TC39 (ECMAScript 標準化委員会) が標準化を進める JavaScript の新しい日時 API です。Date の長年の欠点 (値が可変、タイムゾーンを扱えない、月が 0 始まりなど) を解消するために設計され、Instant / PlainDate / ZonedDateTime など目的別のイミュータブルな型を提供します。",
       "body2": "中心となる Temporal.ZonedDateTime は「瞬間 + IANA タイムゾーン + カレンダー体系」を 1 つの値として保持します。だからこそ DST をまたぐカレンダー演算や、和暦などへの投影を正しく行えます。このデモは、ネイティブ実装を持つブラウザ (Chrome 144+ / Edge 144+ / Firefox 139+) ではその Temporal をそのまま使い、未対応のブラウザでは <polyfillLink>temporal-polyfill</polyfillLink> (fullcalendar 製) で同じ API を再現します。プレイグラウンドや相互運用の画面では両方を並べて表示し、結果ラベルに実装名を示します。"
     },
     "relation": {
@@ -217,7 +217,7 @@
   },
   "workbench": {
     "title": "IXDTF ワークベンチ",
-    "tagline": "同一の IXDTF 入力を 3 実装 (ネイティブ Temporal / temporal-polyfill / Go サーバー) に通し、解析・検証・往復・実装差比較・Temporal ラボ を切り替えます",
+    "tagline": "同一の IXDTF 入力を 3 実装 (ネイティブ Temporal / temporal-polyfill / Go サーバー) に通し、「解析・検証」「往復・実装差比較」「Temporal ラボ」を切り替えます",
     "modeLabel": "モード",
     "modeParse": "解析・検証",
     "modeParseHint": "文字列の Parse / Validate をリアルタイムに可視化する",
@@ -308,32 +308,32 @@
     "goEpoch": "Go ixdtf の unix_nano (サーバー実測)",
     "dstOverlap": {
       "title": "DST 重複時刻",
-      "body": "Los Angeles で夏時間が終わる夜、壁時計の 01:30 は 2 回訪れます。日付・時刻・ゾーン名が同じ 2 つの IXDTF を、数値オフセットと Temporal が解決した瞬間で見比べてください。",
+      "body": "Los Angeles で夏時間が終わる夜、壁時計の 01:30 は 2 回訪れます。日付・時刻・タイムゾーン名が同じ 2 つの IXDTF 文字列を、数値オフセットと、Temporal が解決した瞬間とで見比べてください。",
       "earlier": "1 回目の 01:30",
       "later": "2 回目の 01:30",
       "clockTime": "01:30",
-      "earlierOffset": "DST · -07:00",
+      "earlierOffset": "夏時間 · -07:00",
       "laterOffset": "標準時 · -08:00",
       "epoch": "瞬間 (epoch nanoseconds)",
-      "parseError": "この IXDTF を Temporal で解析できませんでした",
+      "parseError": "この IXDTF 文字列を Temporal で解析できませんでした",
       "errorDetails": "ブラウザのエラー詳細",
       "elapsed": "実時間の差",
       "hours": "+{{count}} h",
       "seconds": "{{count}} 秒",
       "unavailable": "測定不能",
-      "conclusion": "角括弧のタイムゾーン名は地域の規則を、数値オフセットはこのローカル時刻が指す瞬間を確定します。同じ 01:30 でも、-07:00 と -08:00 は 1 時間離れた別の瞬間です。"
+      "conclusion": "角括弧のタイムゾーン名は地域の規則を運び、数値オフセットはこのローカル時刻が指す瞬間を確定します。同じ 01:30 でも、-07:00 と -08:00 は 1 時間離れた別の瞬間です。"
     },
     "zoneArithmetic": {
       "title": "+1 日 と +24 時間",
-      "body": "DST が終わる夜の 01:30 に「1 日」と「24 時間」を足します。この夜をまたぐ 1 日は 25 時間あるため、カレンダー演算と実時間演算は別の瞬間に着地します。タイムゾーン注釈を運ぶ IXDTF だから、デシリアライズ後もこの区別を正しく計算できます。",
+      "body": "DST が終わる夜の 01:30 に「1 日」と「24 時間」を足します。この夜をまたぐ 1 日は 25 時間あるため、カレンダー演算と実時間演算は別の瞬間に着地します。タイムゾーン注釈を運ぶ IXDTF だからこそ、デシリアライズ後もこの区別を正しく計算できます。",
       "base": "基点",
       "plusDay": "+1 日 (カレンダー演算)",
       "plusHours": "+24 時間 (実時間演算)",
-      "realDelta": "基点からの実時間",
+      "realDelta": "基点からの実経過時間",
       "hours": "+{{count}} h",
       "temporalEpoch": "瞬間 (epoch nanoseconds)",
       "goParsed": "Go ixdtf が strict 解析した unix_nano",
-      "conclusion": "+1 日は壁時計 01:30 を保って実時間 25 時間進み、+24 時間は実時間を保って壁時計が 00:30 になります。Temporal が生成した結果の IXDTF 文字列を Go ixdtf が strict 解析して同じ瞬間に到達する — IXDTF は実装間の交換形式として機能します。"
+      "conclusion": "+1 日は壁時計の 01:30 を保ったまま実時間で 25 時間進み、+24 時間は実時間で 24 時間進んで壁時計が 00:30 になります。Temporal が生成した IXDTF 文字列を Go ixdtf が strict 解析して同じ瞬間に到達する — IXDTF は実装間の交換形式として機能します。"
     },
     "calendarProjection": {
       "title": "u-ca カレンダー投影",
@@ -346,12 +346,12 @@
       "instant": "瞬間 (epoch nanoseconds)",
       "goRoundtrip": "Go ixdtf の往復 (サーバー実測)",
       "projectionError": "このカレンダーへ投影できませんでした",
-      "conclusion": "全ての投影で epochNanoseconds は同一です。注釈は瞬間を変えず、読み方だけを変えます。"
+      "conclusion": "すべての投影で epochNanoseconds は同一です。注釈は瞬間を変えず、読み方だけを変えます。"
     }
   },
   "guide": {
     "title": "RFC 9557 学習ガイド",
-    "tagline": "IXDTF が RFC 3339 に何を加えた規格なのかを学びます",
+    "tagline": "IXDTF が RFC 3339 に何を加えたのかを学びます",
     "gallery": "サンプル文字列集",
     "expectServer": "サーバー",
     "expectBrowser": "ブラウザ",
@@ -362,7 +362,7 @@
       },
       "suffix": {
         "heading": "サフィックス構文",
-        "body": "注釈は省略可能な [Area/Location] のタイムゾーンを先頭に、[key=value] の拡張タグを 0 個以上並べます。u-ca はカレンダー体系を表し、[u-ca=japanese] のように書きます。"
+        "body": "先頭に省略可能なタイムゾーン注釈 [Area/Location] を置き、その後ろに [key=value] の拡張タグを 0 個以上並べます。u-ca はカレンダー体系を表し、[u-ca=japanese] のように書きます。"
       },
       "critical": {
         "heading": "critical フラグ (!)",
@@ -389,15 +389,15 @@
       "timezone": "[Asia/Tokyo] のタイムゾーン注釈付き。オフセットと整合しています。",
       "dstOverlapEarlier": "DST 終了前の 1 回目の 01:30。オフセット -07:00 が早い方の瞬間を指定します。",
       "dstOverlapLater": "DST 終了後の 2 回目の 01:30。オフセット -08:00 が 1 時間後の瞬間を指定します。",
-      "offsetMismatchLenient": "オフセット (+02:00) がタイムゾーンと不整合。lenient では ixdtf は受理、Temporal は拒否します。",
+      "offsetMismatchLenient": "オフセット (+02:00) がタイムゾーンと不整合。非 strict では ixdtf は受理し、Temporal は拒否します。",
       "calendarJapanese": "[u-ca=japanese] で和暦を指定。瞬間は同じで表記だけが変わります。",
       "calendarHebrewRfc": "RFC 9557 本文の例。ヘブライ暦を指定しています。",
       "timezoneCritical": "critical なタイムゾーン注釈 [!Asia/Tokyo]。処理できない実装は拒否しなければなりません。",
       "calendarCritical": "critical なカレンダー注釈 [!u-ca=japanese]。",
-      "criticalUnknownTag": "未知のタグが critical [!foo=bar]。非 strict の ixdtf は Critical として記録しつつ受理、Temporal は拒否します。",
+      "criticalUnknownTag": "未知のタグが critical [!foo=bar]。非 strict の ixdtf は critical として記録しつつ受理し、Temporal は拒否します。",
       "unknownTag": "未知だが非 critical なタグ [foo=bar]。両実装とも受理します (ixdtf はタグを保持、Temporal は無視)。",
-      "privateExt": "x- プライベート拡張。ixdtf は拒否、Temporal は無視して受理します。",
-      "experimentalExt": "_ 実験的拡張。ixdtf は拒否、Temporal は無視して受理します。",
+      "privateExt": "x- プライベート拡張。ixdtf は拒否し、Temporal は無視して受理します。",
+      "experimentalExt": "_ 実験的拡張。ixdtf は拒否し、Temporal は無視して受理します。",
       "offsetMismatchStrict": "strict モードのオフセット不整合。両実装とも拒否します。",
       "garbage": "日時として解釈できない文字列。両実装とも解析に失敗します。"
     }
@@ -406,7 +406,7 @@
     "free": "このデモは無料・オープンソースです",
     "repo": "GitHub リポジトリ",
     "sponsor": "支援する",
-    "coffee": "コーヒーを奢る"
+    "coffee": "コーヒーをおごる"
   },
   "support": {
     "title": "このデモを支援する",
@@ -424,9 +424,9 @@
       "sponsorCta": "GitHub Sponsors で支援",
       "coffeeTitle": "Buy Me a Coffee",
       "coffeeBody": "単発の寄付で、サーバー運用と開発時間を支えられます。",
-      "coffeeCta": "コーヒーを奢る",
+      "coffeeCta": "コーヒーをおごる",
       "starTitle": "スター & 拡散",
-      "starBody": "無料でできる支援です。リポジトリにスターを付けたり、必要としている人へ共有してください。",
+      "starBody": "無料でできる支援です。リポジトリにスターを付けたり、必要としている人へ共有したりしてください。",
       "starCta": "リポジトリを見る"
     },
     "note": "いただいた支援は、このデモと学習コンテンツの維持・改善にあてます。"

@@ -96,7 +96,7 @@
       },
       "temporalParsing": {
         "title": "Parsing IXDTF with Temporal",
-        "body": "Strings with a time-zone annotation are parsed by Temporal.ZonedDateTime.from. RFC 3339 forms without that annotation fall back to Temporal.Instant.from. By default, Temporal rejects a conflict between the numeric offset and time zone."
+        "body": "Strings with a time-zone annotation are parsed by Temporal.ZonedDateTime.from. RFC 3339 forms without that annotation fall back to Temporal.Instant.from. By default, Temporal rejects a conflict between the numeric offset and the time zone."
       },
       "offsetConsistency": {
         "title": "Offset and time-zone consistency",
@@ -116,7 +116,7 @@
       },
       "calendarAnnotation": {
         "title": "The u-ca calendar annotation",
-        "body": "The u-ca tag carries which calendar the same instant should be interpreted and displayed in. Temporal recomputes era, year, month, and day via withCalendar; Go ixdtf carries the tag without interpreting it. The instant itself (unix_nano) is unchanged by the tag."
+        "body": "The u-ca tag conveys which calendar the same instant should be interpreted and displayed in. Temporal recomputes era, year, month, and day via withCalendar; Go ixdtf carries the tag without interpreting it. The instant itself (unix_nano) is unchanged by the tag."
       },
       "suffixSyntax": {
         "title": "IXDTF suffix syntax",
@@ -180,7 +180,7 @@
     "calendarLabel": "Calendar system",
     "browserGenerated": "Browser-generated (Temporal.Now)",
     "serverGenerated": "Server-generated (ixdtf.FormatNano)",
-    "calendarHeading": "Month calendar",
+    "calendarHeading": "Monthly calendar",
     "serverNote": "The same instant rendered as IXDTF by the Go server",
     "weekdays": "Mon,Tue,Wed,Thu,Fri,Sat,Sun"
   },
@@ -195,14 +195,14 @@
     },
     "temporal": {
       "heading": "Temporal — the ECMAScript date-time API",
-      "body1": "Temporal is the new JavaScript date-time API being standardized by TC39 (the ECMAScript committee). Designed to replace the long-standing shortcomings of Date (mutable values, no time-zone support, zero-based months, and more), it provides purpose-built immutable types such as Instant, PlainDate, and ZonedDateTime.",
+      "body1": "Temporal is the new JavaScript date-time API being standardized by TC39 (the ECMAScript committee). Designed to address the long-standing shortcomings of Date (mutable values, no time-zone support, zero-based months, and more), it provides purpose-built immutable types such as Instant, PlainDate, and ZonedDateTime.",
       "body2": "The centerpiece, Temporal.ZonedDateTime, holds an instant + an IANA time zone + a calendar system as a single value. That is what makes calendar arithmetic across DST transitions and projection into calendars such as the Japanese one work correctly. On browsers with a native implementation (Chrome 144+ / Edge 144+ / Firefox 139+) this demo uses that Temporal directly; on other browsers it reproduces the same API with <polyfillLink>temporal-polyfill</polyfillLink> (by fullcalendar). The Playground and Interop screens show both side by side, with the implementation name in each result label."
     },
     "relation": {
       "heading": "How they relate — an API and its interchange format",
       "body1": "Serializing a Temporal.ZonedDateTime as text needs information that RFC 3339 alone cannot carry — the IANA time-zone name and the calendar. TC39 worked with the IETF to standardize this serialization format, and it became RFC 9557 (IXDTF). The bracketed time-zone notation follows what Java's java.time had long used de facto; RFC 9557 made it an open standard for the first time.",
       "body2": "In Temporal, ZonedDateTime.toString() produces an IXDTF string and ZonedDateTime.from() parses one. With the format now an open standard, implementations outside JavaScript — the Go ixdtf library in this demo — read and write the same strings, so IXDTF works as an interchange format between implementations.",
-      "body3": "RFC 9557 deliberately leaves the consumption of annotations to each implementation's discretion, and Temporal applies its own profile (rejecting unknown critical tags, its own handling of x- / _ extensions, and so on). The same string may be accepted by one implementation and rejected by another — you can watch this happen on the Interop and Guide pages.",
+      "body3": "RFC 9557 deliberately leaves the consumption of annotations to each implementation's discretion, and Temporal applies its own profile (rejecting unknown critical tags, its handling of x- / _ extensions, and so on). The same string may be accepted by one implementation and rejected by another — you can watch this happen on the Interop and Guide pages.",
       "diagramBrowser": "Temporal (browser)",
       "diagramString": "IXDTF string (RFC 9557)",
       "diagramGo": "ixdtf (Go)",
@@ -210,17 +210,17 @@
     },
     "related": {
       "heading": "Experience it in this demo",
-      "workbench": "Workbench — try parsing and implementation differences",
+      "workbench": "Workbench — explore parsing and implementation differences",
       "guide": "Guide — learn the RFC 9557 syntax",
       "temporalLab": "Temporal Lab — observe the date-time model"
     }
   },
   "workbench": {
     "title": "IXDTF Workbench",
-    "tagline": "Run the same IXDTF input through three implementations (native Temporal / temporal-polyfill / Go server) and switch between parse & validate, round-trip comparison, and Temporal Lab",
+    "tagline": "Run the same IXDTF input through three implementations (native Temporal / temporal-polyfill / Go server) and switch between Parse & validate, Round-trip comparison, and Temporal Lab",
     "modeLabel": "Mode",
     "modeParse": "Parse & validate",
-    "modeParseHint": "Visualize Parse / Validate of the string in real time",
+    "modeParseHint": "Visualize Parse / Validate results for the string in real time",
     "modeRoundtrip": "Round-trip comparison",
     "modeRoundtripHint": "Parse → format the same input and line up the behavioral differences across three implementations",
     "modeLab": "Temporal Lab",
@@ -234,7 +234,7 @@
     "strict": "strict mode",
     "strictHint": "Validates that the offset agrees with the time zone",
     "validateOnly": "Validate only",
-    "validateOnlyHint": "Checks validity without returning a parsed value (like Validate)",
+    "validateOnlyHint": "Checks validity without returning a parsed value (equivalent to Validate)",
     "empty": "Enter an IXDTF string to see the parse result.",
     "serverResult": "Server parse (Go ixdtf)",
     "browserResult": "Browser parse ({{impl}})",
@@ -300,7 +300,7 @@
   },
   "temporalLab": {
     "title": "Temporal Lab",
-    "tagline": "Observe the datetime model shared by IXDTF and Temporal, with live measurements from the browser's Temporal (native or temporal-polyfill) and Go ixdtf",
+    "tagline": "Observe the date-time model shared by IXDTF and Temporal, with live measurements from the browser's Temporal (native or temporal-polyfill) and Go ixdtf",
     "goBadge": "Go ixdtf",
     "nativeUnsupported": "This browser has no native Temporal",
     "goPending": "Querying the server…",
@@ -308,7 +308,7 @@
     "goEpoch": "Go ixdtf unix_nano (server-measured)",
     "dstOverlap": {
       "title": "DST overlap",
-      "body": "On the night daylight saving time ends in Los Angeles, the wall clock reaches 01:30 twice. Compare two IXDTF strings with the same date, time, and zone name by their numeric offsets and the instants resolved by Temporal.",
+      "body": "On the night daylight saving time ends in Los Angeles, the wall clock reaches 01:30 twice. Compare two IXDTF strings with the same date, time, and time-zone name by their numeric offsets and the instants resolved by Temporal.",
       "earlier": "First 01:30",
       "later": "Second 01:30",
       "clockTime": "01:30",
@@ -325,26 +325,26 @@
     },
     "zoneArithmetic": {
       "title": "+1 day vs +24 hours",
-      "body": "Add \"one day\" and \"24 hours\" to 01:30 on the night DST ends. That day is 25 hours long, so calendar arithmetic and exact-time arithmetic land on different instants. Because IXDTF carries the time-zone annotation, the distinction still computes correctly after deserialization.",
+      "body": "Add \"one day\" and \"24 hours\" to 01:30 on the night DST ends. That day is 25 hours long, so calendar arithmetic and exact-time arithmetic land on different instants. Because IXDTF carries the time-zone annotation, the distinction can still be computed correctly after deserialization.",
       "base": "Base",
       "plusDay": "+1 day (calendar)",
       "plusHours": "+24 hours (exact time)",
-      "realDelta": "Real time from base",
+      "realDelta": "Elapsed real time from base",
       "hours": "+{{count}} h",
       "temporalEpoch": "Instant (epoch nanoseconds)",
       "goParsed": "unix_nano from Go ixdtf strict parse",
-      "conclusion": "+1 day keeps the 01:30 wall clock and advances 25 real hours; +24 hours keeps real time and the wall clock becomes 00:30. Go ixdtf strict-parses the IXDTF strings Temporal produced and reaches the same instants — IXDTF works as the interchange format between implementations."
+      "conclusion": "+1 day keeps the wall clock at 01:30 while advancing 25 real hours; +24 hours advances exactly 24 real hours, and the wall clock becomes 00:30. Go ixdtf strict-parses the IXDTF strings Temporal produced and reaches the same instants — IXDTF works as the interchange format between implementations."
     },
     "calendarProjection": {
       "title": "u-ca calendar projection",
-      "body": "The u-ca tag carries which calendar humans should read the same instant in. Temporal interprets the tag and recomputes era, year, month, and day; Go ixdtf carries it losslessly without interpreting. The instant (unix_nano) never changes.",
+      "body": "The u-ca tag conveys which calendar humans should read the same instant in. Temporal interprets the tag and recomputes era, year, month, and day; Go ixdtf carries it losslessly, without interpretation. The instant (unix_nano) never changes.",
       "calendar": "Calendar",
       "year": "Year (era)",
       "month": "monthCode",
       "day": "Day",
       "ixdtf": "IXDTF",
       "instant": "Instant (epoch nanoseconds)",
-      "goRoundtrip": "Go ixdtf roundtrip (server-measured)",
+      "goRoundtrip": "Go ixdtf round trip (server-measured)",
       "projectionError": "Could not project into this calendar",
       "conclusion": "epochNanoseconds is identical across every projection. The annotation changes how the instant is read, never the instant itself."
     }
@@ -389,7 +389,7 @@
       "timezone": "With an [Asia/Tokyo] time-zone annotation that agrees with the offset.",
       "dstOverlapEarlier": "The first 01:30 before DST ends. Offset -07:00 selects the earlier instant.",
       "dstOverlapLater": "The second 01:30 after DST ends. Offset -08:00 selects the instant one hour later.",
-      "offsetMismatchLenient": "Offset (+02:00) disagrees with the zone. Lenient: ixdtf accepts, Temporal rejects.",
+      "offsetMismatchLenient": "Offset (+02:00) disagrees with the zone. Non-strict: ixdtf accepts; Temporal rejects.",
       "calendarJapanese": "[u-ca=japanese] selects the Japanese calendar. The instant is unchanged; only the rendering differs.",
       "calendarHebrewRfc": "An example from the RFC 9557 text, selecting the Hebrew calendar.",
       "timezoneCritical": "Critical time-zone annotation [!Asia/Tokyo]. Parsers that cannot honor it must reject the string.",
