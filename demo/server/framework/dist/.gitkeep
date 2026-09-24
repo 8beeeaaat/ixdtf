@@ -1,0 +1,2 @@
+# go:embed all:dist の対象を保証するためのプレースホルダ。
+# 実際の配信物 (vite build 成果物) は make build がここへコピーする (git 管理外)。

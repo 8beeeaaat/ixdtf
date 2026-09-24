@@ -1,0 +1,427 @@
+{
+  "app": {
+    "title": "IXDTF デモ",
+    "tagline": "RFC 9557 の日時文字列を、ブラウザの Temporal と Go の ixdtf で往復させる"
+  },
+  "nav": {
+    "home": "ホーム",
+    "about": "はじめに",
+    "playground": "プレイグラウンド",
+    "interop": "相互運用",
+    "converter": "変換",
+    "temporalLab": "Temporal ラボ",
+    "guide": "ガイド"
+  },
+  "banner": {
+    "ixdtf": "このデモを支える Go 製 ixdtf ライブラリを GitHub で見る"
+  },
+  "sponsor": {
+    "cta": "スポンサー",
+    "ariaLabel": "このプロジェクトを支援する"
+  },
+  "theme": {
+    "label": "テーマ",
+    "auto": "自動",
+    "light": "ライト",
+    "dark": "ダーク"
+  },
+  "lang": {
+    "label": "言語",
+    "ja": "日本語",
+    "en": "English"
+  },
+  "common": {
+    "copy": "コピー",
+    "copied": "コピーしました",
+    "server": "サーバー",
+    "browser": "ブラウザ",
+    "strict": "strict",
+    "validateOnly": "検証のみ",
+    "enabled": "有効",
+    "disabled": "無効",
+    "yes": "はい",
+    "no": "いいえ",
+    "none": "なし",
+    "add": "追加",
+    "remove": "削除",
+    "loading": "読み込み中…",
+    "tryInPlayground": "プレイグラウンドで試す",
+    "refresh": "更新",
+    "via": "解析 API",
+    "ok": "成功",
+    "error": "エラー",
+    "match": "一致",
+    "mismatch": "不一致"
+  },
+  "reproduce": {
+    "summary": "この結果をコードで再現する",
+    "tabs": {
+      "go": "Go (ixdtf)",
+      "js": "JavaScript (Temporal)"
+    }
+  },
+  "references": {
+    "trigger": "解説・参照",
+    "close": "解説を閉じる",
+    "sourcesHeading": "公式の参照先",
+    "implementationNote": "ブラウザ実装について",
+    "newTab": "新しいタブで開く",
+    "kinds": {
+      "spec": "仕様",
+      "docs": "ドキュメント",
+      "code": "コード"
+    },
+    "topics": {
+      "ixdtf": {
+        "title": "IXDTF と RFC 9557",
+        "body": "IXDTF は RFC 3339 の日時文字列に、タイムゾーン名やカレンダーなどの注釈を角括弧で付加する RFC 9557 の形式です。日時の瞬間だけでなく、その値をどう解釈・表示するかという情報も一緒に運べます。"
+      },
+      "temporalApi": {
+        "title": "TC39 Temporal API",
+        "body": "Temporal は TC39 が標準化を進める ECMAScript の日時 API で、Date を置き換えるために設計されました。Instant / PlainDate / ZonedDateTime などのイミュータブルな型を提供し、タイムゾーンとカレンダーを明示的な値として扱います。",
+        "notice": "ここで説明するのは仕様上の期待動作です。このデモはポリフィルを使わず、実行中のブラウザに内蔵された Temporal 実装をそのまま利用するため、ブラウザやバージョンによって未実装・実装差・仕様との差が生じる場合があります。"
+      },
+      "temporalIxdtf": {
+        "title": "Temporal の文字列形式と RFC 9557",
+        "body": "Temporal が読み書きする文字列形式は RFC 9557 (IXDTF) に基づきます。ZonedDateTime.toString() はタイムゾーン注釈と、ISO 8601 以外のカレンダーでは u-ca 注釈を含む IXDTF 文字列を生成し、ZonedDateTime.from() は同じ形式を解析します。",
+        "notice": "ここで説明するのは仕様上の期待動作です。このデモはポリフィルを使わず、実行中のブラウザに内蔵された Temporal 実装をそのまま利用するため、ブラウザやバージョンによって未実装・実装差・仕様との差が生じる場合があります。"
+      },
+      "goParsing": {
+        "title": "Go ixdtf の Parse と Validate",
+        "body": "Parse は日時と拡張情報を取り出し、Validate は値を返さず形式と拡張を検証します。このデモの検証のみモードは Validate に対応し、エラー文はライブラリの原文を表示します。"
+      },
+      "temporalParsing": {
+        "title": "Temporal による IXDTF の解析",
+        "body": "タイムゾーン注釈を持つ文字列は Temporal.ZonedDateTime.from で解析します。注釈がない RFC 3339 形式は Temporal.Instant.from へフォールバックします。Temporal はオフセットとタイムゾーンの不整合を既定で拒否します。",
+        "notice": "ここで説明するのは仕様上の期待動作です。このデモはポリフィルを使わず、実行中のブラウザに内蔵された Temporal 実装をそのまま利用するため、ブラウザやバージョンによって未実装・実装差・仕様との差が生じる場合があります。"
+      },
+      "offsetConsistency": {
+        "title": "オフセットとタイムゾーンの整合性",
+        "body": "IXDTF では数値オフセットとタイムゾーン注釈が同じ瞬間を示さない場合があります。Go ixdtf の strict モードはこの不整合をエラーにし、非 strict では elective な注釈を適用せず元のオフセットを保ちます。Temporal の既定動作は不整合を拒否します。",
+        "notice": "Temporal 側の結果は、実行中のブラウザとそのバージョンが内蔵する実装による観測値です。仕様で定められた挙動と異なる、または機能が未実装である可能性があります。"
+      },
+      "roundtrip": {
+        "title": "Parse → Format のラウンドトリップ",
+        "body": "ラウンドトリップは文字列を構造化された日時へ解析し、再び文字列へ整形する往復です。同じ瞬間を表せても、精度の省略、注釈の扱い、正規化によって元文字列と完全一致しないことがあります。この画面は Temporal と Go ixdtf の結果を同じ観点で比較します。",
+        "notice": "ブラウザ経路はネイティブ Temporal 実装の実測結果です。ブラウザやバージョンごとの実装状況により、TC39 仕様上の期待動作や別ブラウザの結果と異なる場合があります。"
+      },
+      "dstAmbiguity": {
+        "title": "DST による重複時刻とオフセット",
+        "body": "夏時間の終了で時計が戻ると、同じローカル時刻が 2 回現れます。IANA タイムゾーン名だけではどちらの瞬間か曖昧ですが、IXDTF にその時点の UTC オフセットを併記すれば一意になります。Temporal は入力オフセットが有効なら、そのオフセットを使って重複を解消します。",
+        "notice": "Temporal 側の epoch は、実行中のブラウザに内蔵されたタイムゾーンデータと実装による観測値です。ブラウザやバージョンにより仕様上の期待値と異なる可能性があります。"
+      },
+      "zoneArithmetic": {
+        "title": "タイムゾーン注釈とカレンダー演算",
+        "body": "ZonedDateTime の add({ days: 1 }) は壁時計を保つカレンダー演算、add({ hours: 24 }) は実時間の演算です。DST 境界をまたぐ夜は 1 日が 25 時間になるため両者はずれます。IXDTF がタイムゾーン名を運ぶからこそ、デシリアライズ後もこの区別を正しく計算できます。",
+        "notice": "演算結果は、実行中のブラウザに内蔵された Temporal 実装とタイムゾーンデータによる観測値です。ブラウザやバージョンにより仕様上の期待値と異なる可能性があります。"
+      },
+      "calendarAnnotation": {
+        "title": "u-ca カレンダー注釈",
+        "body": "u-ca タグは、同じ瞬間をどの暦で解釈・表示するかを運びます。Temporal は withCalendar で紀年法・年月日を再計算し、Go ixdtf はタグを解釈せず値を保ったまま運搬します。瞬間そのもの (unix_nano) はタグでは変わりません。",
+        "notice": "投影結果は、実行中のブラウザの ICU カレンダーデータによる観測値です。ブラウザやバージョンにより対応カレンダーや紀年法の表現が異なる場合があります。"
+      },
+      "suffixSyntax": {
+        "title": "IXDTF のサフィックス構文",
+        "body": "RFC 3339 部分の後ろへ、タイムゾーン注釈 [Area/Location] とキー・値の拡張タグ [key=value] を並べます。u-ca は Unicode カレンダー注釈です。構文上の順序や使用できる文字は RFC 9557 の ABNF で定義されています。"
+      },
+      "criticalAnnotations": {
+        "title": "critical 注釈 (!)",
+        "body": "角括弧の直後の ! は、その注釈を処理できなければ文字列全体へ作用してはならないことを受信側へ伝えます。critical でない elective な注釈は、処理系が理解できなければ無視できます。"
+      },
+      "rejectedExtensions": {
+        "title": "実験的・未対応拡張の扱い",
+        "body": "アンダースコアで始まるキーは管理された環境での実験用で、通常の交換では拒否が必要です。Go ixdtf はさらに x- プライベート拡張を拒否します。処理系ごとの差は Interop の教材としてそのまま表示します。"
+      }
+    },
+    "sources": {
+      "rfc9557": "RFC 9557 §3 — Internet Extended Date/Time Format",
+      "rfc3339": "RFC 3339 — Date and Time on the Internet",
+      "rfc9557Consistency": "RFC 9557 §3.4 — Inconsistent Information",
+      "rfc9557Syntax": "RFC 9557 §4.1 — ABNF",
+      "rfc9557Critical": "RFC 9557 §3.3 — Elective / Critical Consumption",
+      "rfc9557Keys": "RFC 9557 §3.2 — 拡張キーの登録",
+      "rfc6648": "RFC 6648 — X- 接頭辞の廃止",
+      "temporalZonedDateTime": "TC39 Temporal — ZonedDateTime",
+      "temporalStrings": "TC39 Temporal — 文字列の解析・永続化・整形",
+      "temporalAmbiguity": "TC39 Temporal — タイムゾーンと曖昧さの解消",
+      "temporalZonedDateTimeAdd": "TC39 Temporal — ZonedDateTime.prototype.add",
+      "temporalCalendars": "TC39 Temporal — カレンダー",
+      "temporalDocs": "TC39 Temporal — ドキュメント",
+      "temporalSpec": "TC39 Temporal — 仕様 (proposal)",
+      "ixdtfPackage": "Go ixdtf v0.4.0 パッケージ文書",
+      "ixdtfParseCode": "Go ixdtf v0.4.0 — parse.go",
+      "ixdtfFormatCode": "Go ixdtf v0.4.0 — format.go",
+      "ixdtfTimezoneCode": "Go ixdtf v0.4.0 — timezone.go",
+      "ixdtfSuffixCode": "Go ixdtf v0.4.0 — suffix.go",
+      "ixdtfAbnfCode": "Go ixdtf v0.4.0 — abnf/abnf.go の拡張キー検証",
+      "ixdtfValidateCode": "Go ixdtf v0.4.0 — validate.go"
+    }
+  },
+  "legend": {
+    "title": "凡例",
+    "date": "日付",
+    "time": "時刻",
+    "offset": "UTC オフセット",
+    "timezone": "タイムゾーン",
+    "extension": "拡張タグ",
+    "critical": "critical フラグ"
+  },
+  "tooltip": {
+    "date": "暦日 (YYYY-MM-DD)",
+    "time": "時刻。任意で小数秒を含む",
+    "offset": "UTC からのオフセット。RFC 9557 では Z は -00:00 (ローカルオフセット不明) と同義",
+    "timezone": "IANA タイムゾーン名の注釈 [Area/Location]",
+    "extension": "拡張タグ [key=value]。u-ca はカレンダー体系",
+    "critical": "critical フラグ (!)。処理できない場合は拒否しなければならない注釈"
+  },
+  "unsupported": {
+    "title": "このブラウザは Temporal 未対応です",
+    "body": "このデモはブラウザネイティブの TC39 Temporal API を使用します。",
+    "browsers": "対応ブラウザ: Chrome 144+ / Edge 144+ / Firefox 139+",
+    "note": "Safari 安定版は 2026-07 時点で未対応のため対象外です。"
+  },
+  "home": {
+    "title": "IXDTF クロック",
+    "tagline": "現在時刻を IXDTF 表記そのもので表示します",
+    "timeZoneLabel": "タイムゾーン",
+    "calendarLabel": "カレンダー体系",
+    "browserGenerated": "ブラウザ生成 (Temporal.Now)",
+    "serverGenerated": "サーバー生成 (ixdtf.FormatNano)",
+    "calendarHeading": "月間カレンダー",
+    "serverNote": "同じ瞬間を Go サーバーが IXDTF 表記にしたものです",
+    "weekdays": "月,火,水,木,金,土,日"
+  },
+  "about": {
+    "title": "Temporal と IXDTF",
+    "tagline": "JavaScript の新しい日時 API と、その値を運ぶ IETF の文字列規格 — それぞれの役割と関係を解説します",
+    "ixdtf": {
+      "heading": "IXDTF — データ形式の規格 (RFC 9557)",
+      "body1": "IXDTF (Internet Extended Date/Time Format) は、IETF の SEDATE ワーキンググループが 2024 年 4 月に RFC 9557 として発行したデータ形式の規格です。インターネット標準のタイムスタンプ形式である RFC 3339 を後方互換のまま拡張し、日時の後ろに角括弧の注釈 (サフィックス) を付けられるようにしました。",
+      "body2": "注釈には [Asia/Tokyo] のような IANA タイムゾーン名と、[u-ca=japanese] のような key=value 形式の拡張タグがあります。先頭に ! を付けた注釈は critical となり、理解できない処理系は文字列全体をエラーとして扱わなければなりません。これにより「どの瞬間か」だけでなく「その瞬間をどう解釈・表示すべきか」という文脈を、機械可読なまま一緒に運べます。",
+      "exampleCaption": "IXDTF 文字列の構造: RFC 3339 の日時 + タイムゾーン注釈 + カレンダー注釈"
+    },
+    "temporal": {
+      "heading": "Temporal — ECMAScript の日時 API",
+      "body1": "Temporal は、TC39 (ECMAScript 標準化委員会) が標準化を進める JavaScript の新しい日時 API です。Date の長年の欠点 (値が可変、タイムゾーンを扱えない、月が 0 始まりなど) を置き換えるために設計され、Instant / PlainDate / ZonedDateTime など目的別のイミュータブルな型を提供します。",
+      "body2": "中心となる Temporal.ZonedDateTime は「瞬間 + IANA タイムゾーン + カレンダー体系」を 1 つの値として保持します。だからこそ DST をまたぐカレンダー演算や、和暦などへの投影を正しく行えます。このデモはポリフィルを使わず、ネイティブ実装を持つブラウザ (Chrome 144+ / Edge 144+ / Firefox 139+) の Temporal をそのまま使います。"
+    },
+    "relation": {
+      "heading": "両者の関係 — API と交換形式",
+      "body1": "Temporal.ZonedDateTime をテキストとして保存・送信するには、RFC 3339 だけでは運べない情報 — IANA タイムゾーン名とカレンダー — を文字列に含める必要がありました。TC39 はこの直列化形式の標準化を IETF と連携して進め、それが RFC 9557 (IXDTF) になりました。角括弧でタイムゾーン名を添える表記は Java の java.time などが事実上使ってきたもので、RFC 9557 が初めて公開規格として整備しました。",
+      "body2": "Temporal では ZonedDateTime.toString() が IXDTF 文字列を生成し、ZonedDateTime.from() がそれを解析します。形式が公開規格になったことで、JavaScript 以外の処理系 — このデモでは Go の ixdtf ライブラリ — も同じ文字列を読み書きでき、IXDTF は実装間の交換形式として機能します。",
+      "body3": "ただし RFC 9557 は注釈の解釈に処理系の裁量を認めており、Temporal は自身のプロファイルで解釈します (未知の critical タグの拒否、x- / _ 拡張の扱いなど)。同じ文字列でも実装によって受理・拒否が分かれ得ます — その様子は相互運用とガイドで実際に観察できます。",
+      "diagramBrowser": "ブラウザの Temporal",
+      "diagramString": "IXDTF 文字列 (RFC 9557)",
+      "diagramGo": "Go の ixdtf",
+      "diagramCaption": "同じ IXDTF 文字列を両実装が読み書きする — このデモ全体の主題です"
+    },
+    "related": {
+      "heading": "このデモで体験する",
+      "playground": "プレイグラウンド — 文字列の解析を試す",
+      "interop": "相互運用 — 実装間の挙動差を見る",
+      "guide": "ガイド — RFC 9557 の構文を学ぶ",
+      "temporalLab": "Temporal ラボ — 日時モデルを観察する"
+    }
+  },
+  "playground": {
+    "title": "IXDTF プレイグラウンド",
+    "tagline": "IXDTF 文字列の解析・検証をリアルタイムに可視化します",
+    "inputLabel": "IXDTF 文字列",
+    "inputPlaceholder": "2026-07-07T23:30:00+09:00[Asia/Tokyo][u-ca=japanese]",
+    "strict": "strict モード",
+    "strictHint": "オフセットとタイムゾーンの整合性を検証します",
+    "validateOnly": "検証のみ",
+    "validateOnlyHint": "解析せず妥当性のみを判定します (Validate 相当)",
+    "empty": "IXDTF 文字列を入力すると解析結果が表示されます。",
+    "serverResult": "サーバー解析 (Go ixdtf)",
+    "browserResult": "ブラウザ解析 (Temporal)",
+    "parsedTime": "解析された時刻 (RFC 3339)",
+    "parsedTimeBrowser": "解析された時刻 (IXDTF)",
+    "unixNano": "unix_nano",
+    "offsetSeconds": "オフセット (秒)",
+    "timeZone": "タイムゾーン",
+    "timeZoneCritical": "タイムゾーン critical",
+    "tags": "拡張タグ",
+    "tagKey": "キー",
+    "tagValue": "値",
+    "tagCritical": "critical",
+    "noTags": "拡張タグはありません",
+    "errorLabel": "エラーメッセージ (ixdtf 原文)",
+    "errorLabelBrowser": "エラーメッセージ (Temporal 原文)",
+    "via": "解析に成功した API",
+    "validatedOk": "検証に成功しました",
+    "share": "共有 URL をコピー",
+    "shareCopied": "URL をコピーしました"
+  },
+  "interop": {
+    "title": "相互運用 — ラウンドトリップ比較",
+    "tagline": "同じ入力を 2 実装で Parse → Format し、挙動差を並べます",
+    "inputLabel": "IXDTF 文字列",
+    "inputPlaceholder": "2026-07-07T23:30:00+02:00[Asia/Tokyo]",
+    "presets": "挙動差の出るプリセット",
+    "resultTitle": "比較結果",
+    "aspect": "観点",
+    "browserCol": "ブラウザ (Temporal)",
+    "serverCol": "サーバー (ixdtf)",
+    "empty": "IXDTF 文字列を入力するか、プリセットを選ぶと比較が表示されます。",
+    "via": "解析 API",
+    "rows": {
+      "status": "解析成否",
+      "error": "エラー",
+      "epoch": "瞬間 (unix_nano)",
+      "timeZone": "タイムゾーン",
+      "calendar": "カレンダー",
+      "roundtrip": "往復後の文字列",
+      "lossless": "ロスレス (入力と一致)"
+    }
+  },
+  "converter": {
+    "title": "タイムゾーン / カレンダー変換",
+    "tagline": "基準時刻を複数のタイムゾーンとカレンダー体系で一覧表示します",
+    "baseTime": "基準時刻",
+    "baseTimeHint": "IXDTF 文字列で指定できます (空欄なら現在時刻)",
+    "baseTimePlaceholder": "2026-07-07T23:30:00+09:00[Asia/Tokyo]",
+    "useNow": "現在時刻",
+    "invalidBase": "基準時刻を解析できませんでした",
+    "calendarLabel": "カレンダー体系",
+    "addTimeZone": "タイムゾーンを追加",
+    "human": "人間可読",
+    "ixdtf": "IXDTF",
+    "empty": "タイムゾーンを追加してください。",
+    "remove": "削除"
+  },
+  "temporalLab": {
+    "title": "Temporal ラボ",
+    "tagline": "IXDTF と Temporal が持つ日時モデルの性質を、ブラウザネイティブの Temporal と Go ixdtf の実測で観察します",
+    "nativeBadge": "Native Temporal",
+    "goBadge": "Go ixdtf",
+    "goPending": "サーバーに問い合わせ中…",
+    "goUnavailable": "サーバー実測を取得できませんでした",
+    "goEpoch": "Go ixdtf の unix_nano (サーバー実測)",
+    "dstOverlap": {
+      "title": "DST 重複時刻",
+      "body": "Los Angeles で夏時間が終わる夜、壁時計の 01:30 は 2 回訪れます。日付・時刻・ゾーン名が同じ 2 つの IXDTF を、数値オフセットと Temporal が解決した瞬間で見比べてください。",
+      "earlier": "1 回目の 01:30",
+      "later": "2 回目の 01:30",
+      "clockTime": "01:30",
+      "earlierOffset": "DST · -07:00",
+      "laterOffset": "標準時 · -08:00",
+      "nativeTemporal": "Native Temporal",
+      "epoch": "瞬間 (epoch nanoseconds)",
+      "parseError": "この IXDTF を Temporal で解析できませんでした",
+      "errorDetails": "ブラウザのエラー詳細",
+      "elapsed": "実時間の差",
+      "hours": "+{{count}} h",
+      "seconds": "{{count}} 秒",
+      "unavailable": "測定不能",
+      "conclusion": "角括弧のタイムゾーン名は地域の規則を、数値オフセットはこのローカル時刻が指す瞬間を確定します。同じ 01:30 でも、-07:00 と -08:00 は 1 時間離れた別の瞬間です。"
+    },
+    "zoneArithmetic": {
+      "title": "+1 日 と +24 時間",
+      "body": "DST が終わる夜の 01:30 に「1 日」と「24 時間」を足します。この夜をまたぐ 1 日は 25 時間あるため、カレンダー演算と実時間演算は別の瞬間に着地します。タイムゾーン注釈を運ぶ IXDTF だから、デシリアライズ後もこの区別を正しく計算できます。",
+      "base": "基点",
+      "plusDay": "+1 日 (カレンダー演算)",
+      "plusHours": "+24 時間 (実時間演算)",
+      "realDelta": "基点からの実時間",
+      "hours": "+{{count}} h",
+      "temporalEpoch": "瞬間 (epoch nanoseconds)",
+      "goParsed": "Go ixdtf が strict 解析した unix_nano",
+      "conclusion": "+1 日は壁時計 01:30 を保って実時間 25 時間進み、+24 時間は実時間を保って壁時計が 00:30 になります。Temporal が生成した結果の IXDTF 文字列を Go ixdtf が strict 解析して同じ瞬間に到達する — IXDTF は実装間の交換形式として機能します。"
+    },
+    "calendarProjection": {
+      "title": "u-ca カレンダー投影",
+      "body": "u-ca タグは、同じ瞬間を人間がどの暦で読むかを運びます。Temporal はタグを解釈して紀年法・年月日を再計算し、Go ixdtf は解釈せず損失なく運搬します。瞬間 (unix_nano) はどちらでも変わりません。",
+      "calendar": "カレンダー",
+      "year": "年 (紀年法)",
+      "month": "monthCode",
+      "day": "日",
+      "ixdtf": "IXDTF 表記",
+      "instant": "瞬間 (epoch nanoseconds)",
+      "goRoundtrip": "Go ixdtf の往復 (サーバー実測)",
+      "projectionError": "このカレンダーへ投影できませんでした",
+      "conclusion": "全ての投影で epochNanoseconds は同一です。注釈は瞬間を変えず、読み方だけを変えます。"
+    }
+  },
+  "guide": {
+    "title": "RFC 9557 学習ガイド",
+    "tagline": "IXDTF が RFC 3339 に何を加えた規格なのかを学びます",
+    "gallery": "サンプル文字列集",
+    "expectServer": "サーバー",
+    "expectBrowser": "ブラウザ",
+    "sections": {
+      "rfc3339": {
+        "heading": "RFC 3339 との差分",
+        "body": "RFC 3339 は日付・時刻・UTC オフセットまでを規定します。RFC 9557 (IXDTF) はその後ろに角括弧の注釈を追加できるよう拡張し、タイムゾーン名やカレンダー体系などの追加情報を、機械可読なまま持ち運べるようにしました。"
+      },
+      "suffix": {
+        "heading": "サフィックス構文",
+        "body": "注釈は省略可能な [Area/Location] のタイムゾーンを先頭に、[key=value] の拡張タグを 0 個以上並べます。u-ca はカレンダー体系を表し、[u-ca=japanese] のように書きます。"
+      },
+      "critical": {
+        "heading": "critical フラグ (!)",
+        "body": "注釈の先頭に ! を付けると critical になります。critical な注釈を処理系が理解できない場合は、その文字列全体を拒否しなければなりません。理解できない非 critical 注釈は無視できます。"
+      },
+      "rejected": {
+        "heading": "拒否されるケース",
+        "body": "x- で始まるプライベート拡張と _ で始まる実験的拡張は ixdtf では拒否されます。また strict モードではオフセットとタイムゾーンの不整合も拒否されます。これらは仕様上の落とし穴として体験する価値があります。"
+      }
+    },
+    "categories": {
+      "basic": "基本 (RFC 3339 互換)",
+      "timezone": "タイムゾーン付き",
+      "calendar": "カレンダー付き",
+      "critical": "critical フラグ",
+      "composite": "複合",
+      "rejected": "拒否されるケース"
+    },
+    "samples": {
+      "basicRfc3339": "RFC 3339 互換の基本形。IXDTF は RFC 3339 を包含します。",
+      "basicUtc": "Z は UTC 時刻を表します。RFC 9557 は Z を「ローカルオフセット不明」(-00:00 と同義) と再定義し、+00:00 と区別します。",
+      "unknownLocalOffset": "-00:00 は「ローカルオフセット不明」を表すと規定されており、+00:00 とは区別されます。",
+      "fractional": "小数秒 (ナノ秒精度) とタイムゾーン注釈の複合例。",
+      "timezone": "[Asia/Tokyo] のタイムゾーン注釈付き。オフセットと整合しています。",
+      "dstOverlapEarlier": "DST 終了前の 1 回目の 01:30。オフセット -07:00 が早い方の瞬間を指定します。",
+      "dstOverlapLater": "DST 終了後の 2 回目の 01:30。オフセット -08:00 が 1 時間後の瞬間を指定します。",
+      "offsetMismatchLenient": "オフセット (+02:00) がタイムゾーンと不整合。lenient では ixdtf は受理、Temporal は拒否します。",
+      "calendarJapanese": "[u-ca=japanese] で和暦を指定。瞬間は同じで表記だけが変わります。",
+      "calendarHebrewRfc": "RFC 9557 本文の例。ヘブライ暦を指定しています。",
+      "timezoneCritical": "critical なタイムゾーン注釈 [!Asia/Tokyo]。処理できない実装は拒否しなければなりません。",
+      "calendarCritical": "critical なカレンダー注釈 [!u-ca=japanese]。",
+      "criticalUnknownTag": "未知のタグが critical [!foo=bar]。非 strict の ixdtf は Critical として記録しつつ受理、Temporal は拒否します。",
+      "unknownTag": "未知だが非 critical なタグ [foo=bar]。両実装とも受理します (ixdtf はタグを保持、Temporal は無視)。",
+      "privateExt": "x- プライベート拡張。ixdtf は拒否、Temporal は無視して受理します。",
+      "experimentalExt": "_ 実験的拡張。ixdtf は拒否、Temporal は無視して受理します。",
+      "offsetMismatchStrict": "strict モードのオフセット不整合。両実装とも拒否します。",
+      "garbage": "日時として解釈できない文字列。両実装とも解析に失敗します。"
+    }
+  },
+  "footer": {
+    "free": "このデモは無料・オープンソースです",
+    "repo": "GitHub リポジトリ",
+    "sponsor": "支援する",
+    "coffee": "コーヒーを奢る"
+  },
+  "support": {
+    "title": "このデモを支援する",
+    "tagline": "IXDTF / RFC 9557 を学べるこのデモは、無料・オープンソースで公開しています",
+    "why": {
+      "heading": "このデモの意義",
+      "body": "RFC 9557 (IXDTF) は、日時文字列にタイムゾーンやカレンダーの注釈を機械可読なまま載せる新しい規格です。このデモは Go の ixdtf ライブラリとブラウザネイティブの Temporal API という独立した 2 実装で同じ文字列を往復させ、規格と相互運用性を「触って」理解できるようにしています。広告なし・トラッキングなしで運用しています。"
+    },
+    "how": {
+      "heading": "支援する方法"
+    },
+    "options": {
+      "sponsorTitle": "GitHub Sponsors",
+      "sponsorBody": "継続的な支援で、ドキュメントやサンプルの拡充・メンテナンスを後押しできます。",
+      "sponsorCta": "GitHub Sponsors で支援",
+      "coffeeTitle": "Buy Me a Coffee",
+      "coffeeBody": "単発の寄付で、サーバー運用と開発時間を支えられます。",
+      "coffeeCta": "コーヒーを奢る",
+      "starTitle": "スター & 拡散",
+      "starBody": "無料でできる支援です。リポジトリにスターを付けたり、必要としている人へ共有してください。",
+      "starCta": "リポジトリを見る"
+    },
+    "note": "いただいた支援は、このデモと学習コンテンツの維持・改善にあてます。"
+  }
+}
