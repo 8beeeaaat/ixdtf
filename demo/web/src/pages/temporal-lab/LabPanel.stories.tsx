@@ -6,7 +6,7 @@ import i18n from "@/app/i18n";
 import { TooltipProvider } from "@/components/ui/Tooltip";
 import { requiredSample } from "@/lib/fixtures";
 import { getTemporal } from "@/lib/temporal/detect";
-import { TemporalLabPage } from "@/pages/temporal-lab/TemporalLabPage";
+import { LabPanel } from "@/pages/temporal-lab/LabPanel";
 
 const earlierSample = requiredSample("dst-overlap-earlier");
 const laterSample = requiredSample("dst-overlap-later");
@@ -18,7 +18,7 @@ const queryClient = new QueryClient({
 });
 
 const meta = {
-  component: TemporalLabPage,
+  component: LabPanel,
   decorators: [
     (Story) => (
       <I18nextProvider i18n={i18n}>
@@ -30,12 +30,14 @@ const meta = {
       </I18nextProvider>
     ),
   ],
-} satisfies Meta<typeof TemporalLabPage>;
+} satisfies Meta<typeof LabPanel>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-export const NativeTemporalPage: Story = {
+// F-6: ワークベンチ Lab モードの本体。画面シェル (h1・モード切替) は WorkbenchPage が
+// 提供するため、この Panel 単体では tagline + 3 実装バッジ + 3 実験を検証する。
+export const NativeTemporalLab: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const temporal = getTemporal();
@@ -48,7 +50,8 @@ export const NativeTemporalPage: Story = {
     ).epochNanoseconds.toString();
     const laterEpoch = temporal.ZonedDateTime.from(laterSample.input).epochNanoseconds.toString();
 
-    await expect(canvas.getByRole("heading", { name: i18n.t("temporalLab.title") })).toBeVisible();
+    // F-6-2: 実測であることを明示する tagline を Panel が持つ (h1 は WorkbenchPage 側)
+    await expect(canvas.getByText(i18n.t("temporalLab.tagline"))).toBeVisible();
     // ヘッダーと各実験に Native / Polyfill / Go の 3 実装が併記される
     await expect(canvas.getAllByText(i18n.t("temporal.implNative")).length).toBeGreaterThan(0);
     await expect(canvas.getAllByText(i18n.t("temporal.implPolyfill")).length).toBeGreaterThan(0);

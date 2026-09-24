@@ -24,18 +24,22 @@ export function ServerNowCard({ timeZone, calendar }: ServerNowCardProps) {
         <CardTitle>{t("home.serverGenerated")}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-3">
-        {now ? (
-          <>
-            <IxdtfHighlight value={now.ixdtf} className="text-base md:text-xl" />
-            <p className="font-mono text-muted-foreground text-xs tabular-nums">
-              unix_nano: {now.unix_nano}
+        {/* aria-live: 取得結果・エラーの切り替わりをスクリーンリーダーへ通知する
+            (temporal-lab パネル群の aria-live="polite" と同基準、N-3) */}
+        <div aria-live="polite" className="space-y-3">
+          {now ? (
+            <>
+              <IxdtfHighlight value={now.ixdtf} className="text-base md:text-xl" />
+              <p className="font-mono text-muted-foreground text-xs tabular-nums">
+                unix_nano: {now.unix_nano}
+              </p>
+            </>
+          ) : (
+            <p className="font-sans text-muted-foreground text-sm">
+              {query.isFetching ? t("common.loading") : t("common.error")}
             </p>
-          </>
-        ) : (
-          <p className="font-sans text-muted-foreground text-sm">
-            {query.isFetching ? t("common.loading") : t("common.error")}
-          </p>
-        )}
+          )}
+        </div>
         <div className="flex items-center justify-between gap-4">
           <p className="font-sans text-muted-foreground text-xs">{t("home.serverNote")}</p>
           <Button variant="secondary" size="sm" onClick={() => void query.refetch()}>

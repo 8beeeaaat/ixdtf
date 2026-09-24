@@ -5,14 +5,20 @@ import { ReproduceSection } from "@/components/ReproduceSection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import { TagBadge } from "@/components/ui/TagBadge";
 import { goDstOverlapSample, jsDstOverlapSample } from "@/lib/reproduce";
-import { cn } from "@/lib/utils";
 import type { GoObservation } from "./observations";
+
+/** One implementation's parse of an IXDTF string. */
+interface EpochReading {
+  epochNanoseconds: string | null;
+  error: string | null;
+}
 
 interface DstOverlapObservation {
   id: "earlier" | "later";
   input: string;
-  epochNanoseconds: string | null;
-  error: string | null;
+  /** `null` when this browser has no native Temporal. */
+  native: EpochReading | null;
+  polyfill: EpochReading;
 }
 
 interface DstOverlapLabProps {
@@ -36,7 +42,42 @@ function epochDeltaSeconds(earlier: string | null, later: string | null): number
 /** F-6-1: one repeated wall-clock time, made exact by two different offsets. */
 function DstOverlapLab({ earlier, later, earlierGo, laterGo }: DstOverlapLabProps) {
   const { t } = useTranslation();
-  const deltaSeconds = epochDeltaSeconds(earlier.epochNanoseconds, later.epochNanoseconds);
+  // polyfill is always present, so the elapsed delta is measured against it.
+  const deltaSeconds = epochDeltaSeconds(
+    earlier.polyfill.epochNanoseconds,
+    later.polyfill.epochNanoseconds,
+  );
+
+  // One browser implementation's epoch (`reading === null` = no native Temporal).
+  const renderEpochBlock = (label: string, reading: EpochReading | null) => (
+    <div className="space-y-2 border-border border-t pt-4" aria-live="polite">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="font-sans text-muted-foreground text-xs">
+          {t("temporalLab.dstOverlap.epoch")}
+        </span>
+        <TagBadge variant="default">{label}</TagBadge>
+      </div>
+      {reading === null ? (
+        <p className="font-sans text-muted-foreground text-xs">
+          {t("temporalLab.nativeUnsupported")}
+        </p>
+      ) : reading.error ? (
+        <>
+          <p className="break-all font-mono text-destructive text-xs">
+            {t("temporalLab.dstOverlap.parseError")}
+          </p>
+          <details className="font-sans text-muted-foreground text-xs">
+            <summary className="cursor-pointer">{t("temporalLab.dstOverlap.errorDetails")}</summary>
+            <code className="mt-2 block break-all font-mono text-destructive">{reading.error}</code>
+          </details>
+        </>
+      ) : (
+        <p className="break-all font-mono text-muted-foreground text-xs tabular-nums">
+          {reading.epochNanoseconds ?? "—"}
+        </p>
+      )}
+    </div>
+  );
 
   const renderObservation = (observation: DstOverlapObservation, go: GoObservation) => {
     const titleId = `dst-overlap-${observation.id}`;
@@ -62,36 +103,8 @@ function DstOverlapLab({ earlier, later, earlierGo, laterGo }: DstOverlapLabProp
 
         <IxdtfHighlight value={observation.input} className="text-sm" />
 
-        <div className="space-y-2 border-border border-t pt-4" aria-live="polite">
-          <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="font-sans text-muted-foreground text-xs">
-              {t("temporalLab.dstOverlap.epoch")}
-            </span>
-            <TagBadge variant={observation.error ? "mismatch" : "default"}>
-              {observation.error ? t("common.error") : t("temporalLab.dstOverlap.nativeTemporal")}
-            </TagBadge>
-          </div>
-          <p
-            className={cn(
-              "break-all font-mono text-xs",
-              observation.error ? "text-destructive" : "text-muted-foreground tabular-nums",
-            )}
-          >
-            {observation.error
-              ? t("temporalLab.dstOverlap.parseError")
-              : (observation.epochNanoseconds ?? "—")}
-          </p>
-          {observation.error && (
-            <details className="font-sans text-muted-foreground text-xs">
-              <summary className="cursor-pointer">
-                {t("temporalLab.dstOverlap.errorDetails")}
-              </summary>
-              <code className="mt-2 block break-all font-mono text-destructive">
-                {observation.error}
-              </code>
-            </details>
-          )}
-        </div>
+        {renderEpochBlock(t("temporal.implNative"), observation.native)}
+        {renderEpochBlock(t("temporal.implPolyfill"), observation.polyfill)}
 
         <div className="space-y-2 border-border border-t pt-4" aria-live="polite">
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -170,5 +183,5 @@ function DstOverlapLab({ earlier, later, earlierGo, laterGo }: DstOverlapLabProp
   );
 }
 
-export type { DstOverlapLabProps, DstOverlapObservation };
+export type { DstOverlapLabProps, DstOverlapObservation, EpochReading };
 export { DstOverlapLab, epochDeltaSeconds };

@@ -79,8 +79,13 @@ function useGoRoundtrip(input: string, strict: boolean): GoRoundtripObservation 
   };
 }
 
-/** F-6: focused demonstrations of IXDTF semantics through native Temporal. */
-function TemporalLabPage() {
+/**
+ * F-6: ワークベンチの Temporal ラボ モード本体。固定 fixture の 3 実験で IXDTF /
+ * Temporal の日時モデルの性質をネイティブ Temporal の実測を主役に観察し、Go ixdtf の
+ * ライブ実測値を併記する (match/mismatch の採点はしない = 往復・実装差比較モードとの違い)。
+ * 画面シェル (max-w コンテナ・見出し・モード切替) は WorkbenchPage が提供する。
+ */
+function LabPanel() {
   const { t } = useTranslation();
   // F-3 と同じ思想で 3 実装を明示指定して併記する。native はブラウザ非対応なら
   // null → 各実験のネイティブブロックに案内メッセージを出す。
@@ -118,20 +123,18 @@ function TemporalLabPage() {
   const calendarGo = useGoRoundtrip(CALENDAR_BASE.input, CALENDAR_BASE.strict);
 
   return (
-    <div className="mx-auto max-w-6xl space-y-12 px-6">
-      <header>
+    <div className="space-y-12">
+      {/* F-6-2: 結果はブラウザ内蔵実装の実測値であることを 3 実装バッジ + tagline で明示する */}
+      <div className="space-y-1">
         <div className="flex flex-wrap items-center gap-3">
-          <h1 className="font-sans font-semibold text-2xl tracking-tight">
-            {t("temporalLab.title")}
-          </h1>
           <TagBadge variant="default">{t("temporal.implNative")}</TagBadge>
           <TagBadge variant="default">{t("temporal.implPolyfill")}</TagBadge>
           <TagBadge variant="default">{t("temporalLab.goBadge")}</TagBadge>
         </div>
-        <p className="mt-1 max-w-3xl font-sans text-muted-foreground text-sm">
+        <p className="max-w-3xl font-sans text-muted-foreground text-sm">
           {t("temporalLab.tagline")}
         </p>
-      </header>
+      </div>
 
       <DstOverlapLab earlier={earlier} later={later} earlierGo={earlierGo} laterGo={laterGo} />
       <ZoneArithmeticLab
@@ -151,4 +154,4 @@ function TemporalLabPage() {
   );
 }
 
-export { TemporalLabPage };
+export { LabPanel };

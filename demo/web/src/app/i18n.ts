@@ -25,6 +25,12 @@ void i18n.use(initReactI18next).init({
   interpolation: { escapeValue: false },
 });
 
+// スクリーンリーダーの読み上げ言語・自動翻訳判定のため <html lang> を UI 言語に同期する (N-3)。
+i18n.on("languageChanged", (language) => {
+  document.documentElement.lang = language;
+});
+document.documentElement.lang = i18n.language;
+
 /** Change the UI language and persist the choice (F-0-2). */
 export function setLanguage(language: Language): void {
   localStorage.setItem(STORAGE_KEY, language);

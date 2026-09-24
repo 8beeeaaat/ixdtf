@@ -4,7 +4,7 @@ This file provides shared guidance to coding agents when working with code in th
 
 ## プロジェクト概要と現状
 
-RFC 9557 (IXDTF) のデモアプリ。Go 製 [ixdtf ライブラリ](https://github.com/8beeeaaat/ixdtf) とブラウザネイティブの TC39 Temporal API (**ポリフィル不使用**、起動時に feature detection) で同じ IXDTF 文字列を往復させ、相互運用性そのものを展示する。「Temporal」は常に TC39 Temporal API を指す (Temporal.io ではない)。
+RFC 9557 (IXDTF) のデモアプリ。Go 製 [ixdtf ライブラリ](https://github.com/8beeeaaat/ixdtf) とブラウザの TC39 Temporal API (ネイティブ / temporal-polyfill を実行時に切替可能、`app/temporal.tsx` の `TemporalProvider` が選択) で同じ IXDTF 文字列を往復させ、相互運用性そのものを展示する。「Temporal」は常に TC39 Temporal API を指す (Temporal.io ではない)。
 
 **配置**: このデモは ixdtf ライブラリのリポジトリの `demo/` 配下にある (リポジトリルートはライブラリ本体、別モジュール)。Claude Code / Codex は `demo/` で起動すること — agents・skills・hooks の設定は `demo/` 配下にあり、本書のパスとコマンドもすべて `demo/` 基準。ixdtf への依存は `server/go.mod` の公開タグで固定しているため、ルートのライブラリ変更はタグを打って依存を上げるまでデモに反映されない (architecture.md D-14)。
 

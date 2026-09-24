@@ -142,11 +142,53 @@ className にはセマンティックトークンのみ使う:
 ## レイアウト
 
 - 単一カラム: `mx-auto max-w-6xl px-6`
-- ヘッダーナビ: 上部固定 `border-b border-border bg-background`。6 ページのテキストリンク
-  (アイコン過多にしない)。モバイルは横スクロール可能なタブ列
+- ヘッダーナビ: 上部固定 `border-b border-border bg-background`。左端にロゴ兼ホームリンク
+  (無彩色線画のロゴマーク + ワードマーク。可視ワードマークがアクセシブルネームを兼ねる)、
+  続けて残り 4 ページ (IXDTF と Temporal / 変換 / ワークベンチ / ガイド) のテキストリンク
+  (アイコン過多にしない)。**md 未満では非表示**にし、下記ボトムタブバーへ切り替える
 - セクション間隔: `space-y-12` 以上。「詰まった」印象を避ける
 
-### Temporal Lab — DST 重複時刻タイムライン
+### モバイル ボトムタブバー (md 未満、F-0-5 の例外)
+
+デスクトップのテキストナビは、ロゴ + 4 リンク + 右クラスタ (GitHub / Sponsor / 言語 / テーマ) の
+合計幅が 375px 幅では成立しない (ナビ実測 0 幅まで潰れ、ページ全体が横スクロールする不具合を
+実機計測で確認済み)。「テキストリンク中心・アイコン過多にしない」という原則を保てないため、
+**md 未満に限り**画面下部固定のアイコン+短ラベルのタブバーへ切り替える意図的な例外とする
+(地球儀ヒーロー背景と同様、原則からの documented exception)。
+
+- 5 項目 (Home を含む、他画面はロゴ兼ホームリンクとは別に明示タブとして持つ) を
+  `fixed inset-x-0 bottom-0 border-t border-border bg-background` で配置し、
+  `env(safe-area-inset-bottom)` でホームインジケータを避ける
+- 各タブは線画アイコン (`h-5 w-5`、他ヘッダーアイコンと同じ stroke スタイル) + 1 行に収まる
+  短いラベル (例: 「IXDTF と Temporal」ではなく「概要」) を縦に積む。ラベル折り返しでタブ高さが
+  不揃いにならないよう、必要なら専用の短縮ラベルキーを用意する
+- 選択中タブは `text-foreground`、非選択は `text-muted-foreground`
+- ヘッダー右クラスタの言語/テーマ Select は、`icon` 指定時に限り sm 未満でラベルを隠し
+  アイコン+シェブロンのみにする (Sponsor ボタンの `hidden sm:inline` と同じ縮退パターン)
+- ボトムタブバーの高さぶん、`<main>` に `pb-[calc(3rem+4.5rem+env(safe-area-inset-bottom))] md:pb-12`
+  のようにモバイル時のみ余分な下余白を確保し、コンテンツ末尾がタブバーに隠れないようにする
+
+### モバイル タッチターゲット・入力 (N-3)
+
+sm 未満ではタップ操作を前提に、デスクトップの密度を保ったまま操作領域だけを広げる:
+
+- **タッチターゲットは 44px 相当** (Apple HIG / WCAG 2.5.8 AAA)。手段は 3 つ:
+  高さ切替 (`h-11 sm:h-{8,9}` — Button / Select / Input / Combobox。sm 以上は各コンポーネント
+  既存のデスクトップ密度を保持)、padding 切替 (`py-3 sm:py-1.5` 前後 — タブ型ボタン。
+  コンポーネントごとに微調整あり)、レイアウトを動かせない場合は透明な擬似要素
+  (`after:absolute after:-inset-*` — ToggleSwitch) または `py + 負マージン相殺`
+  (ReferenceDialog トリガー)。本文中のインラインリンクは WCAG の inline 例外として対象外
+- **テキスト入力は sm 未満で 16px** (`text-base sm:text-sm`) — iOS Safari の
+  フォーカス時強制ズームを防ぐ (Input / Combobox)
+- **ホーム地球儀は md 未満で `opacity-40` に減光** — コンテンツ列が全幅になり文字と
+  重なるため (「文字が主役、地球儀は大気」の維持)。タップでのゾーン選択は wide のみ
+  (上記の documented exception)、モバイルはタイムゾーン Picker が正規の操作経路
+- **`prefers-reduced-motion`** は index.css のグローバル CSS で全 transition/animation を
+  無効化する (WebGL の地球儀は GlobeBackground 側で個別に尊重)
+- viewport meta は `viewport-fit=cover` 必須 (`env(safe-area-inset-bottom)` の前提)。
+  `theme-color` は ThemeProvider が解決済みテーマの `--background` を動的同期する
+
+### Temporal ラボ モード — DST 重複時刻タイムライン
 
 F-6-1 は「同じ壁時計時刻、異なる瞬間」を一目で理解できる横方向の時間軸として表現する。
 

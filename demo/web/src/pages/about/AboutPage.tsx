@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { useTranslation } from "react-i18next";
+import { Trans, useTranslation } from "react-i18next";
 import { IxdtfHighlight, IxdtfLegend } from "@/components/IxdtfHighlight";
 import { ReferenceDialog } from "@/components/ReferenceDialog";
 import { buttonVariants } from "@/components/ui/Button";
@@ -10,13 +10,6 @@ import { cn } from "@/lib/utils";
 
 // F-7-1 の構造例: タイムゾーン注釈とカレンダー注釈の両方を持つ共有 fixture
 const ANATOMY_SAMPLE = requiredSample("calendar-japanese");
-
-const RELATED_LINKS = [
-  { to: "/playground", labelKey: "about.related.playground" },
-  { to: "/interop", labelKey: "about.related.interop" },
-  { to: "/guide", labelKey: "about.related.guide" },
-  { to: "/temporal-lab", labelKey: "about.related.temporalLab" },
-] as const;
 
 interface SectionHeadingProps {
   headingKey: string;
@@ -66,7 +59,22 @@ export function AboutPage() {
       <section className="space-y-4">
         <SectionHeading headingKey="about.temporal.heading" referenceId="temporalApi" />
         <p className="max-w-3xl font-sans text-sm leading-relaxed">{t("about.temporal.body1")}</p>
-        <p className="max-w-3xl font-sans text-sm leading-relaxed">{t("about.temporal.body2")}</p>
+        <p className="max-w-3xl font-sans text-sm leading-relaxed">
+          <Trans
+            i18nKey="about.temporal.body2"
+            components={{
+              polyfillLink: (
+                // biome-ignore lint/a11y/useAnchorContent: <Trans> injects the link text from the translation string
+                <a
+                  href="https://github.com/fullcalendar/temporal-polyfill"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-info underline underline-offset-4 hover:opacity-80"
+                />
+              ),
+            }}
+          />
+        </p>
       </section>
 
       {/* F-7-3: 両者の関係 — API と交換形式 */}
@@ -97,15 +105,23 @@ export function AboutPage() {
           {t("about.related.heading")}
         </h2>
         <div className="flex flex-wrap gap-2">
-          {RELATED_LINKS.map((link) => (
-            <Link
-              key={link.to}
-              to={link.to}
-              className={cn(buttonVariants({ variant: "secondary", size: "sm" }))}
-            >
-              {t(link.labelKey)}
-            </Link>
-          ))}
+          <Link
+            to="/playground"
+            className={cn(buttonVariants({ variant: "secondary", size: "sm" }))}
+          >
+            {t("about.related.workbench")}
+          </Link>
+          <Link to="/guide" className={cn(buttonVariants({ variant: "secondary", size: "sm" }))}>
+            {t("about.related.guide")}
+          </Link>
+          {/* F-6 は F-2 ワークベンチの Lab モードになったため mode=lab で遷移する (旧 /temporal-lab) */}
+          <Link
+            to="/playground"
+            search={{ mode: "lab" }}
+            className={cn(buttonVariants({ variant: "secondary", size: "sm" }))}
+          >
+            {t("about.related.temporalLab")}
+          </Link>
         </div>
       </section>
     </div>
