@@ -8,6 +8,6 @@ export const SPONSOR_LINKS = {
   githubSponsors: "https://github.com/sponsors/8beeeaaat",
   /** Buy Me a Coffee (単発の寄付)。要: アカウント作成。 */
   buyMeACoffee: "https://www.buymeacoffee.com/8beeeaaat",
-  /** このデモ本体のリポジトリ (star / 拡散導線)。git remote から確認済み。 */
-  repo: "https://github.com/8beeeaaat/ixdtf_demo",
+  /** このデモのソース (star / 拡散導線)。ixdtf ライブラリのリポジトリの demo/ 配下にある。 */
+  repo: "https://github.com/8beeeaaat/ixdtf/tree/main/demo",
 } as const;

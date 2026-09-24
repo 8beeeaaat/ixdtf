@@ -1,5 +1,12 @@
-# ixdtf_demo
-A demo for https://pkg.go.dev/github.com/8beeeaaat/ixdtf
+# ixdtf demo
+
+A demo for https://pkg.go.dev/github.com/8beeeaaat/ixdtf — live at https://ixdtf.8beeeaaat.com/
+
+このディレクトリは [ixdtf](https://github.com/8beeeaaat/ixdtf) リポジトリの `demo/` 配下にある
+(旧 [8beeeaaat/ixdtf_demo](https://github.com/8beeeaaat/ixdtf_demo) から履歴ごと統合)。
+`make` コマンド、wrangler、Claude Code / Codex はすべて `demo/` で実行する。
+`go.mod` はフェンス専用で、デモ一式をライブラリのモジュールから切り離す
+([設計書](./docs/architecture.md) D-14)。
 
 ## Docs
 

@@ -12,9 +12,9 @@ import (
 	// ([Asia/Tokyo] 等) の解決が失敗するため tzdata をバイナリに埋め込む。
 	_ "time/tzdata"
 
-	"github.com/8beeeaaat/ixdtf_demo/server/controller"
-	"github.com/8beeeaaat/ixdtf_demo/server/framework/api"
-	"github.com/8beeeaaat/ixdtf_demo/server/usecase/interactor"
+	"github.com/8beeeaaat/ixdtf/demo/server/controller"
+	"github.com/8beeeaaat/ixdtf/demo/server/framework/api"
+	"github.com/8beeeaaat/ixdtf/demo/server/usecase/interactor"
 	"github.com/syumai/workers"
 )
 

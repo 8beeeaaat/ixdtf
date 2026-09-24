@@ -1,5 +1,5 @@
 # GitHub がリポジトリ上に "Sponsor" ボタンを表示するための設定 (ゼロコード施策)。
-# アカウントを有効化したら値を確認・調整すること (docs/monetization.md「有効化チェックリスト」)。
+# アカウントを有効化したら値を確認・調整すること (demo/docs/monetization.md「有効化チェックリスト」)。
 github: [8beeeaaat]
 custom:
   - "https://www.buymeacoffee.com/8beeeaaat"

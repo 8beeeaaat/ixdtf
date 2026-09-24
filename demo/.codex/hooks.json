@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$(git rev-parse --show-toplevel)/.codex/hooks/guard-generated.sh\"",
+            "command": "bash \"$(git rev-parse --show-toplevel)/demo/.codex/hooks/guard-generated.sh\"",
             "timeout": 10,
             "statusMessage": "Checking generated files"
           }
@@ -19,7 +19,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "bash \"$(git rev-parse --show-toplevel)/.codex/hooks/post-edit-checks.sh\"",
+            "command": "bash \"$(git rev-parse --show-toplevel)/demo/.codex/hooks/post-edit-checks.sh\"",
             "timeout": 10,
             "statusMessage": "Checking project follow-ups"
           }

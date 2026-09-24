@@ -45,12 +45,16 @@ graph LR
 
 ## リポジトリ構成 (モノレポ)
 
+デモは Go ixdtf ライブラリのリポジトリ ([8beeeaaat/ixdtf](https://github.com/8beeeaaat/ixdtf)) の
+`demo/` 配下に置く (D-14)。以下のパスはすべて `demo/` 基準。
+
 ```text
-ixdtf_demo/
+demo/                        # ライブラリ本体 (module github.com/8beeeaaat/ixdtf) はリポジトリルート
+├─ go.mod                    # フェンス専用 (Go ソースなし)。demo/ をライブラリのモジュール zip と ./... から除外
 ├─ api/
 │   └─ openapi.yaml          # API 契約の SSOT
 ├─ server/                   # Go バックエンド (Clean Architecture ライト)
-│   ├─ go.mod                # module github.com/8beeeaaat/ixdtf_demo/server
+│   ├─ go.mod                # module github.com/8beeeaaat/ixdtf/demo/server
 │   ├─ cmd/server/main.go    # composition root (単一バイナリ)
 │   ├─ cmd/worker/main.go    # composition root (Cloudflare Workers / WASM)
 │   ├─ entity/
@@ -425,6 +429,7 @@ Playground / Interop / Guide で仕様用語や実装差を説明する箇所に
 | D-11 | 仕様解説と一次情報リンクを参照IDカタログ + 共通ダイアログで提供する | 画面ごとの URL・説明重複を避け、Go ixdtf の利用バージョンとコード参照を同期しながら、学習の文脈を離れず一次情報へ掘り下げられるようにする (F-0-6) |
 | D-12 | IXDTF / Temporal の日時モデル実験は Interop から独立した Temporal Lab に置く | Temporal Lab は実装差や互換性の採点ではなく、日時モデルの性質そのものを示す教材である。ネイティブ Temporal の実測を主役に Go ixdtf のライブ実測値と再現コード (F-0-7) を併記するが、Interop のような match/mismatch の採点 UI は置かない (F-6-5)。専用 fixture は `interop_preset: false` で挙動差プリセットからも明示的に分離する (F-6) |
 | D-13 | リクエストボディ上限 64 KiB + セキュリティヘッダー | 認証・DB なしの公開 API のため、残る攻撃面はリソース消費のみ。controller の `decodeJSON` が `http.MaxBytesReader` で 64 KiB 超を 400 で拒否 (IXDTF 文字列は高々数 KB、A-2 の「リクエスト不備」扱いで契約変更なし)。静的アセットは `web/public/_headers` で CSP / nosniff / frame 拒否を付与、API レスポンスは `writeJSON` が nosniff を付与 |
+| D-14 | デモをライブラリリポジトリ (8beeeaaat/ixdtf) の `demo/` に統合する (2026-09-24) | ライブラリとデモを同じリポジトリで管理し、README / godoc からの導線とデモのソースを一か所に揃える。`demo/go.mod` はフェンス専用のモジュールで、これによってデモのファイル (web / docs / agent 設定など) がライブラリのモジュール zip に入らず、ルートの `go test ./...` からも外れる。サーバーはこれまでどおり `server/go.mod` の独立モジュールとし、ixdtf への依存は公開タグ (`require github.com/8beeeaaat/ixdtf v0.4.0`) に固定する (`replace ../..` は使わない)。こうすることで、参照カタログの版固定 (D-11) と本番に出ている挙動が一致する。Claude Code / Codex の設定 (`.claude/` `.agent/` `.codex/`) は `demo/` に閉じ込め、エージェントは `demo/` で起動する |
 
 ## テスト戦略
 
@@ -451,7 +456,7 @@ make deploy     # vite build → make build-worker (wrangler 経由) → wrangle
 
 ## デプロイ (Cloudflare Workers)
 
-`wrangler.jsonc` (リポジトリルート) が設定の実体。API は `server/cmd/worker` を
+`wrangler.jsonc` (`demo/` 直下) が設定の実体。API は `server/cmd/worker` を
 `GOOS=js GOARCH=wasm` でビルドした WASM ([syumai/workers](https://github.com/syumai/workers) 経由)、
 フロントエンドは Workers Static Assets (`web/dist`) で配信する (D-9)。
 
@@ -473,4 +478,5 @@ make deploy     # vite build → make build-worker (wrangler 経由) → wrangle
 1. **ビジュアルデザインの方向性** — タイポグラフィ・ミニマル (詳細は「スタイリング」節)
 2. **F-5 サンプル文字列集** — RFC 9557 本文の例 + 代表的な落とし穴から 10〜15 個に厳選
    ([requirements.md](./requirements.md) F-5-2)
-3. **Go module path** — `github.com/8beeeaaat/ixdtf_demo/server` (`server/go.mod`)
+3. **Go module path** — `github.com/8beeeaaat/ixdtf/demo/server` (`server/go.mod`)。
+   2026-09-24 のライブラリリポジトリ統合 (D-14) で旧 `github.com/8beeeaaat/ixdtf_demo/server` から変更

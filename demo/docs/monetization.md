@@ -32,7 +32,7 @@
 | ルート | `web/src/app/router.tsx` | `/support` を追加 (6 画面のメインナビには含めず、ヘッダー/フッターから到達) |
 | リンク一元管理 | `web/src/lib/sponsor.ts` | 外部 URL の単一情報源。差し替えはここだけ |
 | i18n | `web/src/locales/{ja,en}/translation.json` | `sponsor` / `footer` / `support` namespace を両 locale 同期 (N-2) |
-| リポジトリ Sponsor ボタン | `.github/FUNDING.yml` | GitHub リポジトリページに Sponsor ボタンを出すゼロコード施策 |
+| リポジトリ Sponsor ボタン | `.github/FUNDING.yml` (ixdtf リポジトリルート) | GitHub リポジトリページに Sponsor ボタンを出すゼロコード施策 |
 
 ### 設計上の線引き
 
@@ -47,8 +47,8 @@
 
 - [ ] GitHub Sponsors を有効化する (`https://github.com/sponsors/8beeeaaat`)
 - [ ] Buy Me a Coffee アカウントを作成する (未作成なら `web/src/lib/sponsor.ts` と
-      `.github/FUNDING.yml` の URL を実在のものに差し替えるか、当面は該当リンクを外す)
-- [ ] `.github/FUNDING.yml` をデフォルトブランチに置き、リポジトリの Sponsor ボタン表示を確認する
+      `.github/FUNDING.yml` (ixdtf リポジトリルート) の URL を実在のものに差し替えるか、当面は該当リンクを外す)
+- [ ] `.github/FUNDING.yml` (ixdtf リポジトリルート) をデフォルトブランチに置き、リポジトリの Sponsor ボタン表示を確認する
 - [ ] `web/src/lib/sponsor.ts` の 3 URL が実在することを最終確認する
 
 > リンクは `lib/sponsor.ts` に集約済み。存在しないアカウントへ誘導しないよう、

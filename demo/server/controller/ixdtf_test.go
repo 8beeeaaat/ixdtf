@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/8beeeaaat/ixdtf_demo/server/generated"
-	"github.com/8beeeaaat/ixdtf_demo/server/usecase/interactor"
+	"github.com/8beeeaaat/ixdtf/demo/server/generated"
+	"github.com/8beeeaaat/ixdtf/demo/server/usecase/interactor"
 )
 
 func newController() *Ixdtf {

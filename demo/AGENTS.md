@@ -6,6 +6,8 @@ This file provides shared guidance to coding agents when working with code in th
 
 RFC 9557 (IXDTF) のデモアプリ。Go 製 [ixdtf ライブラリ](https://github.com/8beeeaaat/ixdtf) とブラウザネイティブの TC39 Temporal API (**ポリフィル不使用**、起動時に feature detection) で同じ IXDTF 文字列を往復させ、相互運用性そのものを展示する。「Temporal」は常に TC39 Temporal API を指す (Temporal.io ではない)。
 
+**配置**: このデモは ixdtf ライブラリのリポジトリの `demo/` 配下にある (リポジトリルートはライブラリ本体、別モジュール)。Claude Code / Codex は `demo/` で起動すること — agents・skills・hooks の設定は `demo/` 配下にあり、本書のパスとコマンドもすべて `demo/` 基準。ixdtf への依存は `server/go.mod` の公開タグで固定しているため、ルートのライブラリ変更はタグを打って依存を上げるまでデモに反映されない (architecture.md D-14)。
+
 **現状: 設計フェーズ完了・実装未着手。** コードを書く前に必ず docs/ を読むこと。docs/ が唯一の規範であり、実装と docs が食い違ったら docs 更新を先行させる:
 
 - `docs/requirements.md` — 採番済み要件 (F-0〜F-6 機能 / A-1〜A-3 API / N-1〜N-6 非機能)。受け入れ条件の SSOT
@@ -32,7 +34,7 @@ make deploy     # Cloudflare Workers へデプロイ (`cloudflare-deploy` スキ
 ## アーキテクチャ (詳細は architecture.md)
 
 - **スキーマ駆動**: `api/openapi.yaml` が API 契約の SSOT。API 型の手書きは禁止 — orval → `web/src/generated/`、oapi-codegen → `server/generated/` で生成。generated/ の手動編集は PreToolUse hook がブロックする。変更手順は `api-contract-sync` スキル参照
-- **server/** (module: `github.com/8beeeaaat/ixdtf_demo/server`): Clean Architecture ライト。依存方向は framework → controller → (presenter / usecase/inputport / generated)、interactor → (inputport 実装 / entity / ixdtf)。`model/` `gateway/` は作らない (DB なし、D-6)。composition root は cmd/server のみ
+- **server/** (module: `github.com/8beeeaaat/ixdtf/demo/server`): Clean Architecture ライト。依存方向は framework → controller → (presenter / usecase/inputport / generated)、interactor → (inputport 実装 / entity / ixdtf)。`model/` `gateway/` は作らない (DB なし、D-6)。composition root は cmd/server のみ
 - **web/**: React + Vite + TS。TanStack Router (型付き search params が Playground 共有 URL = F-2-7) / Query (Orval 生成 hooks) / Form。i18n は react-i18next (ja/en)
 - エンドポイントは 4 つのみ: parse / format / roundtrip / now
 

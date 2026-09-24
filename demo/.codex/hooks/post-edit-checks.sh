@@ -2,10 +2,13 @@
 # PostToolUse: add context for SSOT follow-ups and DESIGN.md guardrails.
 set -o pipefail
 
+# demo/ は ixdtf リポジトリのサブディレクトリなので、demo/ 基準の相対パスで差分を見る。
+cd "$(dirname "$0")/../.." || exit 0
+
 changed_files=$(
   {
-    git diff --name-only 2>/dev/null
-    git diff --cached --name-only 2>/dev/null
+    git diff --name-only --relative 2>/dev/null
+    git diff --cached --name-only --relative 2>/dev/null
   } | sort -u
 )
 

@@ -5,7 +5,7 @@ description: IXDTF サンプル文字列の共有フィクスチャ管理。(1) 
 
 # IXDTF 共有フィクスチャ
 
-サンプル文字列はリポジトリルートの `testdata/ixdtf_samples.json` に一元管理する。
+サンプル文字列は `demo/testdata/ixdtf_samples.json` (以下 `testdata/ixdtf_samples.json`) に一元管理する。
 Go テスト・Vitest・F-5 SampleGallery の 3 消費者がこのカタログを読む。
 **個々のテストにサンプル文字列を直書きしない** (ロジック固有の境界値のみ例外)。
 

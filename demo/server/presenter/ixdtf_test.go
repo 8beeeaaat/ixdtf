@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/8beeeaaat/ixdtf_demo/server/entity"
+	"github.com/8beeeaaat/ixdtf/demo/server/entity"
 )
 
 func TestToParseResponse_OK(t *testing.T) {

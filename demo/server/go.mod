@@ -1,4 +1,4 @@
-module github.com/8beeeaaat/ixdtf_demo/server
+module github.com/8beeeaaat/ixdtf/demo/server
 
 go 1.25.12
 

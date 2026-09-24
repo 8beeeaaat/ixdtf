@@ -7,8 +7,8 @@ import (
 	"time"
 
 	"github.com/8beeeaaat/ixdtf"
-	"github.com/8beeeaaat/ixdtf_demo/server/entity"
-	"github.com/8beeeaaat/ixdtf_demo/server/usecase/inputport"
+	"github.com/8beeeaaat/ixdtf/demo/server/entity"
+	"github.com/8beeeaaat/ixdtf/demo/server/usecase/inputport"
 )
 
 // Ixdtf は ixdtf ライブラリを用いた IxdtfInputPort 実装。

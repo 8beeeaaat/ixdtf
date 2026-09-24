@@ -17,17 +17,17 @@ API は `server/cmd/worker` を `GOOS=js GOARCH=wasm` でビルドした WASM (s
 
 ## 前提
 
-- 裸の `wrangler` はリポジトリルートの Node (nodenv) に無く失敗する — 常に `npx -y wrangler@4` を使う
+- 裸の `wrangler` は Node (nodenv) に無く失敗する — 常に `npx -y wrangler@4` を使う
 - 認証が必要 (`npx -y wrangler@4 whoami` で確認)。期限切れならユーザーに
   `! npx -y wrangler@4 login` の実行を依頼する (ブラウザ OAuth のためエージェントからは不可)
 
 ## デプロイ手順
 
 ```bash
-make deploy   # リポジトリルートで実行 (vite build → make build-worker → wrangler deploy)
+make deploy   # demo/ で実行 (vite build → make build-worker → wrangler deploy)
 ```
 
-- 必ず**リポジトリルート**から実行する (wrangler の build.command が `make build-worker` を呼ぶため、CWD がずれると "No rule to make target" で失敗する)
+- 必ず **`demo/`** (wrangler.jsonc と Makefile のある場所) から実行する。ixdtf リポジトリのルートではない (wrangler の build.command が `make build-worker` を呼ぶため、CWD がずれると "No rule to make target" で失敗する)
 - デプロイ後は本番スモークを行う:
 
 ```bash
@@ -42,7 +42,7 @@ curl -s -o /dev/null -w "%{http_code}\n" $BASE/playground   # SPA フォール�
 ## ローカル検証 (デプロイ前)
 
 ```bash
-npx -y wrangler@4 dev --port 8787   # リポジトリルートから。未ログインでも動く
+npx -y wrangler@4 dev --port 8787   # demo/ から。未ログインでも動く
 ```
 
 ## 破ってはいけない制約
@@ -58,6 +58,6 @@ npx -y wrangler@4 dev --port 8787   # リポジトリルートから。未ログ
 ## トラブルシューティング
 
 - デプロイ直後に error 1042 / 404 が混在 → Cloudflare 側の伝播遅延。数十秒待って再確認する
-- `make build-worker` が "No rule to make target" → CWD がリポジトリルートでない
+- `make build-worker` が "No rule to make target" → CWD が `demo/` でない
 - `nodenv: wrangler: command not found` → 裸の `wrangler` を使っている。`npx -y wrangler@4` に置き換える
 - 本番で `time_zone: null` (ネイティブでは値が返る) → worker バイナリに tzdata が入っていない

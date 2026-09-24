@@ -6,7 +6,7 @@ package api
 import (
 	"net/http"
 
-	"github.com/8beeeaaat/ixdtf_demo/server/controller"
+	"github.com/8beeeaaat/ixdtf/demo/server/controller"
 )
 
 // RegisterRoutes は API ルートを mux に登録する。

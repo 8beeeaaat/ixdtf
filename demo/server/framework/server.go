@@ -9,8 +9,8 @@ import (
 	"path"
 	"strings"
 
-	"github.com/8beeeaaat/ixdtf_demo/server/controller"
-	"github.com/8beeeaaat/ixdtf_demo/server/framework/api"
+	"github.com/8beeeaaat/ixdtf/demo/server/controller"
+	"github.com/8beeeaaat/ixdtf/demo/server/framework/api"
 )
 
 //go:embed all:dist

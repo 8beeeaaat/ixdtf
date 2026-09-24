@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/8beeeaaat/ixdtf_demo/server/entity"
-	"github.com/8beeeaaat/ixdtf_demo/server/generated"
+	"github.com/8beeeaaat/ixdtf/demo/server/entity"
+	"github.com/8beeeaaat/ixdtf/demo/server/generated"
 )
 
 // ToParseResponse は ParseOutcome を generated.ParseResponse へ変換する。

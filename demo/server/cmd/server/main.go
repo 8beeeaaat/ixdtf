@@ -7,9 +7,9 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/8beeeaaat/ixdtf_demo/server/controller"
-	"github.com/8beeeaaat/ixdtf_demo/server/framework"
-	"github.com/8beeeaaat/ixdtf_demo/server/usecase/interactor"
+	"github.com/8beeeaaat/ixdtf/demo/server/controller"
+	"github.com/8beeeaaat/ixdtf/demo/server/framework"
+	"github.com/8beeeaaat/ixdtf/demo/server/usecase/interactor"
 )
 
 func main() {

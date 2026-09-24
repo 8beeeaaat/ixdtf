@@ -1,7 +1,7 @@
 // Package inputport は usecase 入口のインターフェース (controller が依存する契約) を定義する。
 package inputport
 
-import "github.com/8beeeaaat/ixdtf_demo/server/entity"
+import "github.com/8beeeaaat/ixdtf/demo/server/entity"
 
 // IxdtfInputPort は IXDTF の解析・整形ユースケースの契約。
 // interactor が実装し、controller が依存する。

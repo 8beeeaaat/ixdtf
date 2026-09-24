@@ -9,10 +9,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/8beeeaaat/ixdtf_demo/server/entity"
-	"github.com/8beeeaaat/ixdtf_demo/server/generated"
-	"github.com/8beeeaaat/ixdtf_demo/server/presenter"
-	"github.com/8beeeaaat/ixdtf_demo/server/usecase/inputport"
+	"github.com/8beeeaaat/ixdtf/demo/server/entity"
+	"github.com/8beeeaaat/ixdtf/demo/server/generated"
+	"github.com/8beeeaaat/ixdtf/demo/server/presenter"
+	"github.com/8beeeaaat/ixdtf/demo/server/usecase/inputport"
 )
 
 // Ixdtf は IXDTF API の HTTP ハンドラ群。

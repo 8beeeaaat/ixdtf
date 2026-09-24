@@ -1,0 +1,46 @@
+name: Demo
+
+# demo/ は独立した Go モジュール (demo/server) なので、ルートの CI の ./... には含まれない。
+# web (demo/web) のジョブは意図的に未導入: package-lock.json が package.json と同期しておらず
+# npm ci が失敗する、biome check に既存エラーがある、vitest の storybook プロジェクトに
+# Playwright ブラウザが必要、の 3 点を解消してから追加する。
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'demo/**'
+      - '.github/workflows/demo.yml'
+  pull_request:
+    paths:
+      - 'demo/**'
+      - '.github/workflows/demo.yml'
+
+jobs:
+  server:
+    name: Server
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: demo/server
+
+    steps:
+    - uses: actions/checkout@v7
+
+    - name: Set up Go
+      uses: actions/setup-go@v7
+      with:
+        go-version-file: demo/server/go.mod
+        cache-dependency-path: demo/server/go.sum
+
+    - name: Verify dependencies
+      run: go mod verify
+
+    - name: Vet
+      run: go vet ./...
+
+    - name: Test
+      run: go test ./...
+
+    - name: Build worker (WASM)
+      run: GOOS=js GOARCH=wasm go build -o /dev/null ./cmd/worker
