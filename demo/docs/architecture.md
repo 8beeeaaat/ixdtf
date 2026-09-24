@@ -8,7 +8,7 @@
 | ------------- | ------------------------------------------------------------------ |
 | バックエンド        | Go (net/http 標準ルーター) + [ixdtf](https://github.com/8beeeaaat/ixdtf) |
 | フロントエンド       | React + Vite + TypeScript                                          |
-| 日時処理 (ブラウザ)   | TC39 Temporal API ネイティブ実装 (**ポリフィル不使用**)                           |
+| 日時処理 (ブラウザ)   | TC39 Temporal API (ネイティブ / temporal-polyfill を実行時に切替可能)             |
 | API 契約        | OpenAPI 3.1 (SSOT) → Orval (TS) / oapi-codegen (Go)                |
 | データ取得         | TanStack Query (Orval 生成 hooks)                                    |
 | フォーム          | TanStack Form                                                      |
@@ -310,19 +310,19 @@ sequenceDiagram
 
 ```text
 web/src/
-├─ main.tsx                  # Temporal feature detection → App or UnsupportedBrowser
+├─ main.tsx                  # Providers → TemporalProvider (native/polyfill 切替) → Router
 ├─ index.css                 # Tailwind エントリ (@import "tailwindcss" + @theme トークン)
 ├─ app/
-│   ├─ router.tsx            # TanStack Router (7 メインルート + support)
+│   ├─ router.tsx            # TanStack Router (5 メインルート + support。/interop → /playground?mode=roundtrip、/temporal-lab → /playground?mode=lab へリダイレクト)
 │   ├─ providers.tsx         # QueryClient / i18n / theme
 │   └─ i18n.ts
 ├─ pages/
 │   ├─ home/                 # F-1: ClockCard, IxdtfDisplay, MonthCalendar, ServerNowCard
-│   ├─ playground/           # F-2: IxdtfForm (TanStack Form), ResultPanel, BrowserResultPanel
-│   ├─ interop/              # F-3: RoundtripForm, ComparisonTable, PresetList
+│   ├─ playground/           # F-2/F-3/F-6: ワークベンチ = 解析・検証 / 往復比較 / Temporal ラボ の 3 モード。実装は workbench/ (解析・往復は入力共有、Lab は temporal-lab/ の固定 fixture)
+│   ├─ interop/              # F-3: ↑ ワークベンチの往復比較モードへ統合 (ComparisonTable / PresetList を内包)
 │   ├─ converter/            # F-4: WorldClockList, TimeZoneAdder, CalendarSwitch
 │   ├─ guide/                # F-5: GuideContent, SampleGallery
-│   ├─ temporal-lab/         # F-6: native Temporal による日時モデルの実験
+│   ├─ temporal-lab/         # F-6: ワークベンチ Lab モードの実体 (LabPanel + DstOverlap / ZoneArithmetic / CalendarProjection 実験)
 │   └─ about/                # F-7: Temporal / IXDTF それぞれの解説と関係性 (静的コンテンツ)
 ├─ components/               # 横断: IxdtfHighlight, TimeZonePicker, CalendarPicker,
 │                            #       CopyButton, StrictToggle, ReferenceDialog
@@ -334,7 +334,7 @@ web/src/
 │   │   ├─ zoneTab.ts        # tzdb zone.tab 由来の全ゾーン代表座標 (自動生成)
 │   │   └─ solar.ts          # 現在時刻 → 太陽直下点 (昼夜テルミネータ用)
 │   └─ temporal/
-│       ├─ detect.ts         # globalThis.Temporal の存在検出
+│       ├─ detect.ts         # native/polyfill 実装の解決 + active mode (getTemporal/requireTemporal)
 │       └─ browserParse.ts   # ZonedDateTime.from → 失敗時 Instant.from フォールバック
 ├─ generated/api/            # Orval 出力 (型 + TanStack Query hooks、git 管理)
 └─ locales/
@@ -362,7 +362,7 @@ web/src/
 失敗時は `Temporal.Instant.from` にフォールバックし、どちらの API で解析できたかも表示する
 - `Temporal.ZonedDateTime.from(input).epochNanoseconds` — F-6-1 の DST 重複時刻デモ。
   同一ローカル時刻に併記された DST 前後の有効なオフセットが、それぞれ別の瞬間を一意に
-  指定することをネイティブ Temporal の実測値で示す。Interop の実装差比較とは分離する
+  指定することをネイティブ Temporal の実測値で示す。ワークベンチの往復・実装差比較モードとは目的を分ける
 - `Temporal.ZonedDateTime.add()` — F-6-3 のタイムゾーン演算デモ。DST 境界をまたぐ
   +1 日 (カレンダー演算) と +24 時間 (実時間演算) の差を実測し、演算結果の IXDTF 文字列は
   `POST /api/ixdtf/parse` (strict) で Go ixdtf にも解析させる
@@ -417,7 +417,7 @@ Playground / Interop / Guide で仕様用語や実装差を説明する箇所に
 | #   | 判断                                         | 理由                                                                 |
 | --- | ------------------------------------------ | ------------------------------------------------------------------ |
 | D-1 | 解析失敗を HTTP 200 のドメイン結果で返す                  | 不正入力の観察がデモの目的。エラーハンドリングを UI の分岐 (ok フラグ) に一本化                      |
-| D-2 | ポリフィル不使用 + feature detection ゲート           | ネイティブ実装のショーケースであることを優先。非対応環境は案内画面 (F-0-4)                          |
+| D-2 | ネイティブ / temporal-polyfill をユーザー選択なしで扱う   | 2 実装の挙動差そのものを展示物にする。単一 live-UI (Home/Converter) は native があれば native、無ければ polyfill に自動フォールバック。比較系 (ワークベンチの往復・実装差比較 / Temporal ラボ モード) は 3 実装を明示併記。実行時セレクタ・localStorage 選択・F-0-4 案内画面は撤去済み (`web/src/lib/temporal/detect.ts`)。F-0-4 要件自体も要見直し |
 | D-3 | `unix_nano` を 10 進文字列で運ぶ                   | int64 は JS の `Number.MAX_SAFE_INTEGER` を超えるため                      |
 | D-4 | 拡張タグを map でなく順序付き配列 (`ExtensionTag[]`) で運ぶ | 表表示の安定性と、`!` critical フラグをタグ単位で持たせるため                              |
 | D-5 | ルーターに TanStack Router を採用                  | F-2-7 の共有 URL を型付き search params で実装できる。TanStack Query / Form との整合 |
@@ -427,7 +427,7 @@ Playground / Interop / Guide で仕様用語や実装差を説明する箇所に
 | D-9 | Cloudflare デプロイは Go → WASM (Workers) + Static Assets | 既存の Go 実装 (ixdtf) をそのまま Workers 上で動かし「独立 2 実装の相互運用」を本番でも保つ。Workers 実行環境に OS の zoneinfo が無いため worker のみ `time/tzdata` を埋め込む。詳細は「デプロイ」節 |
 | D-10 | ホーム背景に Three.js ドットマトリクス地球儀を敷く (装飾・表示専用) | 選択中タイムゾーンを地球儀上で直感的に見せ、トップページの訴求力を高める。「グラデ背景なし」の意図的例外だが、点は白黒基調・有彩色は IXDTF トークン (`--ixdtf-timezone` / `--ixdtf-offset`) 流用に限定し規範を保つ。**遅延ロード** (dynamic import) / `prefers-reduced-motion` 尊重 / WebGL 非対応時は無描画フォールバック。IANA タイムゾーン → 緯度経度は `tokenize.ts` と同じ「表示専用・近似」の線引き (正当性判定に使わない)。詳細は [DESIGN.md](./DESIGN.md)「ホーム・ヒーロー背景」節 |
 | D-11 | 仕様解説と一次情報リンクを参照IDカタログ + 共通ダイアログで提供する | 画面ごとの URL・説明重複を避け、Go ixdtf の利用バージョンとコード参照を同期しながら、学習の文脈を離れず一次情報へ掘り下げられるようにする (F-0-6) |
-| D-12 | IXDTF / Temporal の日時モデル実験は Interop から独立した Temporal Lab に置く | Temporal Lab は実装差や互換性の採点ではなく、日時モデルの性質そのものを示す教材である。ネイティブ Temporal の実測を主役に Go ixdtf のライブ実測値と再現コード (F-0-7) を併記するが、Interop のような match/mismatch の採点 UI は置かない (F-6-5)。専用 fixture は `interop_preset: false` で挙動差プリセットからも明示的に分離する (F-6) |
+| D-12 | IXDTF / Temporal の日時モデル実験は独立画面ではなくワークベンチ (F-2) の第 3 モード『Temporal ラボ』として提供する | 触る系画面の乱立を避け、解析・往復・Lab を単一ワークベンチのモード切替に統合する (旧: Interop から独立した専用画面 `/temporal-lab`)。**反転したのは配置のみ**で、Lab モードは実装差や互換性の採点ではなく日時モデルの性質を示す教材である点は不変。ネイティブ Temporal の実測を主役に Go ixdtf のライブ実測値と再現コード (F-0-7) を併記し、往復・実装差比較モードのような match/mismatch の採点 UI は置かない (F-6-5)。自由入力ではなく専用 fixture で駆動し、`interop_preset: false` で挙動差プリセットからも明示的に分離する (F-6)。deep link 保持のため `/temporal-lab` は `/playground?mode=lab` へリダイレクトする |
 | D-13 | リクエストボディ上限 64 KiB + セキュリティヘッダー | 認証・DB なしの公開 API のため、残る攻撃面はリソース消費のみ。controller の `decodeJSON` が `http.MaxBytesReader` で 64 KiB 超を 400 で拒否 (IXDTF 文字列は高々数 KB、A-2 の「リクエスト不備」扱いで契約変更なし)。静的アセットは `web/public/_headers` で CSP / nosniff / frame 拒否を付与、API レスポンスは `writeJSON` が nosniff を付与 |
 | D-14 | デモをライブラリリポジトリ (8beeeaaat/ixdtf) の `demo/` に統合する (2026-09-24) | ライブラリとデモを同じリポジトリで管理し、README / godoc からの導線とデモのソースを一か所に揃える。`demo/go.mod` はフェンス専用のモジュールで、これによってデモのファイル (web / docs / agent 設定など) がライブラリのモジュール zip に入らず、ルートの `go test ./...` からも外れる。サーバーはこれまでどおり `server/go.mod` の独立モジュールとし、ixdtf への依存は公開タグ (`require github.com/8beeeaaat/ixdtf v0.4.0`) に固定する (`replace ../..` は使わない)。こうすることで、参照カタログの版固定 (D-11) と本番に出ている挙動が一致する。Claude Code / Codex の設定 (`.claude/` `.agent/` `.codex/`) は `demo/` に閉じ込め、エージェントは `demo/` で起動する |
 
@@ -470,7 +470,7 @@ make deploy     # vite build → make build-worker (wrangler 経由) → wrangle
 | リスク                                   | 対応                                                                                                                                                       |
 | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | oapi-codegen の OpenAPI 3.1 対応が不完全な可能性 | **確定済み (2026-07-08)**: `openapi-down-convert` で 3.0 中間ファイルへ変換してから oapi-codegen に渡す (Makefile `generate-server`)。down-convert が扱えない `oneOf: [$ref, null]` は使わず、nullable なオブジェクト参照は optional な `$ref` で表現する (ok フラグがセマンティクスを担う) |
-| Edge の Temporal が experimental 段階     | feature detection (F-0-4) で実行時に判定するため、対応表の更新のみで追従できる                                                                                                     |
+| Edge の Temporal が experimental 段階     | ネイティブ有無を実行時に判定 (F-0-4) し、非対応時は temporal-polyfill をデフォルトにフォールバックするため、対応表の更新のみで追従できる                                                                          |
 | ブラウザと ixdtf の解析結果が想定外に一致しない           | それ自体を F-3 の展示物として扱う (バグではなく仕様差として明示する)                                                                                                                   |
 
 ## 決定済みの補足事項 (2026-07-07 確定)

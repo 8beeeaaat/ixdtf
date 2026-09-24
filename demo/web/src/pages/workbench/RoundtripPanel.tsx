@@ -1,0 +1,279 @@
+import { useMemo } from "react";
+import { useTranslation } from "react-i18next";
+import { ReferenceDialog } from "@/components/ReferenceDialog";
+import { ReproduceSection } from "@/components/ReproduceSection";
+import { Button } from "@/components/ui/Button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
+import { TagBadge } from "@/components/ui/TagBadge";
+import { useRoundtripIxdtf } from "@/generated/api/endpoints";
+import { interopPresets } from "@/lib/fixtures";
+import { goRoundtripSample, jsRoundtripSample } from "@/lib/reproduce";
+import { browserParse } from "@/lib/temporal/browserParse";
+import { getNativeTemporal, getPolyfillTemporal } from "@/lib/temporal/detect";
+import { cn } from "@/lib/utils";
+
+interface ComparisonRow {
+  key: string;
+  native: string | null;
+  polyfill: string | null;
+  server: string | null;
+  /** undefined = 比較対象外 (ハイライトしない) */
+  match?: boolean;
+}
+
+interface RoundtripPanelProps {
+  /** デバウンス後の入力 */
+  input: string;
+  strict: boolean;
+  /** プリセット選択で入力と strict をまとめて更新する (共有入力・URL 同期は shell が担う) */
+  onApplyPreset: (input: string, strict: boolean) => void;
+}
+
+/** ワークベンチ「往復・実装差比較」モード (旧 F-3 Interop)。3 実装の挙動差そのものがコンテンツ。 */
+export function RoundtripPanel({ input, strict, onApplyPreset }: RoundtripPanelProps) {
+  const { t } = useTranslation();
+
+  const roundtripQuery = useRoundtripIxdtf(
+    { input, strict },
+    { query: { enabled: input.length > 0 } },
+  );
+  const server = roundtripQuery.data?.status === 200 ? roundtripQuery.data.data : null;
+
+  // 3 実装を明示指定して同時に走らせる (ヘッダーの選択に依存せず native / polyfill を併記)。
+  // native はブラウザ非対応なら null → その列に案内メッセージを出す。
+  const nativeTemporal = getNativeTemporal();
+  const nativeSupported = nativeTemporal !== null;
+  const nativeParse = useMemo(
+    () => (input && nativeTemporal ? browserParse(input, nativeTemporal) : null),
+    [input, nativeTemporal],
+  );
+  const polyParse = useMemo(
+    () => (input ? browserParse(input, getPolyfillTemporal()) : null),
+    [input],
+  );
+
+  // 選択中プリセット (入力と strict の一致から導出)。fixtures の note_key で
+  // 「このプリセットが何を実証するか」を説明する (F-3-3 の学習導線)
+  const activePreset =
+    interopPresets.find((preset) => preset.input === input && preset.strict === strict) ?? null;
+
+  const rows: ComparisonRow[] = useMemo(() => {
+    if (!polyParse || !server) {
+      return [];
+    }
+    const parse = server.parse;
+    const serverResult = parse.result ?? null;
+    const serverCalendarTag = serverResult?.tags.find((tag) => tag.key === "u-ca") ?? null;
+    const okLabel = (ok: boolean) => t(ok ? "common.ok" : "common.error");
+
+    // 一致判定: null は比較対象から除外し、値が 2 件以上そろって初めて match/mismatch を確定する。
+    // native 非対応時は自動的に polyfill × server の 2 項比較へ縮退する。
+    const cmp = (values: (string | null)[]): boolean | undefined => {
+      const present = values.filter((v): v is string => v !== null);
+      return present.length >= 2 ? present.every((v) => v === present[0]) : undefined;
+    };
+
+    const nEpoch = nativeParse?.ok ? nativeParse.epochNanoseconds : null;
+    const pEpoch = polyParse.ok ? polyParse.epochNanoseconds : null;
+    const sEpoch = serverResult?.unix_nano ?? null;
+
+    const nTz = nativeParse?.ok ? nativeParse.timeZone : null;
+    const pTz = polyParse.ok ? polyParse.timeZone : null;
+    const sTz = serverResult?.time_zone ?? null;
+
+    const nCal = nativeParse?.ok ? nativeParse.calendar : null;
+    const pCal = polyParse.ok ? polyParse.calendar : null;
+    const sCal = serverCalendarTag?.value ?? (serverResult ? "iso8601" : null);
+
+    const nFmt = nativeParse?.ok ? nativeParse.formatted : null;
+    const pFmt = polyParse.ok ? polyParse.formatted : null;
+    const sFmt = server.formatted;
+
+    const nLoss = nativeParse?.ok ? String(nativeParse.formatted === input) : null;
+    const pLoss = polyParse.ok ? String(polyParse.formatted === input) : null;
+    const sLoss = server.lossless === null ? null : String(server.lossless);
+
+    // タイムゾーンは「解析成功だが注釈なし (null)」を "" として比較対象に含める
+    const tzMatch = cmp([
+      nativeParse?.ok ? (nativeParse.timeZone ?? "") : null,
+      polyParse.ok ? (polyParse.timeZone ?? "") : null,
+      serverResult ? (serverResult.time_zone ?? "") : null,
+    ]);
+
+    return [
+      {
+        key: "status",
+        native: nativeParse ? okLabel(nativeParse.ok) : null,
+        polyfill: okLabel(polyParse.ok),
+        server: okLabel(parse.ok),
+        match: cmp([
+          nativeParse ? String(nativeParse.ok) : null,
+          String(polyParse.ok),
+          String(parse.ok),
+        ]),
+      },
+      {
+        key: "error",
+        native: nativeParse && !nativeParse.ok ? nativeParse.error : null,
+        polyfill: polyParse.ok ? null : polyParse.error,
+        server: parse.error?.message ?? null,
+      },
+      {
+        key: "epoch",
+        native: nEpoch,
+        polyfill: pEpoch,
+        server: sEpoch,
+        match: cmp([nEpoch, pEpoch, sEpoch]),
+      },
+      { key: "timeZone", native: nTz, polyfill: pTz, server: sTz, match: tzMatch },
+      {
+        key: "calendar",
+        native: nCal,
+        polyfill: pCal,
+        server: sCal,
+        match: cmp([nCal, pCal, sCal]),
+      },
+      {
+        key: "roundtrip",
+        native: nFmt,
+        polyfill: pFmt,
+        server: sFmt,
+        match: cmp([nFmt, pFmt, sFmt]),
+      },
+      {
+        key: "lossless",
+        native: nLoss,
+        polyfill: pLoss,
+        server: sLoss,
+        match: cmp([nLoss, pLoss, sLoss]),
+      },
+    ];
+  }, [nativeParse, polyParse, server, input, t]);
+
+  return (
+    <>
+      <section className="space-y-3">
+        <h2 className="font-sans font-semibold text-muted-foreground text-sm uppercase tracking-wider">
+          {t("interop.presets")}
+        </h2>
+        <div className="flex flex-wrap gap-2">
+          {interopPresets.map((preset) => (
+            <Button
+              key={preset.id}
+              variant="secondary"
+              size="sm"
+              aria-pressed={activePreset?.id === preset.id}
+              className={cn("font-mono", activePreset?.id === preset.id && "border-foreground")}
+              onClick={() => onApplyPreset(preset.input, preset.strict)}
+            >
+              {preset.id}
+              {preset.strict && (
+                <TagBadge variant="default" className="ml-1">
+                  {t("common.strict")}
+                </TagBadge>
+              )}
+            </Button>
+          ))}
+        </div>
+        {activePreset && (
+          <p className="max-w-3xl font-sans text-muted-foreground text-sm">
+            {t(activePreset.note_key)}
+          </p>
+        )}
+      </section>
+
+      {!input || rows.length === 0 ? (
+        <p className="font-sans text-muted-foreground text-sm">{t("interop.empty")}</p>
+      ) : (
+        <>
+          {/* 比較テーブル全体を live region にすると読み上げが長大になるため、
+              要約のみを sr-only で通知する (N-3) */}
+          <p aria-live="polite" className="sr-only">
+            {rows.some((row) => row.match === false)
+              ? t("interop.liveMismatch")
+              : t("interop.liveAllMatch")}
+          </p>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex flex-wrap items-center gap-1">
+                {t("interop.resultTitle")}
+                <ReferenceDialog referenceId="roundtrip" />
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="overflow-x-auto">
+              <table className="w-full border-collapse text-left">
+                <thead>
+                  <tr className="border-border border-b">
+                    <th className="py-2 pr-4 font-medium font-sans text-muted-foreground text-xs">
+                      {t("interop.aspect")}
+                    </th>
+                    <th className="py-2 pr-4 font-medium font-sans text-muted-foreground text-xs">
+                      {t("interop.nativeCol")}
+                    </th>
+                    <th className="py-2 pr-4 font-medium font-sans text-muted-foreground text-xs">
+                      {t("interop.polyfillCol")}
+                    </th>
+                    <th className="py-2 font-medium font-sans text-muted-foreground text-xs">
+                      {t("interop.serverCol")}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {rows.map((row, index) => {
+                    const cell = (value: string | null) => (
+                      <span
+                        className={cn(
+                          "break-all font-mono text-sm tabular-nums",
+                          row.match === true && "text-success",
+                          row.match === false && "text-destructive",
+                        )}
+                      >
+                        {value ?? "—"}
+                      </span>
+                    );
+                    return (
+                      <tr
+                        key={row.key}
+                        className="border-border border-b align-top last:border-b-0"
+                      >
+                        <td className="whitespace-nowrap py-2 pr-4 font-sans text-muted-foreground text-xs">
+                          {t(`interop.rows.${row.key}`)}
+                          {row.match === true && (
+                            <TagBadge variant="match" className="ml-2">
+                              {t("common.match")}
+                            </TagBadge>
+                          )}
+                          {row.match === false && (
+                            <TagBadge variant="mismatch" className="ml-2">
+                              {t("common.mismatch")}
+                            </TagBadge>
+                          )}
+                        </td>
+                        {nativeSupported ? (
+                          <td className="max-w-96 py-2 pr-4">{cell(row.native)}</td>
+                        ) : index === 0 ? (
+                          <td
+                            rowSpan={rows.length}
+                            className="max-w-80 py-2 pr-4 align-middle font-sans text-muted-foreground text-sm"
+                          >
+                            {t("interop.nativeUnsupported")}
+                          </td>
+                        ) : null}
+                        <td className="max-w-96 py-2 pr-4">{cell(row.polyfill)}</td>
+                        <td className="max-w-96 py-2">{cell(row.server)}</td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </CardContent>
+          </Card>
+          <ReproduceSection
+            goSample={goRoundtripSample({ input, strict })}
+            jsSample={jsRoundtripSample(input)}
+          />
+        </>
+      )}
+    </>
+  );
+}

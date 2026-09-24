@@ -20,7 +20,8 @@ function ToggleSwitch({ enabled, onChange, label, id, className }: ToggleSwitchP
       aria-label={label}
       title={label}
       className={cn(
-        "h-5 w-9 shrink-0 rounded-full border border-border bg-muted transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background data-[state=checked]:bg-primary",
+        // 見た目は 36x20 のまま、透明な擬似要素でタップ可能領域を約 52x44 に拡大する
+        "relative h-5 w-9 shrink-0 rounded-full border border-border bg-muted transition-colors after:absolute after:-inset-x-2 after:-inset-y-3 after:content-[''] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background data-[state=checked]:bg-primary",
         className,
       )}
     >

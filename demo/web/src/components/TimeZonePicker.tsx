@@ -5,11 +5,13 @@ import { supportedTimeZones } from "@/lib/intl";
 interface TimeZonePickerProps {
   value: string;
   onChange: (timeZone: string) => void;
+  /** FormField の label (htmlFor) と関連付けるための input id。 */
+  id?: string;
   className?: string;
 }
 
 /** Searchable IANA time-zone picker (F-1-3, `Intl.supportedValuesOf`). */
-export function TimeZonePicker({ value, onChange, className }: TimeZonePickerProps) {
+export function TimeZonePicker({ value, onChange, id, className }: TimeZonePickerProps) {
   const { t } = useTranslation();
   return (
     <Combobox
@@ -18,6 +20,7 @@ export function TimeZonePicker({ value, onChange, className }: TimeZonePickerPro
       onChange={onChange}
       aria-label={t("home.timeZoneLabel")}
       placeholder="Asia/Tokyo"
+      id={id}
       className={className}
     />
   );

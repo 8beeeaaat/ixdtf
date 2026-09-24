@@ -7,6 +7,8 @@ interface ComboboxProps {
   onChange: (value: string) => void;
   placeholder?: string;
   "aria-label"?: string;
+  /** FormField の label (htmlFor) と関連付けるための input id。 */
+  id?: string;
   className?: string;
 }
 
@@ -20,6 +22,7 @@ function Combobox({
   onChange,
   placeholder,
   "aria-label": ariaLabel,
+  id,
   className,
 }: ComboboxProps) {
   const [open, setOpen] = useState(false);
@@ -56,9 +59,12 @@ function Combobox({
   return (
     <div ref={rootRef} className={cn("relative", className)}>
       <input
+        id={id}
         role="combobox"
         aria-expanded={open}
         aria-controls={listId}
+        aria-autocomplete="list"
+        aria-activedescendant={open && filtered[active] ? `${listId}-option-${active}` : undefined}
         aria-label={ariaLabel}
         placeholder={placeholder}
         value={open ? query : value}
@@ -87,7 +93,10 @@ function Combobox({
             setOpen(false);
           }
         }}
-        className="h-9 w-full rounded-md border border-border bg-transparent px-3 font-mono text-foreground text-sm tabular-nums placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+        className={cn(
+          // モバイル (sm 未満) は 16px/44px 高。iOS Safari のフォーカス時強制ズームを防ぐ (Input と同基準)
+          "h-11 w-full rounded-md border border-border bg-transparent px-3 font-mono text-base text-foreground tabular-nums placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background sm:h-9 sm:text-sm",
+        )}
       />
       {open && filtered.length > 0 && (
         <div
@@ -98,13 +107,14 @@ function Combobox({
           {filtered.map((option, index) => (
             <button
               key={option}
+              id={`${listId}-option-${index}`}
               type="button"
               role="option"
               aria-selected={option === value}
               onMouseEnter={() => setActive(index)}
               onClick={() => commit(option)}
               className={cn(
-                "block w-full px-3 py-1.5 text-left font-mono text-card-foreground text-sm",
+                "block w-full px-3 py-2.5 text-left font-mono text-card-foreground text-sm sm:py-1.5",
                 index === active && "bg-accent text-accent-foreground",
               )}
             >

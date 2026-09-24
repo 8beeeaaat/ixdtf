@@ -31,6 +31,20 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       root.classList.add("dark");
     }
     localStorage.setItem(STORAGE_KEY, mode);
+
+    // モバイルブラウザの UI 色 (theme-color) を解決済みテーマへ追従させる。
+    // 手動切替 (.light/.dark) は index.html の media 付き meta では追従できないため、
+    // 地球儀 canvas と同じく getComputedStyle でトークン値を読む (DESIGN.md: 色はトークン駆動)。
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const syncThemeColor = () => {
+      const color = getComputedStyle(document.body).backgroundColor;
+      for (const meta of document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')) {
+        meta.content = color;
+      }
+    };
+    syncThemeColor();
+    media.addEventListener("change", syncThemeColor);
+    return () => media.removeEventListener("change", syncThemeColor);
   }, [mode]);
 
   const setMode = useCallback((next: ThemeMode) => setModeState(next), []);

@@ -9,7 +9,7 @@ import { AboutPage } from "@/pages/about/AboutPage";
 // AboutPage は Link を使うため、遷移先パスを持つ最小のルーターで包む
 function createStoryRouter() {
   const rootRoute = createRootRoute({ component: AboutPage });
-  const routes = ["/", "/playground", "/interop", "/guide", "/temporal-lab"].map((path) =>
+  const routes = ["/", "/playground", "/guide"].map((path) =>
     createRoute({
       getParentRoute: () => rootRoute,
       path,
@@ -68,8 +68,7 @@ export const Default: Story = {
 
     // F-7-4: 関連画面への遷移導線
     for (const key of [
-      "about.related.playground",
-      "about.related.interop",
+      "about.related.workbench",
       "about.related.guide",
       "about.related.temporalLab",
     ]) {
