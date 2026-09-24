@@ -398,8 +398,7 @@
   "footer": {
     "free": "This demo is free and open source",
     "repo": "GitHub repository",
-    "sponsor": "Support",
-    "coffee": "Buy me a coffee"
+    "sponsor": "Support"
   },
   "support": {
     "title": "Support this demo",
@@ -415,9 +414,6 @@
       "sponsorTitle": "GitHub Sponsors",
       "sponsorBody": "Recurring support helps fund documentation, more samples, and ongoing maintenance.",
       "sponsorCta": "Sponsor on GitHub",
-      "coffeeTitle": "Buy Me a Coffee",
-      "coffeeBody": "A one-off tip supports hosting and development time.",
-      "coffeeCta": "Buy me a coffee",
       "starTitle": "Star & share",
       "starBody": "Free ways to help: star the repository or share it with someone who needs it.",
       "starCta": "View the repository"

@@ -398,8 +398,7 @@
   "footer": {
     "free": "このデモは無料・オープンソースです",
     "repo": "GitHub リポジトリ",
-    "sponsor": "支援する",
-    "coffee": "コーヒーを奢る"
+    "sponsor": "支援する"
   },
   "support": {
     "title": "このデモを支援する",
@@ -415,9 +414,6 @@
       "sponsorTitle": "GitHub Sponsors",
       "sponsorBody": "継続的な支援で、ドキュメントやサンプルの拡充・メンテナンスを後押しできます。",
       "sponsorCta": "GitHub Sponsors で支援",
-      "coffeeTitle": "Buy Me a Coffee",
-      "coffeeBody": "単発の寄付で、サーバー運用と開発時間を支えられます。",
-      "coffeeCta": "コーヒーを奢る",
       "starTitle": "スター & 拡散",
       "starBody": "無料でできる支援です。リポジトリにスターを付けたり、必要としている人へ共有してください。",
       "starCta": "リポジトリを見る"

@@ -14,6 +14,10 @@
 | 実装コスト | 静的リンク + 1 ページ追加のみ。運用負荷ゼロ (課金・鍵管理・レート制限の基盤が不要) |
 | 収益の現実性 | 後述のとおり規模は小さい。**事業ではなく、維持・改善の持続可能性を支える寄付**と位置づける |
 
+金銭的な支援の受け口は **GitHub Sponsors (`https://github.com/sponsors/8beeeaaat`) のみ**とする。
+Buy Me a Coffee は 2026-09-24 に廃止した (アカウント未作成のまま公開リポジトリの Sponsor ボタンに
+載せると、第三者がハンドルを取得して寄付を横取りできるため)。
+
 ### 検討したが採用しなかった案
 
 | 案 | 不採用の理由 |
@@ -27,8 +31,8 @@
 | 要素 | ファイル | 役割 |
 |---|---|---|
 | Sponsor ボタン | `web/src/components/Layout.tsx` (ヘッダー) | `/support` へ誘導。モノクロのハート (DESIGN.md: 彩度色は IXDTF ハイライト/状態表示に限定) |
-| フッター導線 | `web/src/components/Footer.tsx` (+ `.stories.tsx`) | 「無料・OSS」の明示 + リポジトリ / Buy Me a Coffee / 支援ページへのリンク |
-| サポートページ | `web/src/pages/support/SupportPage.tsx` | 「デモの意義」を先に説明し、その後に GitHub Sponsors / Buy Me a Coffee / スター & 拡散の 3 導線 (F-5 GuidePage のレイアウトを踏襲) |
+| フッター導線 | `web/src/components/Footer.tsx` (+ `.stories.tsx`) | 「無料・OSS」の明示 + リポジトリ / 支援ページへのリンク |
+| サポートページ | `web/src/pages/support/SupportPage.tsx` | 「デモの意義」を先に説明し、その後に GitHub Sponsors の導線 (スター & 拡散の導線は現在コメントアウト。F-5 GuidePage のレイアウトを踏襲) |
 | ルート | `web/src/app/router.tsx` | `/support` を追加 (6 画面のメインナビには含めず、ヘッダー/フッターから到達) |
 | リンク一元管理 | `web/src/lib/sponsor.ts` | 外部 URL の単一情報源。差し替えはここだけ |
 | i18n | `web/src/locales/{ja,en}/translation.json` | `sponsor` / `footer` / `support` namespace を両 locale 同期 (N-2) |
@@ -46,10 +50,8 @@
 コードは投入済み。以下はリポジトリ所有者が行う:
 
 - [ ] GitHub Sponsors を有効化する (`https://github.com/sponsors/8beeeaaat`)
-- [ ] Buy Me a Coffee アカウントを作成する (未作成なら `web/src/lib/sponsor.ts` と
-      `.github/FUNDING.yml` (ixdtf リポジトリルート) の URL を実在のものに差し替えるか、当面は該当リンクを外す)
 - [ ] `.github/FUNDING.yml` (ixdtf リポジトリルート) をデフォルトブランチに置き、リポジトリの Sponsor ボタン表示を確認する
-- [ ] `web/src/lib/sponsor.ts` の 3 URL が実在することを最終確認する
+- [ ] `web/src/lib/sponsor.ts` の 2 URL が実在することを最終確認する
 
 > リンクは `lib/sponsor.ts` に集約済み。存在しないアカウントへ誘導しないよう、
 > 有効化が済むまでは未使用の導線を外す運用でもよい。

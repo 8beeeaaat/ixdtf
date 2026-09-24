@@ -5,14 +5,13 @@ import { SPONSOR_LINKS } from "@/lib/sponsor";
 import { cn } from "@/lib/utils";
 
 interface SupportOption {
-  key: "sponsor" | "coffee" | "star";
+  key: "sponsor" | "star";
   href: string;
   variant: "primary" | "secondary";
 }
 
 const OPTIONS: SupportOption[] = [
   { key: "sponsor", href: SPONSOR_LINKS.githubSponsors, variant: "primary" },
-  // { key: "coffee", href: SPONSOR_LINKS.buyMeACoffee, variant: "secondary" },
   // { key: "star", href: SPONSOR_LINKS.repo, variant: "secondary" },
 ];
 

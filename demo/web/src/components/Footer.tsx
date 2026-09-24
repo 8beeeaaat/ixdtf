@@ -19,14 +19,6 @@ export function Footer() {
           >
             {t("footer.repo")} ↗
           </a>
-          <a
-            href={SPONSOR_LINKS.buyMeACoffee}
-            target="_blank"
-            rel="noreferrer"
-            className="font-sans text-muted-foreground text-xs hover:text-foreground"
-          >
-            {t("footer.coffee")} ↗
-          </a>
           <Link
             to="/support"
             className="font-sans text-foreground text-xs underline underline-offset-4 hover:opacity-80"
