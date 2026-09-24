@@ -6,7 +6,8 @@
 //
 // An interactive demo is available at https://ixdtf.8beeeaaat.com/, which runs
 // IXDTF strings through both the browser-native TC39 Temporal API and this
-// library (source: https://github.com/8beeeaaat/ixdtf_demo).
+// library (source: the demo directory of this repository,
+// https://github.com/8beeeaaat/ixdtf/tree/main/demo).
 //
 // The package is organized so each file covers one RFC 9557 concern:
 //

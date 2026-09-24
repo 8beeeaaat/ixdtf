@@ -32,7 +32,7 @@ result, _ := ixdtf.Format(parsedTime, ixdtfExtensions)
 ## Demo
 
 An interactive demo application is available at **[ixdtf.8beeeaaat.com](https://ixdtf.8beeeaaat.com/)**
-([source](https://github.com/8beeeaaat/ixdtf_demo)).
+(source: [`demo/`](./demo)).
 
 It feeds the same IXDTF strings through both the browser-native
 [TC39 Temporal API](https://tc39.es/proposal-temporal/) and this library to demonstrate
@@ -42,6 +42,10 @@ comparison, a timezone/calendar converter, and an RFC 9557 learning guide.
 
 > The demo relies on native `Temporal` support (Chrome 144+ / Edge 144+ / Firefox 139+) and
 > uses no polyfill, so an up-to-date browser is required.
+
+The demo (Go API server + React frontend, deployed to Cloudflare Workers) lives in
+[`demo/`](./demo) as separate Go modules, so it is not part of the `github.com/8beeeaaat/ixdtf`
+module and adds no dependencies to it. See [`demo/README.md`](./demo/README.md) for development.
 
 ## Installation
 

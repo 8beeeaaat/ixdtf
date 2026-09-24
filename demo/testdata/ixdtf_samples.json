@@ -1,0 +1,190 @@
+{
+  "samples": [
+    {
+      "id": "basic-rfc3339",
+      "input": "1996-12-19T16:39:57-08:00",
+      "category": "basic",
+      "strict": false,
+      "expect_server": "ok",
+      "expect_browser": "ok",
+      "note_key": "guide.samples.basicRfc3339",
+      "guide": true
+    },
+    {
+      "id": "basic-utc",
+      "input": "2026-07-07T14:30:00Z",
+      "category": "basic",
+      "strict": false,
+      "expect_server": "ok",
+      "expect_browser": "ok",
+      "note_key": "guide.samples.basicUtc",
+      "guide": true
+    },
+    {
+      "id": "unknown-local-offset",
+      "input": "2026-07-07T14:30:00-00:00",
+      "category": "basic",
+      "strict": false,
+      "expect_server": "ok",
+      "expect_browser": "ok",
+      "note_key": "guide.samples.unknownLocalOffset",
+      "guide": true
+    },
+    {
+      "id": "fractional",
+      "input": "2026-07-07T23:30:00.123456789+09:00[Asia/Tokyo]",
+      "category": "basic",
+      "strict": false,
+      "expect_server": "ok",
+      "expect_browser": "ok",
+      "note_key": "guide.samples.fractional",
+      "guide": false
+    },
+    {
+      "id": "timezone",
+      "input": "2026-07-07T23:30:00+09:00[Asia/Tokyo]",
+      "category": "timezone",
+      "strict": false,
+      "expect_server": "ok",
+      "expect_browser": "ok",
+      "note_key": "guide.samples.timezone",
+      "guide": true
+    },
+    {
+      "id": "dst-overlap-earlier",
+      "input": "2018-11-04T01:30:00-07:00[America/Los_Angeles]",
+      "category": "timezone",
+      "strict": true,
+      "expect_server": "ok",
+      "expect_browser": "ok",
+      "note_key": "guide.samples.dstOverlapEarlier",
+      "interop_preset": false,
+      "guide": false
+    },
+    {
+      "id": "dst-overlap-later",
+      "input": "2018-11-04T01:30:00-08:00[America/Los_Angeles]",
+      "category": "timezone",
+      "strict": true,
+      "expect_server": "ok",
+      "expect_browser": "ok",
+      "note_key": "guide.samples.dstOverlapLater",
+      "interop_preset": false,
+      "guide": false
+    },
+    {
+      "id": "offset-mismatch-lenient",
+      "input": "2026-07-07T23:30:00+02:00[Asia/Tokyo]",
+      "category": "timezone",
+      "strict": false,
+      "expect_server": "ok",
+      "expect_browser": "error",
+      "note_key": "guide.samples.offsetMismatchLenient",
+      "guide": true
+    },
+    {
+      "id": "calendar-japanese",
+      "input": "2026-07-07T23:30:00+09:00[Asia/Tokyo][u-ca=japanese]",
+      "category": "calendar",
+      "strict": false,
+      "expect_server": "ok",
+      "expect_browser": "ok",
+      "note_key": "guide.samples.calendarJapanese",
+      "guide": true
+    },
+    {
+      "id": "calendar-hebrew-rfc",
+      "input": "1996-12-19T16:39:57-08:00[America/Los_Angeles][u-ca=hebrew]",
+      "category": "composite",
+      "strict": false,
+      "expect_server": "ok",
+      "expect_browser": "ok",
+      "note_key": "guide.samples.calendarHebrewRfc",
+      "guide": false
+    },
+    {
+      "id": "timezone-critical",
+      "input": "2026-07-07T23:30:00+09:00[!Asia/Tokyo]",
+      "category": "critical",
+      "strict": false,
+      "expect_server": "ok",
+      "expect_browser": "ok",
+      "note_key": "guide.samples.timezoneCritical",
+      "guide": true
+    },
+    {
+      "id": "calendar-critical",
+      "input": "2026-07-07T23:30:00+09:00[Asia/Tokyo][!u-ca=japanese]",
+      "category": "critical",
+      "strict": false,
+      "expect_server": "ok",
+      "expect_browser": "ok",
+      "note_key": "guide.samples.calendarCritical",
+      "guide": true
+    },
+    {
+      "id": "critical-unknown-tag",
+      "input": "2026-07-07T23:30:00+09:00[Asia/Tokyo][!foo=bar]",
+      "category": "critical",
+      "strict": false,
+      "expect_server": "ok",
+      "expect_browser": "error",
+      "note_key": "guide.samples.criticalUnknownTag",
+      "guide": true
+    },
+    {
+      "id": "unknown-tag",
+      "input": "2026-07-07T23:30:00+09:00[Asia/Tokyo][foo=bar]",
+      "category": "composite",
+      "strict": false,
+      "expect_server": "ok",
+      "expect_browser": "ok",
+      "note_key": "guide.samples.unknownTag",
+      "guide": true
+    },
+    {
+      "id": "private-ext",
+      "input": "2026-07-07T23:30:00+09:00[Asia/Tokyo][x-private=demo]",
+      "category": "rejected",
+      "strict": false,
+      "expect_server": "error",
+      "expect_browser": "ok",
+      "expect_error_substr": "private extension",
+      "note_key": "guide.samples.privateExt",
+      "guide": true
+    },
+    {
+      "id": "experimental-ext",
+      "input": "2026-07-07T23:30:00+09:00[Asia/Tokyo][_exp=demo]",
+      "category": "rejected",
+      "strict": false,
+      "expect_server": "error",
+      "expect_browser": "ok",
+      "expect_error_substr": "experimental extension",
+      "note_key": "guide.samples.experimentalExt",
+      "guide": true
+    },
+    {
+      "id": "offset-mismatch-strict",
+      "input": "2026-07-07T23:30:00+02:00[Asia/Tokyo]",
+      "category": "rejected",
+      "strict": true,
+      "expect_server": "error",
+      "expect_browser": "error",
+      "expect_error_substr": "timezone offset does not match",
+      "note_key": "guide.samples.offsetMismatchStrict",
+      "guide": true
+    },
+    {
+      "id": "garbage",
+      "input": "not-a-timestamp",
+      "category": "rejected",
+      "strict": false,
+      "expect_server": "error",
+      "expect_browser": "error",
+      "expect_error_substr": "cannot parse",
+      "note_key": "guide.samples.garbage",
+      "guide": false
+    }
+  ]
+}

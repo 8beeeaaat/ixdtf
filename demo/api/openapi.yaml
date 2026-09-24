@@ -1,0 +1,232 @@
+openapi: 3.1.0
+info:
+  title: IXDTF Demo API
+  version: 0.1.0
+  description: >
+    RFC 9557 (IXDTF) demo API backed by github.com/8beeeaaat/ixdtf.
+    Parse failures are domain-level results (HTTP 200 + ok:false, requirement A-1).
+    4xx is reserved for malformed requests only (A-2).
+paths:
+  /api/ixdtf/parse:
+    post:
+      operationId: parseIxdtf
+      summary: Parse and validate an IXDTF string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ParseRequest"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ParseResponse"
+        "400":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestError"
+  /api/ixdtf/format:
+    post:
+      operationId: formatIxdtf
+      summary: Format a unix-nano timestamp with IXDTF extensions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FormatRequest"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FormatResponse"
+        "400":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestError"
+  /api/ixdtf/roundtrip:
+    post:
+      operationId: roundtripIxdtf
+      summary: Parse then re-format an IXDTF string in one request
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoundtripRequest"
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RoundtripResponse"
+        "400":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestError"
+  /api/now:
+    get:
+      operationId: getNow
+      summary: Server current time as an IXDTF string
+      parameters:
+        - name: time_zone
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: calendar
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NowResponse"
+        "400":
+          description: "OK"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestError"
+components:
+  schemas:
+    ParseRequest:
+      type: object
+      required: [input, strict]
+      properties:
+        input:
+          type: string
+        strict:
+          type: boolean
+        validate_only:
+          type: boolean
+          default: false
+    ExtensionTag:
+      type: object
+      required: [key, value, critical]
+      properties:
+        key:
+          type: string
+        value:
+          type: string
+        critical:
+          type: boolean
+    ParseResult:
+      type: object
+      required:
+        [rfc3339, unix_nano, offset_seconds, time_zone, time_zone_critical, tags]
+      properties:
+        rfc3339:
+          type: string
+        unix_nano:
+          type: string
+          pattern: "^-?[0-9]+$"
+        offset_seconds:
+          type: integer
+        time_zone:
+          type: ["string", "null"]
+        time_zone_critical:
+          type: boolean
+        tags:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExtensionTag"
+    ParseError:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string
+    # result / error は oneOf+null でなく optional で表現する:
+    # oapi-codegen (3.0 down-convert 経由) が oneOf [$ref, null] を扱えないため。
+    # 「成功時のみ result、失敗時のみ error」のセマンティクスは ok フラグが担う (D-1)。
+    ParseResponse:
+      type: object
+      required: [ok]
+      properties:
+        ok:
+          type: boolean
+        result:
+          $ref: "#/components/schemas/ParseResult"
+        error:
+          $ref: "#/components/schemas/ParseError"
+    Extensions:
+      type: object
+      required: [time_zone, time_zone_critical, tags]
+      properties:
+        time_zone:
+          type: ["string", "null"]
+        time_zone_critical:
+          type: boolean
+        tags:
+          type: array
+          items:
+            $ref: "#/components/schemas/ExtensionTag"
+    FormatRequest:
+      type: object
+      required: [unix_nano, extensions]
+      properties:
+        unix_nano:
+          type: string
+          pattern: "^-?[0-9]+$"
+        extensions:
+          $ref: "#/components/schemas/Extensions"
+    FormatResponse:
+      type: object
+      required: [ok, ixdtf]
+      properties:
+        ok:
+          type: boolean
+        ixdtf:
+          type: ["string", "null"]
+        error:
+          $ref: "#/components/schemas/ParseError"
+    RoundtripRequest:
+      type: object
+      required: [input, strict]
+      properties:
+        input:
+          type: string
+        strict:
+          type: boolean
+    RoundtripResponse:
+      type: object
+      required: [parse, formatted, lossless]
+      properties:
+        parse:
+          $ref: "#/components/schemas/ParseResponse"
+        formatted:
+          type: ["string", "null"]
+        lossless:
+          type: ["boolean", "null"]
+    NowResponse:
+      type: object
+      required: [ixdtf, unix_nano]
+      properties:
+        ixdtf:
+          type: string
+        unix_nano:
+          type: string
+          pattern: "^-?[0-9]+$"
+    BadRequestError:
+      type: object
+      required: [message]
+      properties:
+        message:
+          type: string

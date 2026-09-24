@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- The interactive demo site (https://ixdtf.8beeeaaat.com/) moved into this repository under `demo/`, with its history, from the former `8beeeaaat/ixdtf_demo` repository. `demo/` is fenced off by its own `go.mod`, so the library module contents and dependencies are unchanged
+
 ## [0.4.0] - 2026-07-07
 
 ### Added

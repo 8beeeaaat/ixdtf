@@ -1,0 +1,423 @@
+{
+  "app": {
+    "title": "IXDTF Demo",
+    "tagline": "Round-tripping RFC 9557 date-time strings between the browser's Temporal and Go's ixdtf"
+  },
+  "nav": {
+    "home": "Home",
+    "about": "About",
+    "playground": "Playground",
+    "interop": "Interop",
+    "converter": "Converter",
+    "temporalLab": "Temporal Lab",
+    "guide": "Guide"
+  },
+  "banner": {
+    "ixdtf": "View the Go ixdtf library powering this demo on GitHub"
+  },
+  "sponsor": {
+    "cta": "Sponsor",
+    "ariaLabel": "Support this project"
+  },
+  "theme": {
+    "label": "Theme",
+    "auto": "Auto",
+    "light": "Light",
+    "dark": "Dark"
+  },
+  "lang": {
+    "label": "Language",
+    "ja": "日本語",
+    "en": "English"
+  },
+  "common": {
+    "copy": "Copy",
+    "copied": "Copied",
+    "server": "Server",
+    "browser": "Browser",
+    "strict": "strict",
+    "validateOnly": "Validate only",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "yes": "Yes",
+    "no": "No",
+    "none": "None",
+    "add": "Add",
+    "remove": "Remove",
+    "loading": "Loading…",
+    "tryInPlayground": "Try in Playground",
+    "refresh": "Refresh",
+    "via": "Parsed via",
+    "ok": "OK",
+    "error": "Error",
+    "match": "Match",
+    "mismatch": "Mismatch"
+  },
+  "reproduce": {
+    "summary": "Reproduce this result in code",
+    "tabs": {
+      "go": "Go (ixdtf)",
+      "js": "JavaScript (Temporal)"
+    }
+  },
+  "references": {
+    "trigger": "Explain & sources",
+    "close": "Close explanation",
+    "sourcesHeading": "Official sources",
+    "implementationNote": "About browser implementations",
+    "newTab": "opens in a new tab",
+    "kinds": {
+      "spec": "Spec",
+      "docs": "Docs",
+      "code": "Code"
+    },
+    "topics": {
+      "ixdtf": {
+        "title": "IXDTF and RFC 9557",
+        "body": "IXDTF is the RFC 9557 format that adds bracketed annotations such as time-zone names and calendars to RFC 3339 date-time strings. It carries not only an instant, but also information about how that value should be interpreted and displayed."
+      },
+      "temporalApi": {
+        "title": "The TC39 Temporal API",
+        "body": "Temporal is the ECMAScript date-time API being standardized by TC39 to replace Date. It provides immutable types such as Instant, PlainDate, and ZonedDateTime, and treats time zones and calendars as explicit values.",
+        "notice": "This describes the behavior expected by the specification. This demo uses the Temporal implementation built into the current browser without a polyfill, so features may be missing and behavior may differ by browser or version, including differences from the specification."
+      },
+      "temporalIxdtf": {
+        "title": "Temporal's string format and RFC 9557",
+        "body": "The string format Temporal reads and writes is based on RFC 9557 (IXDTF). ZonedDateTime.toString() emits an IXDTF string with a time-zone annotation — plus a u-ca annotation for calendars other than ISO 8601 — and ZonedDateTime.from() parses the same format.",
+        "notice": "This describes the behavior expected by the specification. This demo uses the Temporal implementation built into the current browser without a polyfill, so features may be missing and behavior may differ by browser or version, including differences from the specification."
+      },
+      "goParsing": {
+        "title": "Parse and Validate in Go ixdtf",
+        "body": "Parse returns the date-time and extension information. Validate checks the format and extensions without returning a value. This demo's validate-only mode maps to Validate and shows library error messages verbatim."
+      },
+      "temporalParsing": {
+        "title": "Parsing IXDTF with Temporal",
+        "body": "Strings with a time-zone annotation are parsed by Temporal.ZonedDateTime.from. RFC 3339 forms without that annotation fall back to Temporal.Instant.from. By default, Temporal rejects a conflict between the numeric offset and time zone.",
+        "notice": "This describes the behavior expected by the specification. This demo uses the Temporal implementation built into the current browser without a polyfill, so features may be missing and behavior may differ by browser or version, including differences from the specification."
+      },
+      "offsetConsistency": {
+        "title": "Offset and time-zone consistency",
+        "body": "In IXDTF, the numeric offset and time-zone annotation can disagree about the instant. Go ixdtf's strict mode makes this an error; non-strict mode leaves an elective annotation unapplied and preserves the original offset. Temporal rejects the conflict by default.",
+        "notice": "The Temporal result is observed from the implementation built into the current browser and version. It may differ from the specified behavior, or the feature may not yet be implemented."
+      },
+      "roundtrip": {
+        "title": "Parse → Format round trips",
+        "body": "A round trip parses a string into structured date-time data and then formats it back into a string. Even when the instant is preserved, omitted precision, annotation handling, or normalization can keep the output from exactly matching the input. This page compares Temporal and Go ixdtf on the same aspects.",
+        "notice": "The browser path reports measurements from its native Temporal implementation. Depending on the browser and version, the result may differ from the behavior expected by the TC39 specification or from another browser."
+      },
+      "dstAmbiguity": {
+        "title": "DST overlap and offsets",
+        "body": "When clocks move back at the end of daylight saving time, the same local time occurs twice. An IANA time-zone name alone leaves the instant ambiguous, but IXDTF can make it exact by carrying the applicable UTC offset too. Temporal uses a valid input offset to resolve which occurrence was meant.",
+        "notice": "The Temporal epoch is observed from the current browser's built-in implementation and time-zone data. It may differ from the specification's expected result depending on the browser or version."
+      },
+      "zoneArithmetic": {
+        "title": "Time-zone annotations and calendar arithmetic",
+        "body": "ZonedDateTime's add({ days: 1 }) is calendar arithmetic that preserves the wall clock, while add({ hours: 24 }) is exact-time arithmetic. Across a DST boundary the day is 25 hours long, so they diverge. Because IXDTF carries the IANA time-zone name, the distinction can still be computed after deserialization.",
+        "notice": "Results are measurements of the Temporal implementation and time-zone data built into your running browser, and may differ from the spec's expected behavior across browsers and versions."
+      },
+      "calendarAnnotation": {
+        "title": "The u-ca calendar annotation",
+        "body": "The u-ca tag carries which calendar the same instant should be interpreted and displayed in. Temporal recomputes era, year, month, and day via withCalendar; Go ixdtf carries the tag without interpreting it. The instant itself (unix_nano) is unchanged by the tag.",
+        "notice": "Projections are measurements of the ICU calendar data built into your running browser; supported calendars and era representations may differ across browsers and versions."
+      },
+      "suffixSyntax": {
+        "title": "IXDTF suffix syntax",
+        "body": "After the RFC 3339 portion, IXDTF can append a time-zone annotation [Area/Location] and key-value extension tags [key=value]. u-ca is the Unicode calendar annotation. RFC 9557's ABNF defines their order and allowed characters."
+      },
+      "criticalAnnotations": {
+        "title": "Critical annotations (!)",
+        "body": "An ! immediately after the opening bracket tells a recipient not to act on the whole string unless it can process that annotation. An elective annotation without ! may be ignored when an implementation does not understand it."
+      },
+      "rejectedExtensions": {
+        "title": "Experimental and unsupported extensions",
+        "body": "Keys beginning with an underscore are for experiments in controlled environments and must be rejected in normal interchange. Go ixdtf also rejects x- private extensions. Interop exposes these implementation differences as learning material."
+      }
+    },
+    "sources": {
+      "rfc9557": "RFC 9557 §3 — Internet Extended Date/Time Format",
+      "rfc3339": "RFC 3339 — Date and Time on the Internet",
+      "rfc9557Consistency": "RFC 9557 §3.4 — Inconsistent Information",
+      "rfc9557Syntax": "RFC 9557 §4.1 — ABNF",
+      "rfc9557Critical": "RFC 9557 §3.3 — Elective / Critical Consumption",
+      "rfc9557Keys": "RFC 9557 §3.2 — Registering extension keys",
+      "rfc6648": "RFC 6648 — Deprecating the X- prefix",
+      "temporalZonedDateTime": "TC39 Temporal — ZonedDateTime",
+      "temporalStrings": "TC39 Temporal — string parsing, persistence, and formatting",
+      "temporalAmbiguity": "TC39 Temporal — time zones and resolving ambiguity",
+      "temporalZonedDateTimeAdd": "TC39 Temporal — ZonedDateTime.prototype.add",
+      "temporalCalendars": "TC39 Temporal — Calendars",
+      "temporalDocs": "TC39 Temporal — documentation",
+      "temporalSpec": "TC39 Temporal — specification (proposal)",
+      "ixdtfPackage": "Go ixdtf v0.4.0 package documentation",
+      "ixdtfParseCode": "Go ixdtf v0.4.0 — parse.go",
+      "ixdtfFormatCode": "Go ixdtf v0.4.0 — format.go",
+      "ixdtfTimezoneCode": "Go ixdtf v0.4.0 — timezone.go",
+      "ixdtfSuffixCode": "Go ixdtf v0.4.0 — suffix.go",
+      "ixdtfAbnfCode": "Go ixdtf v0.4.0 — extension-key validation in abnf/abnf.go",
+      "ixdtfValidateCode": "Go ixdtf v0.4.0 — validate.go"
+    }
+  },
+  "legend": {
+    "title": "Legend",
+    "date": "Date",
+    "time": "Time",
+    "offset": "UTC offset",
+    "timezone": "Time zone",
+    "extension": "Extension tag",
+    "critical": "Critical flag"
+  },
+  "tooltip": {
+    "date": "Calendar date (YYYY-MM-DD)",
+    "time": "Time of day, optionally with fractional seconds",
+    "offset": "Offset from UTC. RFC 9557 makes Z equivalent to -00:00 (local offset unknown)",
+    "timezone": "IANA time-zone annotation [Area/Location]",
+    "extension": "Extension tag [key=value]. u-ca is the calendar system",
+    "critical": "Critical flag (!). An annotation a parser must reject if it cannot honor it"
+  },
+  "unsupported": {
+    "title": "This browser does not support Temporal",
+    "body": "This demo uses the browser-native TC39 Temporal API (no polyfill).",
+    "browsers": "Supported: Chrome 144+ / Edge 144+ / Firefox 139+",
+    "note": "Safari stable is not supported as of 2026-07 and is out of scope."
+  },
+  "home": {
+    "title": "IXDTF Clock",
+    "tagline": "Shows the current time as the IXDTF representation itself",
+    "timeZoneLabel": "Time zone",
+    "calendarLabel": "Calendar system",
+    "browserGenerated": "Browser-generated (Temporal.Now)",
+    "serverGenerated": "Server-generated (ixdtf.FormatNano)",
+    "calendarHeading": "Month calendar",
+    "serverNote": "The same instant rendered as IXDTF by the Go server",
+    "weekdays": "Mon,Tue,Wed,Thu,Fri,Sat,Sun"
+  },
+  "about": {
+    "title": "Temporal & IXDTF",
+    "tagline": "The new JavaScript date-time API and the IETF string format that carries its values — what each is, and how they relate",
+    "ixdtf": {
+      "heading": "IXDTF — a data-format standard (RFC 9557)",
+      "body1": "IXDTF (Internet Extended Date/Time Format) is a data-format standard published as RFC 9557 in April 2024 by the IETF SEDATE working group. It extends RFC 3339 — the internet-standard timestamp format — in a backward-compatible way, allowing bracketed annotations (a suffix) after the date-time.",
+      "body2": "Annotations include an IANA time-zone name such as [Asia/Tokyo] and key=value extension tags such as [u-ca=japanese]. An annotation prefixed with ! is critical: an implementation that cannot understand it must treat the whole string as erroneous. A value can thus carry not only \"which instant\" but also the machine-readable context of how that instant should be interpreted and displayed.",
+      "exampleCaption": "Anatomy of an IXDTF string: an RFC 3339 date-time + a time-zone annotation + a calendar annotation"
+    },
+    "temporal": {
+      "heading": "Temporal — the ECMAScript date-time API",
+      "body1": "Temporal is the new JavaScript date-time API being standardized by TC39 (the ECMAScript committee). Designed to replace the long-standing shortcomings of Date (mutable values, no time-zone support, zero-based months, and more), it provides purpose-built immutable types such as Instant, PlainDate, and ZonedDateTime.",
+      "body2": "The centerpiece, Temporal.ZonedDateTime, holds an instant + an IANA time zone + a calendar system as a single value. That is what makes calendar arithmetic across DST transitions and projection into calendars such as the Japanese one work correctly. This demo uses no polyfill: it runs on the native Temporal of supporting browsers (Chrome 144+ / Edge 144+ / Firefox 139+)."
+    },
+    "relation": {
+      "heading": "How they relate — an API and its interchange format",
+      "body1": "Serializing a Temporal.ZonedDateTime as text needs information that RFC 3339 alone cannot carry — the IANA time-zone name and the calendar. TC39 worked with the IETF to standardize this serialization format, and it became RFC 9557 (IXDTF). The bracketed time-zone notation follows what Java's java.time had long used de facto; RFC 9557 made it an open standard for the first time.",
+      "body2": "In Temporal, ZonedDateTime.toString() produces an IXDTF string and ZonedDateTime.from() parses one. With the format now an open standard, implementations outside JavaScript — the Go ixdtf library in this demo — read and write the same strings, so IXDTF works as an interchange format between implementations.",
+      "body3": "RFC 9557 deliberately leaves the consumption of annotations to each implementation's discretion, and Temporal applies its own profile (rejecting unknown critical tags, its own handling of x- / _ extensions, and so on). The same string may be accepted by one implementation and rejected by another — you can watch this happen on the Interop and Guide pages.",
+      "diagramBrowser": "Temporal (browser)",
+      "diagramString": "IXDTF string (RFC 9557)",
+      "diagramGo": "ixdtf (Go)",
+      "diagramCaption": "Both implementations read and write the same IXDTF string — the theme of this whole demo"
+    },
+    "related": {
+      "heading": "Experience it in this demo",
+      "playground": "Playground — parse strings in real time",
+      "interop": "Interop — compare implementation behaviour",
+      "guide": "Guide — learn the RFC 9557 syntax",
+      "temporalLab": "Temporal Lab — observe the date-time model"
+    }
+  },
+  "playground": {
+    "title": "IXDTF Playground",
+    "tagline": "Visualizes parsing and validation of IXDTF strings in real time",
+    "inputLabel": "IXDTF string",
+    "inputPlaceholder": "2026-07-07T23:30:00+09:00[Asia/Tokyo][u-ca=japanese]",
+    "strict": "strict mode",
+    "strictHint": "Validates that the offset agrees with the time zone",
+    "validateOnly": "Validate only",
+    "validateOnlyHint": "Checks validity without returning a parsed value (like Validate)",
+    "empty": "Enter an IXDTF string to see the parse result.",
+    "serverResult": "Server parse (Go ixdtf)",
+    "browserResult": "Browser parse (Temporal)",
+    "parsedTime": "Parsed time (RFC 3339)",
+    "parsedTimeBrowser": "Parsed time (IXDTF)",
+    "unixNano": "unix_nano",
+    "offsetSeconds": "Offset (seconds)",
+    "timeZone": "Time zone",
+    "timeZoneCritical": "Time zone critical",
+    "tags": "Extension tags",
+    "tagKey": "Key",
+    "tagValue": "Value",
+    "tagCritical": "critical",
+    "noTags": "No extension tags",
+    "errorLabel": "Error message (verbatim from ixdtf)",
+    "errorLabelBrowser": "Error message (verbatim from Temporal)",
+    "via": "Parsed successfully via",
+    "validatedOk": "Validation succeeded",
+    "share": "Copy shareable URL",
+    "shareCopied": "URL copied"
+  },
+  "interop": {
+    "title": "Interop — round-trip comparison",
+    "tagline": "Parse → format the same input through both implementations and line up the behavioral differences",
+    "inputLabel": "IXDTF string",
+    "inputPlaceholder": "2026-07-07T23:30:00+02:00[Asia/Tokyo]",
+    "presets": "Presets that expose behavioral differences",
+    "resultTitle": "Comparison result",
+    "aspect": "Aspect",
+    "browserCol": "Browser (Temporal)",
+    "serverCol": "Server (ixdtf)",
+    "empty": "Enter an IXDTF string or pick a preset to see the comparison.",
+    "via": "Parsed via",
+    "rows": {
+      "status": "Parse status",
+      "error": "Error",
+      "epoch": "Instant (unix_nano)",
+      "timeZone": "Time zone",
+      "calendar": "Calendar",
+      "roundtrip": "Round-tripped string",
+      "lossless": "Lossless (equals input)"
+    }
+  },
+  "converter": {
+    "title": "Time-zone / calendar converter",
+    "tagline": "Lists a base instant across several time zones and calendar systems",
+    "baseTime": "Base time",
+    "baseTimeHint": "Accepts an IXDTF string (leave empty for the current time)",
+    "baseTimePlaceholder": "2026-07-07T23:30:00+09:00[Asia/Tokyo]",
+    "useNow": "Now",
+    "invalidBase": "Could not parse the base time",
+    "calendarLabel": "Calendar system",
+    "addTimeZone": "Add time zone",
+    "human": "Human-readable",
+    "ixdtf": "IXDTF",
+    "empty": "Add a time zone to begin.",
+    "remove": "Remove"
+  },
+  "temporalLab": {
+    "title": "Temporal Lab",
+    "tagline": "Observe the datetime model shared by IXDTF and Temporal, with live measurements from the browser's native Temporal and Go ixdtf",
+    "nativeBadge": "Native Temporal",
+    "goBadge": "Go ixdtf",
+    "goPending": "Querying the server…",
+    "goUnavailable": "Server measurement unavailable",
+    "goEpoch": "Go ixdtf unix_nano (server-measured)",
+    "dstOverlap": {
+      "title": "DST overlap",
+      "body": "On the night daylight saving time ends in Los Angeles, the wall clock reaches 01:30 twice. Compare two IXDTF strings with the same date, time, and zone name by their numeric offsets and the instants resolved by Temporal.",
+      "earlier": "First 01:30",
+      "later": "Second 01:30",
+      "clockTime": "01:30",
+      "earlierOffset": "DST · -07:00",
+      "laterOffset": "Standard · -08:00",
+      "nativeTemporal": "Native Temporal",
+      "epoch": "Instant (epoch nanoseconds)",
+      "parseError": "Temporal could not parse this IXDTF string",
+      "errorDetails": "Browser error details",
+      "elapsed": "Exact-time gap",
+      "hours": "+{{count}} h",
+      "seconds": "{{count}} seconds",
+      "unavailable": "Unavailable",
+      "conclusion": "The bracketed time-zone name carries the region's rules, while the numeric offset pins the local time to an exact instant. Although both read 01:30, -07:00 and -08:00 identify instants one hour apart."
+    },
+    "zoneArithmetic": {
+      "title": "+1 day vs +24 hours",
+      "body": "Add \"one day\" and \"24 hours\" to 01:30 on the night DST ends. That day is 25 hours long, so calendar arithmetic and exact-time arithmetic land on different instants. Because IXDTF carries the time-zone annotation, the distinction still computes correctly after deserialization.",
+      "base": "Base",
+      "plusDay": "+1 day (calendar)",
+      "plusHours": "+24 hours (exact time)",
+      "realDelta": "Real time from base",
+      "hours": "+{{count}} h",
+      "temporalEpoch": "Instant (epoch nanoseconds)",
+      "goParsed": "unix_nano from Go ixdtf strict parse",
+      "conclusion": "+1 day keeps the 01:30 wall clock and advances 25 real hours; +24 hours keeps real time and the wall clock becomes 00:30. Go ixdtf strict-parses the IXDTF strings Temporal produced and reaches the same instants — IXDTF works as the interchange format between implementations."
+    },
+    "calendarProjection": {
+      "title": "u-ca calendar projection",
+      "body": "The u-ca tag carries which calendar humans should read the same instant in. Temporal interprets the tag and recomputes era, year, month, and day; Go ixdtf carries it losslessly without interpreting. The instant (unix_nano) never changes.",
+      "calendar": "Calendar",
+      "year": "Year (era)",
+      "month": "monthCode",
+      "day": "Day",
+      "ixdtf": "IXDTF",
+      "instant": "Instant (epoch nanoseconds)",
+      "goRoundtrip": "Go ixdtf roundtrip (server-measured)",
+      "projectionError": "Could not project into this calendar",
+      "conclusion": "epochNanoseconds is identical across every projection. The annotation changes how the instant is read, never the instant itself."
+    }
+  },
+  "guide": {
+    "title": "RFC 9557 learning guide",
+    "tagline": "Learn what IXDTF adds on top of RFC 3339",
+    "gallery": "Sample string gallery",
+    "expectServer": "Server",
+    "expectBrowser": "Browser",
+    "sections": {
+      "rfc3339": {
+        "heading": "Differences from RFC 3339",
+        "body": "RFC 3339 specifies date, time, and UTC offset. RFC 9557 (IXDTF) extends it with bracketed annotations appended afterward, so extra information such as the time-zone name and calendar system can travel with the value in a machine-readable form."
+      },
+      "suffix": {
+        "heading": "Suffix syntax",
+        "body": "An optional [Area/Location] time-zone annotation comes first, followed by zero or more [key=value] extension tags. u-ca denotes the calendar system, e.g. [u-ca=japanese]."
+      },
+      "critical": {
+        "heading": "Critical flag (!)",
+        "body": "Prefixing an annotation with ! marks it critical. A parser that does not understand a critical annotation must reject the whole string. Unknown non-critical annotations may be ignored."
+      },
+      "rejected": {
+        "heading": "Rejected cases",
+        "body": "Private extensions starting with x- and experimental extensions starting with _ are rejected by ixdtf. In strict mode an offset that disagrees with the time zone is also rejected. These are worthwhile pitfalls to experience."
+      }
+    },
+    "categories": {
+      "basic": "Basic (RFC 3339 compatible)",
+      "timezone": "With time zone",
+      "calendar": "With calendar",
+      "critical": "Critical flag",
+      "composite": "Composite",
+      "rejected": "Rejected cases"
+    },
+    "samples": {
+      "basicRfc3339": "Basic RFC 3339 form. IXDTF is a superset of RFC 3339.",
+      "basicUtc": "Z denotes a time in UTC. RFC 9557 redefines Z as 'local offset unknown' (equivalent to -00:00), distinct from +00:00.",
+      "unknownLocalOffset": "-00:00 is specified to mean 'local offset unknown' and is distinct from +00:00.",
+      "fractional": "Fractional seconds (nanosecond precision) combined with a time-zone annotation.",
+      "timezone": "With an [Asia/Tokyo] time-zone annotation that agrees with the offset.",
+      "dstOverlapEarlier": "The first 01:30 before DST ends. Offset -07:00 selects the earlier instant.",
+      "dstOverlapLater": "The second 01:30 after DST ends. Offset -08:00 selects the instant one hour later.",
+      "offsetMismatchLenient": "Offset (+02:00) disagrees with the zone. Lenient: ixdtf accepts, Temporal rejects.",
+      "calendarJapanese": "[u-ca=japanese] selects the Japanese calendar. The instant is unchanged; only the rendering differs.",
+      "calendarHebrewRfc": "An example from the RFC 9557 text, selecting the Hebrew calendar.",
+      "timezoneCritical": "Critical time-zone annotation [!Asia/Tokyo]. Parsers that cannot honor it must reject the string.",
+      "calendarCritical": "Critical calendar annotation [!u-ca=japanese].",
+      "criticalUnknownTag": "An unknown tag marked critical [!foo=bar]. Non-strict ixdtf accepts and records it as critical; Temporal rejects.",
+      "unknownTag": "An unknown but non-critical tag [foo=bar]. Both implementations accept it (ixdtf keeps the tag; Temporal ignores it).",
+      "privateExt": "An x- private extension. ixdtf rejects; Temporal ignores and accepts.",
+      "experimentalExt": "A _ experimental extension. ixdtf rejects; Temporal ignores and accepts.",
+      "offsetMismatchStrict": "Offset mismatch under strict mode. Both implementations reject.",
+      "garbage": "A string that cannot be parsed as a date-time. Both implementations fail."
+    }
+  },
+  "footer": {
+    "free": "This demo is free and open source",
+    "repo": "GitHub repository",
+    "sponsor": "Support"
+  },
+  "support": {
+    "title": "Support this demo",
+    "tagline": "This IXDTF / RFC 9557 learning demo is free and open source",
+    "why": {
+      "heading": "Why this demo exists",
+      "body": "RFC 9557 (IXDTF) is a modern format that carries time-zone and calendar annotations alongside a date-time in a machine-readable way. This demo round-trips the same string through two independent implementations — Go's ixdtf library and the browser-native Temporal API — so you can understand the format and its interoperability hands-on. It runs with no ads and no tracking."
+    },
+    "how": {
+      "heading": "Ways to support"
+    },
+    "options": {
+      "sponsorTitle": "GitHub Sponsors",
+      "sponsorBody": "Recurring support helps fund documentation, more samples, and ongoing maintenance.",
+      "sponsorCta": "Sponsor on GitHub",
+      "starTitle": "Star & share",
+      "starBody": "Free ways to help: star the repository or share it with someone who needs it.",
+      "starCta": "View the repository"
+    },
+    "note": "Any support goes toward maintaining and improving this demo and its learning content."
+  }
+}
