@@ -1,8 +1,10 @@
 # Cloudflare Workers Static Assets のセキュリティヘッダー (D-13)。
 # style-src の 'unsafe-inline' は Radix UI (react-remove-scroll) が動的注入する
-# <style> タグに必要。script は 'self' のみ (インラインスクリプト・外部 CDN 不使用)。
+# <style> タグに必要。script はインラインスクリプトを使わず、外部は Cloudflare Web
+# Analytics の beacon (取得: static.cloudflareinsights.com / 送信: cloudflareinsights.com)
+# のみ許可する (D-15, N-8)。
 /*
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY
   Referrer-Policy: strict-origin-when-cross-origin
-  Content-Security-Policy: default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://cloudflareinsights.com; object-src 'none'; base-uri 'self'; frame-ancestors 'none'; form-action 'self'

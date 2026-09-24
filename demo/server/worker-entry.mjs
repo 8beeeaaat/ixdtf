@@ -3,7 +3,9 @@
 // 目的:
 //  1. 旧 URL (ixdtf-demo.8beeeaaat.workers.dev) へのアクセスを正規ドメイン
 //     (ixdtf.8beeeaaat.com) へ 301 恒久リダイレクトする。
-//  2. それ以外は従来どおり /api/* を Go WASM worker へ、
+//  2. ワークベンチへ統合した旧パス (/interop /temporal-lab) を、モード付きの
+//     /playground へ 301 恒久リダイレクトする (N-7)。クライアント側の redirect と同じ対応。
+//  3. それ以外は従来どおり /api/* を Go WASM worker へ、
 //     残りを Static Assets へ委譲する。
 //
 // wrangler.jsonc の run_worker_first: true により全リクエストが本 worker を
@@ -15,6 +17,12 @@ import goWorker from "./build/worker.mjs";
 const LEGACY_HOST = "ixdtf-demo.8beeeaaat.workers.dev";
 const CANONICAL_HOST = "ixdtf.8beeeaaat.com";
 
+// 旧パス → ワークベンチのモード (web/src/app/router.tsx の redirect と対応)。
+const LEGACY_WORKBENCH_PATHS = new Map([
+  ["/interop", "roundtrip"],
+  ["/temporal-lab", "lab"],
+]);
+
 export default {
   async fetch(req, env, ctx) {
     const url = new URL(req.url);
@@ -25,13 +33,21 @@ export default {
       return Response.redirect(url.toString(), 301);
     }
 
-    // 2. API は Go WASM worker (composition root) へ委譲。
+    // 2. 旧パスは他のクエリを保ったまま mode 付きの /playground へ 301 恒久リダイレクト。
+    const legacyMode = LEGACY_WORKBENCH_PATHS.get(url.pathname.replace(/\/+$/, ""));
+    if (legacyMode) {
+      url.pathname = "/playground";
+      url.searchParams.set("mode", legacyMode);
+      return Response.redirect(url.toString(), 301);
+    }
+
+    // 3. API は Go WASM worker (composition root) へ委譲。
     //    WASM はこの分岐に入ったときだけ遅延ロードされる。
     if (url.pathname.startsWith("/api/")) {
       return goWorker.fetch(req, env, ctx);
     }
 
-    // 3. 残りは Static Assets へ。not_found_handling(SPA フォールバック) は
+    // 4. 残りは Static Assets へ。not_found_handling(SPA フォールバック) は
     //    ASSETS binding の fetch が尊重する。
     return env.ASSETS.fetch(req);
   },

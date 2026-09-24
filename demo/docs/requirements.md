@@ -231,6 +231,15 @@ Guide (F-5) が RFC 9557 の構文詳細を扱うのに対し、About は「Temp
   - server: golangci-lint、table-driven test
   - OpenAPI スキーマと生成コード (Orval / oapi-codegen) の乖離を CI で検出すること
 - **N-6 依存最小**: Go サーバーは ixdtf + 標準ライブラリを基本とする (DB なし、認証なし)
+- **N-7 SEO**: 検索エンジンが各画面を個別のページとして扱えること
+  - 画面ごとの `<title>` / `<meta name="description">` / `<link rel="canonical">` を、ルート遷移と
+    UI 言語 (F-0-2) の切り替えに追従させる。文言は各画面の locale (`<page>.title` / `<page>.tagline`) を流用する (N-2)
+  - canonical は正規ドメインの `origin + pathname` とし、共有 URL のクエリ (F-2-7) は含めない。
+    未定義パスは `noindex` にする
+  - `robots.txt` と `sitemap.xml` を配信する。sitemap には実在する画面のみを載せ、リダイレクト専用の旧パスは載せない
+  - 旧パス (`/interop` `/temporal-lab`) はエッジで 301 リダイレクトする
+- **N-8 アクセス解析**: 広告は置かない。アクセス解析は Cookie を使わず個人データを収集しない
+  Cloudflare Web Analytics のみとし、その旨をサポート画面 (`support.why.body`) で明示する
 
 ## スコープ外 (Non-goals)
 

@@ -1,0 +1,6 @@
+# N-7: すべての画面をクロール可。API は検索対象外。
+User-agent: *
+Allow: /
+Disallow: /api/
+
+Sitemap: https://ixdtf.8beeeaaat.com/sitemap.xml

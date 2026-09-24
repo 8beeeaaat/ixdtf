@@ -5,6 +5,7 @@ import { type ThemeMode, useTheme } from "@/app/theme";
 import { buttonVariants } from "@/components/ui/Button";
 import { Select } from "@/components/ui/Select";
 import { TooltipProvider } from "@/components/ui/Tooltip";
+import { useDocumentHead } from "@/lib/useDocumentHead";
 import { cn } from "@/lib/utils";
 
 // ホームへはロゴ兼ホームリンクで遷移するため、ナビはそれ以外の 4 画面のみ (F-0-1)。
@@ -219,6 +220,8 @@ function LanguageIcon() {
 export function Layout() {
   const { t, i18n } = useTranslation();
   const { mode, setMode } = useTheme();
+  // 画面ごとの title / description / canonical をルートと UI 言語に追従させる (N-7)。
+  useDocumentHead();
   // ヘッダーの設定コントロールはすべて Select (プルダウン) で現在値を表示する。
   const currentLanguage: Language = i18n.language.startsWith("ja") ? "ja" : "en";
   const languageOptions = [
