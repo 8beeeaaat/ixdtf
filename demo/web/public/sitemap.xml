@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- N-7: web/src/lib/seo.ts の PAGE_META と一致させる (seo.test.ts が検証)。 -->
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>https://ixdtf.8beeeaaat.com/</loc></url>
+  <url><loc>https://ixdtf.8beeeaaat.com/about</loc></url>
+  <url><loc>https://ixdtf.8beeeaaat.com/playground</loc></url>
+  <url><loc>https://ixdtf.8beeeaaat.com/converter</loc></url>
+  <url><loc>https://ixdtf.8beeeaaat.com/guide</loc></url>
+  <url><loc>https://ixdtf.8beeeaaat.com/support</loc></url>
+</urlset>

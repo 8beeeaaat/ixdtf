@@ -28,6 +28,22 @@
       content="IXDTF Demo — RFC 9557 date-time string with highlighted date, time, offset, time zone and extension tokens"
     />
     <meta name="twitter:card" content="summary_large_image" />
+    <!-- 構造化データ (N-7)。実行されないデータブロックのため CSP の script-src の対象外。 -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        "name": "IXDTF Demo",
+        "url": "https://ixdtf.8beeeaaat.com/",
+        "description": "Round-tripping RFC 9557 date-time strings between the browser's Temporal and Go's ixdtf",
+        "applicationCategory": "DeveloperApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript and a modern browser",
+        "inLanguage": ["en", "ja"],
+        "isAccessibleForFree": true,
+        "author": { "@type": "Person", "name": "8beeeaaat", "url": "https://github.com/8beeeaaat" }
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

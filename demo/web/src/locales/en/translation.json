@@ -412,7 +412,7 @@
     "tagline": "This IXDTF / RFC 9557 learning demo is free and open source",
     "why": {
       "heading": "Why this demo exists",
-      "body": "RFC 9557 (IXDTF) is a modern format that carries time-zone and calendar annotations alongside a date-time in a machine-readable way. This demo round-trips the same string through two independent implementations — Go's ixdtf library and the browser's Temporal API (native or temporal-polyfill) — so you can understand the format and its interoperability hands-on. It runs with no ads and no tracking."
+      "body": "RFC 9557 (IXDTF) is a modern format that carries time-zone and calendar annotations alongside a date-time in a machine-readable way. This demo round-trips the same string through two independent implementations — Go's ixdtf library and the browser's Temporal API (native or temporal-polyfill) — so you can understand the format and its interoperability hands-on. It runs with no ads. The only analytics is Cloudflare Web Analytics, which uses no cookies and collects no personal data."
     },
     "how": {
       "heading": "Ways to support"
